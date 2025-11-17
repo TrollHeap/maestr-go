@@ -1,0 +1,202 @@
+[
+  {
+    "id": "go-001",
+    "title": "Goroutines Basics",
+    "description": "Comprenez comment les goroutines permettent la concurrence légère en Go.",
+    "domain": "golang",
+    "difficulty": 1,
+    "steps": [
+      "Créer une goroutine simple avec 'go func()'",
+      "Utiliser sync.WaitGroup pour synchroniser",
+      "Comprendre la planification des goroutines"
+    ],
+    "content": "package main\n\nimport (\n\t\"fmt\"\n\t\"sync\"\n)\n\nfunc main() {\n\tvar wg sync.WaitGroup\n\t\n\t// TODO: Ajouter 3 goroutines\n\tfor i := 1; i <= 3; i++ {\n\t\twg.Add(1)\n\t\tgo func(num int) {\n\t\t\tdefer wg.Done()\n\t\t\tfmt.Printf(\"Goroutine %d\\n\", num)\n\t\t}(i)\n\t}\n\t\n\twg.Wait()\n\tfmt.Println(\"Done!\")\n}",
+    "completed": false,
+    "last_reviewed": null,
+    "ease_factor": 2.5,
+    "interval_days": 0,
+    "repetitions": 0,
+    "created_at": "2025-11-17T20:00:00Z",
+    "updated_at": "2025-11-17T20:00:00Z"
+  },
+  {
+    "id": "go-002",
+    "title": "Channels et Communication",
+    "description": "Maîtrisez les canaux pour une communication sûre entre goroutines.",
+    "domain": "golang",
+    "difficulty": 2,
+    "steps": [
+      "Créer des canaux typés",
+      "Envoyer et recevoir via les canaux",
+      "Implémenter le pattern producteur-consommateur"
+    ],
+    "content": "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tch := make(chan int)\n\t\n\t// Producteur\n\tgo func() {\n\t\tfor i := 1; i <= 3; i++ {\n\t\t\tch <- i\n\t\t}\n\t\tclose(ch)\n\t}()\n\t\n\t// Consommateur\n\tfor val := range ch {\n\t\tfmt.Printf(\"Received: %d\\n\", val)\n\t}\n}",
+    "completed": false,
+    "last_reviewed": null,
+    "ease_factor": 2.5,
+    "interval_days": 0,
+    "repetitions": 0,
+    "created_at": "2025-11-17T20:00:00Z",
+    "updated_at": "2025-11-17T20:00:00Z"
+  },
+  {
+    "id": "go-003",
+    "title": "Interfaces et Polymorphisme",
+    "description": "Écrivez du code flexible et réutilisable avec les interfaces.",
+    "domain": "golang",
+    "difficulty": 2,
+    "steps": [
+      "Définir des contrats d'interface",
+      "Implémenter les interfaces implicitement",
+      "Utiliser interface{} pour la flexibilité"
+    ],
+    "content": "package main\n\nimport \"fmt\"\n\ntype Reader interface {\n\tRead() string\n}\n\ntype File struct {\n\tName string\n}\n\nfunc (f File) Read() string {\n\treturn fmt.Sprintf(\"Reading from %s\", f.Name)\n}\n\ntype Network struct {\n\tURL string\n}\n\nfunc (n Network) Read() string {\n\treturn fmt.Sprintf(\"Reading from %s\", n.URL)\n}\n\nfunc main() {\n\tvar readers []Reader\n\treaders = append(readers, File{\"file.txt\"})\n\treaders = append(readers, Network{\"http://example.com\"})\n\t\n\tfor _, r := range readers {\n\t\tfmt.Println(r.Read())\n\t}\n}",
+    "completed": false,
+    "last_reviewed": null,
+    "ease_factor": 2.5,
+    "interval_days": 0,
+    "repetitions": 0,
+    "created_at": "2025-11-17T20:00:00Z",
+    "updated_at": "2025-11-17T20:00:00Z"
+  },
+  {
+    "id": "go-004",
+    "title": "Error Handling Patterns",
+    "description": "Maîtrisez les patterns de gestion d'erreurs en Go.",
+    "domain": "golang",
+    "difficulty": 1,
+    "steps": [
+      "Comprendre l'interface error",
+      "Créer des types d'erreurs personnalisés",
+      "Gérer les erreurs gracieusement"
+    ],
+    "content": "package main\n\nimport (\n\t\"fmt\"\n\t\"errors\"\n)\n\ntype ValidationError struct {\n\tField string\n\tReason string\n}\n\nfunc (e ValidationError) Error() string {\n\treturn fmt.Sprintf(\"validation error in %s: %s\", e.Field, e.Reason)\n}\n\nfunc Validate(age int) error {\n\tif age < 0 {\n\t\treturn ValidationError{\"age\", \"cannot be negative\"}\n\t}\n\tif age > 150 {\n\t\treturn ValidationError{\"age\", \"unrealistic\"}\n\t}\n\treturn nil\n}\n\nfunc main() {\n\terr := Validate(-5)\n\tif err != nil {\n\t\tfmt.Println(err)\n\t}\n}",
+    "completed": false,
+    "last_reviewed": null,
+    "ease_factor": 2.5,
+    "interval_days": 0,
+    "repetitions": 0,
+    "created_at": "2025-11-17T20:00:00Z",
+    "updated_at": "2025-11-17T20:00:00Z"
+  },
+  {
+    "id": "linux-001",
+    "title": "Tmux Window Management",
+    "description": "Maîtrisez tmux pour un multiplexage de terminal efficace.",
+    "domain": "linux",
+    "difficulty": 1,
+    "steps": [
+      "Créer et nommer des sessions",
+      "Diviser fenêtres et volets",
+      "Naviguer entre les fenêtres"
+    ],
+    "content": "# Tmux Basics\n\n# Créer une session\ntmux new-session -s mysession\n\n# Créer une fenêtre\ntmux new-window -t mysession -n editor\n\n# Diviser horizontalement\nCtrl-b %\n\n# Diviser verticalement\nCtrl-b \"\n\n# Naviguer\nCtrl-b ← → ↑ ↓\n\n# Kill session\ntmux kill-session -t mysession",
+    "completed": false,
+    "last_reviewed": null,
+    "ease_factor": 2.5,
+    "interval_days": 0,
+    "repetitions": 0,
+    "created_at": "2025-11-17T20:00:00Z",
+    "updated_at": "2025-11-17T20:00:00Z"
+  },
+  {
+    "id": "linux-002",
+    "title": "Shell Scripting Fundamentals",
+    "description": "Apprenez le scripting bash pour automatiser les tâches système.",
+    "domain": "linux",
+    "difficulty": 2,
+    "steps": [
+      "Variables et conditionnels",
+      "Boucles et fonctions",
+      "Gestion d'erreurs avec exit codes"
+    ],
+    "content": "#!/bin/bash\n\n# Variables\nFILE=\"$1\"\n\n# Fonction\ncheck_file() {\n    if [ -f \"$1\" ]; then\n        echo \"File exists: $1\"\n        return 0\n    else\n        echo \"File not found: $1\"\n        return 1\n    fi\n}\n\n# Boucle\nfor file in *.txt; do\n    check_file \"$file\" || echo \"Skipping $file\"\ndone\n\nexit 0",
+    "completed": false,
+    "last_reviewed": null,
+    "ease_factor": 2.5,
+    "interval_days": 0,
+    "repetitions": 0,
+    "created_at": "2025-11-17T20:00:00Z",
+    "updated_at": "2025-11-17T20:00:00Z"
+  },
+  {
+    "id": "linux-003",
+    "title": "File Permissions et Ownership",
+    "description": "Maîtrisez le système de permissions Linux.",
+    "domain": "linux",
+    "difficulty": 1,
+    "steps": [
+      "Comprendre read/write/execute",
+      "Modèle user/group/other",
+      "Commandes chmod et chown"
+    ],
+    "content": "# File Permissions: rwxrwxrwx\n# Chiffres: r=4, w=2, x=1\n\n# Voir les permissions\nls -l myfile.txt\n\n# Donner lecture+écriture au propriétaire (6)\nchmod 600 myfile.txt\n\n# user=rw, group=r, other=none\nchmod 640 myfile.txt\n\n# Ajouter permission execute\nchmod +x script.sh\n\n# Changer propriétaire\nchown user:group myfile.txt\n\n# Recursive\nchown -R user:group directory/",
+    "completed": false,
+    "last_reviewed": null,
+    "ease_factor": 2.5,
+    "interval_days": 0,
+    "repetitions": 0,
+    "created_at": "2025-11-17T20:00:00Z",
+    "updated_at": "2025-11-17T20:00:00Z"
+  },
+  {
+    "id": "arch-001",
+    "title": "Memory Hierarchy and Caches",
+    "description": "Visualisez comment CPU caches, RAM, et stockage interagissent.",
+    "domain": "architecture",
+    "difficulty": 2,
+    "steps": [
+      "Étudier les niveaux de cache (L1, L2, L3)",
+      "Comprendre les patterns d'accès mémoire",
+      "Optimiser pour la localité de cache"
+    ],
+    "content": "# Memory Hierarchy (latency)\n\nL1 Cache:   32 KB  → 4 cycles\nL2 Cache:  256 KB  → 12 cycles\nL3 Cache:    8 MB  → 40 cycles\nRAM:        16 GB  → 200 cycles\nDisk:        1 TB  → 10,000,000+ cycles\n\n# Principle: Spatial + Temporal Locality\n# Access nearby memory and recent memory\n\n// Good: Sequential access\nfor i := 0; i < len(arr); i++ {\n    sum += arr[i]\n}\n\n// Bad: Random access\nfor i := 0; i < len(arr); i += RANDOM {\n    sum += arr[i]\n}",
+    "completed": false,
+    "last_reviewed": null,
+    "ease_factor": 2.5,
+    "interval_days": 0,
+    "repetitions": 0,
+    "created_at": "2025-11-17T20:00:00Z",
+    "updated_at": "2025-11-17T20:00:00Z"
+  },
+  {
+    "id": "arch-002",
+    "title": "Process vs Thread Model",
+    "description": "Construisez un modèle mental clair de l'isolation des processus et du partage des threads.",
+    "domain": "architecture",
+    "difficulty": 1,
+    "steps": [
+      "Dessiner la disposition mémoire d'un processus",
+      "Comprendre le partage mémoire des threads",
+      "Visualiser le context switching"
+    ],
+    "content": "# PROCESS ISOLATION\nProcess A:      Process B:\n┌──────────┐    ┌──────────┐\n│  Code    │    │  Code    │ (SEPARATE)\n│  Data    │    │  Data    │ (SEPARATE)\n│  Heap    │    │  Heap    │ (SEPARATE)\n│  Stack   │    │  Stack   │ (SEPARATE)\n└──────────┘    └──────────┘\n\n# THREAD SHARING (same process)\nProcess A:\n┌──────────────────────┐\n│  Code (SHARED)       │\n│  Data (SHARED)       │\n│  Heap (SHARED)       │\n├────┬────┬────────────┤\n│ T1 │ T2 │ T3 Stack   │ (SEPARATE per thread)\n└────┴────┴────────────┘",
+    "completed": false,
+    "last_reviewed": null,
+    "ease_factor": 2.5,
+    "interval_days": 0,
+    "repetitions": 0,
+    "created_at": "2025-11-17T20:00:00Z",
+    "updated_at": "2025-11-17T20:00:00Z"
+  },
+  {
+    "id": "arch-003",
+    "title": "Virtual Memory and Paging",
+    "description": "Comprenez la paging, la segmentation, et les lookaside buffers.",
+    "domain": "architecture",
+    "difficulty": 3,
+    "steps": [
+      "Comprendre l'espace adresse virtuel",
+      "Apprendre le mécanisme de paging",
+      "Étudier l'optimisation TLB"
+    ],
+    "content": "# VIRTUAL TO PHYSICAL ADDRESS TRANSLATION\n\nVirtual Address: [Page Number | Offset]\n       ↓\n    Page Table Lookup\n       ↓\nPhysical Address: [Frame Number | Offset]\n\n# TLB (Translation Lookaside Buffer)\n# Cache of recent translations\n# Hit rate: 95-99%\n\n# TLB Miss → Page Table Lookup (slow)\n# Page Fault → Disk I/O (very slow)\n\n# Page Size: typically 4KB\n# Virtual Address Space: 2^32 (32-bit) or 2^64 (64-bit)",
+    "completed": false,
+    "last_reviewed": null,
+    "ease_factor": 2.5,
+    "interval_days": 0,
+    "repetitions": 0,
+    "created_at": "2025-11-17T20:00:00Z",
+    "updated_at": "2025-11-17T20:00:00Z"
+  }
+]

@@ -22,21 +22,20 @@ func NewScheduler() *Scheduler {
 
 // ReviewExercise applique l'algorithme SM-2
 // rating doit être entre 1 et 4:
-//
-//	1 = Complètement oublié (reset)
-//	2 = Très difficile (EF - 0.2)
-//	3 = Normal (EF constant)
-//	4 = Facile (EF + 0.1)
+//   1 = Complètement oublié (reset)
+//   2 = Très difficile (EF - 0.2)
+//   3 = Normal (EF constant)
+//   4 = Facile (EF + 0.1)
 func (s *Scheduler) ReviewExercise(ex *models.Exercise, rating int) {
 	if rating < 1 || rating > 4 {
-		return // Invalid rating
+		return  // Invalid rating
 	}
 
 	var newInterval int
 	var newEF float64
 
 	switch rating {
-	case 4: // Facile
+	case 4:  // Facile
 		if ex.IntervalDays == 0 {
 			newInterval = 1
 		} else {
@@ -44,7 +43,7 @@ func (s *Scheduler) ReviewExercise(ex *models.Exercise, rating int) {
 		}
 		newEF = ex.EaseFactor + 0.1
 
-	case 3: // Normal
+	case 3:  // Normal
 		if ex.IntervalDays == 0 {
 			newInterval = 1
 		} else {
@@ -52,14 +51,14 @@ func (s *Scheduler) ReviewExercise(ex *models.Exercise, rating int) {
 		}
 		newEF = ex.EaseFactor
 
-	case 2: // Difficile
+	case 2:  // Difficile
 		newInterval = int(float64(ex.IntervalDays) * 0.5)
 		if newInterval < 1 {
 			newInterval = 1
 		}
 		newEF = ex.EaseFactor - 0.2
 
-	case 1: // Oublié (reset)
+	case 1:  // Oublié (reset)
 		newInterval = 1
 		newEF = ex.EaseFactor - 0.5
 	}
@@ -76,7 +75,7 @@ func (s *Scheduler) ReviewExercise(ex *models.Exercise, rating int) {
 	now := time.Now()
 	ex.LastReviewed = &now
 	ex.IntervalDays = newInterval
-	ex.EaseFactor = newEF // ← ✅ CETTE LIGNE EST CRUCIALE
+	ex.EaseFactor = newEF  // ← ✅ CETTE LIGNE EST CRUCIALE
 	ex.Repetitions++
 	ex.Completed = true
 	ex.UpdatedAt = now
@@ -94,14 +93,14 @@ func (s *Scheduler) IsDueForReview(ex *models.Exercise) bool {
 // GetDaysUntilReview retourne le nombre de jours avant la prochaine révision
 func (s *Scheduler) GetDaysUntilReview(ex *models.Exercise) int {
 	if ex.LastReviewed == nil {
-		return 0 // Nouveau, révision immédiate
+		return 0  // Nouveau, révision immédiate
 	}
 
 	nextReview := ex.LastReviewed.AddDate(0, 0, ex.IntervalDays)
 	days := int(time.Until(nextReview).Hours() / 24)
 
 	if days < 0 {
-		return 0 // Due
+		return 0  // Due
 	}
 	return days
 }
