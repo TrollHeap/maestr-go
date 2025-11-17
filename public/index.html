@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maestro - Ultra-Learning Tool</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="view active">
+            <div class="terminal-header">
+                <div class="terminal-title">╔══════════════════════════════════════════════════════════════╗</div>
+                <div class="terminal-title">║               MAESTRO - Ultra-Learning Tool                 ║</div>
+                <div class="terminal-title">╚══════════════════════════════════════════════════════════════╝</div>
+            </div>
+
+            <div class="dashboard-content">
+                <div class="stats-section">
+                    <div class="stat-card streak-card">
+                        <div class="stat-label">Current Streak</div>
+                        <div class="stat-value" id="streak-value">5 days</div>
+                        <div class="streak-visual" id="streak-visual">✓✓✓✓✓</div>
+                    </div>
+
+                    <div class="stat-card timer-card">
+                        <div class="stat-label">Next Session In</div>
+                        <div class="stat-value" id="timer-value">Ready!</div>
+                        <div class="timer-visual">⏱️</div>
+                    </div>
+
+                    <div class="stat-card progress-card">
+                        <div class="stat-label">Today's Progress</div>
+                        <div class="stat-value" id="today-progress">4/4 exercises</div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="daily-progress-bar" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recommended-section">
+                    <div class="section-title">📚 Recommended Next</div>
+                    <div class="recommended-card" id="recommended-exercise">
+                        <div class="exercise-header">
+                            <span class="exercise-domain golang">golang</span>
+                            <span class="exercise-difficulty easy">●</span>
+                            <span class="exercise-title">Goroutines Basics</span>
+                        </div>
+                        <div class="exercise-desc">Learn how goroutines work in Go - lightweight threads managed by Go runtime</div>
+                        <div class="exercise-status">Status: ◐ Ready to practice</div>
+                    </div>
+                </div>
+
+                <div class="mastery-section">
+                    <div class="section-title">🌳 Learning Tree</div>
+                    <div class="tree-container">
+                        <div class="domain-branch">
+                            <div class="branch-header">🌿 golang</div>
+                            <div class="mastery-bar-container">
+                                <div class="mastery-bar" style="width: 50%"></div>
+                            </div>
+                            <div class="mastery-text">50% mastery (2/4 completed)</div>
+                        </div>
+                        <div class="domain-branch">
+                            <div class="branch-header">🌳 linux</div>
+                            <div class="mastery-bar-container">
+                                <div class="mastery-bar" style="width: 33%"></div>
+                            </div>
+                            <div class="mastery-text">33% mastery (1/3 completed)</div>
+                        </div>
+                        <div class="domain-branch">
+                            <div class="branch-header">🏛️ architecture</div>
+                            <div class="mastery-bar-container">
+                                <div class="mastery-bar" style="width: 33%"></div>
+                            </div>
+                            <div class="mastery-text">33% mastery (1/3 completed)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="command-bar">
+                <div class="command-hint">[Q] Quick Start  [B] Browse  [S] Stats  [Esc] Quit</div>
+            </div>
+        </div>
+
+        <!-- Browse View -->
+        <div id="browse-view" class="view">
+            <div class="terminal-header">
+                <div class="terminal-title">╔══════════════════════════════════════════════════════════════╗</div>
+                <div class="terminal-title">║                    Exercise Browser                         ║</div>
+                <div class="terminal-title">╚══════════════════════════════════════════════════════════════╝</div>
+            </div>
+
+            <div class="filter-bar">
+                <button class="filter-btn active" data-domain="all">All</button>
+                <button class="filter-btn" data-domain="golang">🌿 Golang</button>
+                <button class="filter-btn" data-domain="linux">🌳 Linux</button>
+                <button class="filter-btn" data-domain="architecture">🏛️ Architecture</button>
+            </div>
+
+            <div class="exercise-list" id="exercise-list">
+                <!-- Exercise items will be populated by JavaScript -->
+            </div>
+
+            <div class="command-bar">
+                <div class="command-hint">[↑↓/JK] Navigate  [Enter] Select  [Esc] Back</div>
+            </div>
+        </div>
+
+        <!-- Exercise View -->
+        <div id="exercise-view" class="view">
+            <div class="terminal-header">
+                <div class="terminal-title">╔══════════════════════════════════════════════════════════════╗</div>
+                <div class="terminal-title" id="exercise-view-title">║                    Exercise Practice                        ║</div>
+                <div class="terminal-title">╚══════════════════════════════════════════════════════════════╝</div>
+            </div>
+
+            <div class="session-timer" id="session-timer">
+                ⏱️ Session: <span id="session-time">15:00</span>
+            </div>
+
+            <div class="exercise-content">
+                <div class="exercise-detail">
+                    <div class="detail-header">
+                        <span class="exercise-domain" id="detail-domain">golang</span>
+                        <span class="exercise-difficulty" id="detail-difficulty">●</span>
+                        <h2 id="detail-title">Exercise Title</h2>
+                    </div>
+                    <p class="detail-description" id="detail-description">Exercise description</p>
+                </div>
+
+                <div class="steps-section">
+                    <div class="section-title">📋 Task Checklist</div>
+                    <div class="steps-container" id="steps-container">
+                        <!-- Steps will be populated by JavaScript -->
+                    </div>
+                    <div class="step-progress">
+                        <div class="step-progress-bar-container">
+                            <div class="step-progress-bar" id="step-progress-bar" style="width: 0%"></div>
+                        </div>
+                        <div class="step-progress-text" id="step-progress-text">0/0 steps completed</div>
+                    </div>
+                </div>
+
+                <div class="encouragement" id="encouragement">
+                    💪 Let's do this! Start with step 1.
+                </div>
+
+                <div class="rating-section">
+                    <div class="section-title">How did it go?</div>
+                    <div class="rating-buttons">
+                        <button class="rating-btn" data-rating="1">1 - Forgot</button>
+                        <button class="rating-btn" data-rating="2">2 - Hard</button>
+                        <button class="rating-btn" data-rating="3">3 - Good</button>
+                        <button class="rating-btn" data-rating="4">4 - Easy</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="command-bar">
+                <div class="command-hint">[Space] Toggle Step  [1-4] Rate  [Esc] Back</div>
+            </div>
+        </div>
+
+        <!-- Stats View -->
+        <div id="stats-view" class="view">
+            <div class="terminal-header">
+                <div class="terminal-title">╔══════════════════════════════════════════════════════════════╗</div>
+                <div class="terminal-title">║                  Statistics &amp; Progress                      ║</div>
+                <div class="terminal-title">╚══════════════════════════════════════════════════════════════╝</div>
+            </div>
+
+            <div class="stats-content">
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-box-label">Total Completed</div>
+                        <div class="stat-box-value" id="total-completed">4</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-label">Total Reviews</div>
+                        <div class="stat-box-value" id="total-reviews">9</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-label">Current Streak</div>
+                        <div class="stat-box-value" id="stats-streak">5</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-box-label">Overall Progress</div>
+                        <div class="stat-box-value" id="overall-progress">40%</div>
+                    </div>
+                </div>
+
+                <div class="review-schedule">
+                    <div class="section-title">📅 Upcoming Reviews</div>
+                    <div class="review-list" id="review-list">
+                        <!-- Review items will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="domain-details">
+                    <div class="section-title">📊 Domain Breakdown</div>
+                    <div id="domain-breakdown">
+                        <!-- Domain stats will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="command-bar">
+                <div class="command-hint">[Esc] Back to Dashboard</div>
+            </div>
+        </div>
+
+        <!-- Quick Start View -->
+        <div id="quick-start-view" class="view">
+            <div class="terminal-header">
+                <div class="terminal-title">╔══════════════════════════════════════════════════════════════╗</div>
+                <div class="terminal-title">║                    Quick Start Session                      ║</div>
+                <div class="terminal-title">╚══════════════════════════════════════════════════════════════╝</div>
+            </div>
+
+            <div class="quick-start-content">
+                <div class="session-info">
+                    <div class="session-timer-large" id="quick-timer">15:00</div>
+                    <div class="session-message">Pick one exercise to focus on:</div>
+                </div>
+
+                <div class="quick-exercises" id="quick-exercises">
+                    <!-- Quick exercise cards will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="command-bar">
+                <div class="command-hint">[1-3] Select Exercise  [Esc] Cancel</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
