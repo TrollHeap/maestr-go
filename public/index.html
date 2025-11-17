@@ -22,8 +22,9 @@
                 <div class="navbar-brand">🎯 MAESTRO</div>
                 <div class="navbar-menu">
                     <button class="nav-btn active" data-view="dashboard">Tableau de bord</button>
-                    <button class="nav-btn" data-view="quick-start">Quick Start</button>
-                    <button class="nav-btn" data-view="browse">Parcourir</button>
+                    <button id="btn-browse" class="btn btn-secondary">
+                        Parcourir
+                    </button>
                     <button class="nav-btn" data-view="stats">Statistiques</button>
                 </div>
             </nav>
@@ -31,8 +32,14 @@
             <main class="dashboard-container">
                 <section class="welcome-section">
                     <h1>Bienvenue sur Maestro</h1>
-                    <p class="subtitle">Apprendre par la pratique, avec la répétition espacée</p>
                 </section>
+
+                <section class="quick-actions">
+                    <button id="btn-quick-start" class="btn btn-primary btn-large">
+                        ⚡ Commencer une session de 15 min
+                    </button>
+                </section>
+                    <br/>
 
                 <section class="stats-grid">
                     <div class="stat-card">
@@ -75,14 +82,6 @@
                     </div>
                 </section>
 
-                <section class="quick-actions">
-                    <button id="btn-quick-start" class="btn btn-primary btn-large">
-                        ⚡ Commencer une session de 15 min
-                    </button>
-                    <button id="btn-browse" class="btn btn-secondary">
-                        📖 Parcourir tous les exercices
-                    </button>
-                </section>
             </main>
         </div>
 
