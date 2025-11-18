@@ -8,15 +8,13 @@
 
 </head>
 <body>
-    <!-- NAVBAR -->
     <div class="navbar">
-        <div class="navbar-brand" onclick="app.goToPage('exercises')">🎯 MAESTRO v2.5</div>
-        
+        <div class="navbar-brand">🎯 MAESTRO v3.1</div>
         <div class="navbar-menu">
             <button class="nav-link active" onclick="app.goToPage('exercises')">📚 Exercices</button>
-            <button class="nav-link" onclick="app.goToPage('stats')">📊 Statistiques</button>
+            <button class="nav-link" onclick="app.goToPage('stats')">📊 Stats</button>
+            <button class="nav-link" onclick="app.goToPage('planner')">📋 Planner</button>
         </div>
-
         <div class="navbar-stats">
             <div class="stat-mini">
                 <div class="stat-mini-label">Streak</div>
@@ -34,10 +32,9 @@
     </div>
 
     <div class="container">
-        <!-- ============= EXERCISES PAGE ============= -->
+        <!-- EXERCISES PAGE -->
         <div id="exercises" class="page active">
             <div class="main-content">
-                <!-- LEFT: Exercise List -->
                 <div class="card">
                     <h2>📚 Exercices</h2>
                     
@@ -60,6 +57,16 @@
                                 <button class="filter-btn" data-domain="architecture">Arch</button>
                             </div>
                         </div>
+
+                        <!-- NOUVEAU: Filtre Date -->
+                        <div class="filter-section">
+                            <div class="filter-label">📅 Date Révision</div>
+                            <div class="filter-buttons">
+                                <button class="filter-btn active" data-date="all">Tous</button>
+                                <button class="filter-btn" data-date="week">Cette semaine</button>
+                                <button class="filter-btn" data-date="month">Ce mois</button>
+                            </div>
+                        </div>
                     </div>
 
                     <div id="exerciseList"></div>
@@ -71,62 +78,90 @@
                     </div>
                 </div>
 
-                <!-- RIGHT: Exercise Detail -->
                 <div class="card exercise-detail" id="exerciseDetail">
                     <div style="text-align: center; color: #888;">Sélectionnez un exercice</div>
                 </div>
             </div>
         </div>
 
-        <!-- ============= STATS PAGE ============= -->
+        <!-- STATS PAGE -->
         <div id="stats" class="page">
-            <h2 style="color: #90EE90; margin-bottom: 30px; font-size: 24px;">📊 Tableau de Bord</h2>
-
+            <h2 style="color: #90EE90;">📊 Statistiques</h2>
             <div class="stats-grid">
                 <div class="stat-card">
-                    <h3>Exercices Complétés</h3>
+                    <h3>Complétés</h3>
                     <div class="value" id="completedCard">0</div>
-                    <div class="unit">/ <span id="totalCard">10</span></div>
                 </div>
-
                 <div class="stat-card">
-                    <h3>Mastery Moyen</h3>
+                    <h3>Mastery</h3>
                     <div class="value" id="masteryCard">0%</div>
-                    <div class="unit">Efficacité d'apprentissage</div>
                 </div>
-
                 <div class="stat-card">
-                    <h3>Streak Actuel</h3>
+                    <h3>Streak</h3>
                     <div class="value" id="streakCard">0</div>
-                    <div class="unit">Jours consécutifs</div>
-                </div>
-
-                <div class="stat-card">
-                    <h3>Révisions Total</h3>
-                    <div class="value" id="reviewsCard">0</div>
-                    <div class="unit">Répétitions</div>
                 </div>
             </div>
+        </div>
 
-            <div class="strengths-weaknesses">
-                <div class="strength-card">
-                    <h4>💪 Points Forts</h4>
-                    <ul class="item-list" id="strengthsList">
-                        <li><span class="item-label">Aucun domaine maîtrisé pour l'instant</span></li>
-                    </ul>
+        <!-- PLANNER PAGE -->
+        <div id="planner" class="page">
+            <h2 style="color: #90EE90;">📋 Mon Planner</h2>
+            
+            <div class="planner-tabs">
+                <button class="planner-tab active" onclick="app.switchPlannerView('today')">Aujourd'hui</button>
+                <button class="planner-tab" onclick="app.switchPlannerView('week')">Cette Semaine</button>
+                <button class="planner-tab" onclick="app.switchPlannerView('month')">Ce Mois</button>
+            </div>
+            
+            <!-- Today View -->
+            <div id="planner-today" class="planner-view active">
+                <div class="time-slot">
+                    <h3>🌅 Matin (9h-12h)</h3>
+                    <div id="morning-sessions"></div>
+                    <button class="btn-add" onclick="app.addSession('morning')">+ Ajouter session</button>
+                </div>
+                
+                <div class="time-slot">
+                    <h3>🌞 Après-midi (14h-17h)</h3>
+                    <div id="afternoon-sessions"></div>
+                    <button class="btn-add" onclick="app.addSession('afternoon')">+ Ajouter session</button>
+                </div>
+                
+                <div class="time-slot">
+                    <h3>🌙 Soir (19h-22h)</h3>
+                    <div id="evening-sessions"></div>
+                    <button class="btn-add" onclick="app.addSession('evening')">+ Ajouter session</button>
                 </div>
 
-                <div class="weakness-card">
-                    <h4>⚠️ Points Faibles</h4>
-                    <ul class="item-list" id="weaknessList">
-                        <li><span class="item-label">Aucun domaine à améliorer encore</span></li>
-                    </ul>
+                <div class="planner-stats">
+                    <h4 style="color: #90EE90;">📊 Progression du jour</h4>
+                    <div id="plannerDailyStats"></div>
                 </div>
             </div>
+            
+            <!-- Week View -->
+            <div id="planner-week" class="planner-view">
+                <div id="week-grid"></div>
+            </div>
+            
+            <!-- Month View -->
+            <div id="planner-month" class="planner-view">
+                <div id="month-overview"></div>
+            </div>
+        </div>
+    </div>
 
-            <div class="chart-section">
-                <h3>📈 Progression par Domaine</h3>
-                <div id="domainStats"></div>
+    <!-- Modal Exercise Selector -->
+    <div id="exerciseSelectorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="color: #90EE90;">Choisir les exercices</h3>
+                <button class="modal-close" onclick="app.closeExerciseSelector()">×</button>
+            </div>
+            <div id="exerciseSelectorList"></div>
+            <div class="modal-footer">
+                <button style="background: #555; color: #fff;" onclick="app.closeExerciseSelector()">Annuler</button>
+                <button style="background: #90EE90; color: #000;" onclick="app.confirmExerciseSelection()">Planifier</button>
             </div>
         </div>
     </div>
