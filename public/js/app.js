@@ -1,4 +1,5 @@
-// ============= API CLIENT WITH NEW ENDPOINTS =============
+// ============= MAESTRO APP v3.1 WITH FILTERS & PLANNER =============
+
 class MaestroAPI {
     constructor(baseURL = 'http://localhost:8080') {
         this.baseURL = baseURL;
@@ -7,13 +8,9 @@ class MaestroAPI {
     async request(endpoint, options = {}) {
         try {
             const response = await fetch(`${this.baseURL}${endpoint}`, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                },
+                headers: { 'Content-Type': 'application/json', ...options.headers },
                 ...options
             });
-
             if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
             return await response.json();
         } catch (error) {
@@ -29,10 +26,7 @@ class MaestroAPI {
     rateExercise(exerciseId, rating) {
         return this.request('/api/rate', {
             method: 'POST',
-            body: JSON.stringify({
-                exercise_id: exerciseId,
-                rating: rating
-            })
+            body: JSON.stringify({ exercise_id: exerciseId, rating: rating })
         });
     }
 
@@ -40,46 +34,39 @@ class MaestroAPI {
         return this.request('/api/stats');
     }
 
-    // Advanced stats endpoints
-    getAdvancedStats() {
-        return this.request('/api/stats/advanced');
+    getPlannerToday() {
+        return this.request('/api/planner/today');
     }
 
-    getStruggling() {
-        return this.request('/api/stats/struggling');
+    getPlannerWeek(startDate) {
+        const query = startDate ? `?start=${startDate}` : '';
+        return this.request(`/api/planner/week${query}`);
     }
 
-    getMastered() {
-        return this.request('/api/stats/mastered');
+    getPlannerMonth(startDate) {
+        const query = startDate ? `?start=${startDate}` : '';
+        return this.request(`/api/planner/month${query}`);
     }
 
-    getNeedsPractice() {
-        return this.request('/api/stats/needs-practice');
+    createSession(date, timeSlot, exerciseIDs, duration) {
+        return this.request('/api/planner/session', {
+            method: 'POST',
+            body: JSON.stringify({ date, time_slot: timeSlot, exercise_ids: exerciseIDs, duration })
+        });
     }
 
-    getInsights() {
-        return this.request('/api/stats/insights');
+    updateSession(sessionID, status, notes = '') {
+        return this.request(`/api/planner/session/${sessionID}`, {
+            method: 'PUT',
+            body: JSON.stringify({ status, notes })
+        });
     }
 
-    getDomainAnalysis(domain) {
-        return this.request(`/api/stats/domain/${domain}`);
-    }
-
-    // Calendar endpoints
-    getCalendarUpcoming(days = 30) {
-        return this.request(`/api/calendar/upcoming?days=${days}`);
-    }
-
-    getCalendarWeek() {
-        return this.request('/api/calendar/week');
-    }
-
-    getCalendarMonth() {
-        return this.request('/api/calendar/month');
+    deleteSession(sessionID) {
+        return this.request(`/api/planner/session/${sessionID}`, { method: 'DELETE' });
     }
 }
 
-// ============= APP STATE WITH ADVANCED STATS =============
 class MaestroApp {
     constructor() {
         this.api = new MaestroAPI();
@@ -89,12 +76,15 @@ class MaestroApp {
         this.currentPage = 'exercises';
         this.currentStatus = 'all';
         this.currentDomain = 'all';
+        this.currentDateFilter = 'all'; // NOUVEAU
         this.pageNum = 1;
         this.pageSize = 10;
         this.stats = {};
-        this.advancedStats = {};
-        this.reviewDates = {};
         this.completedSteps = {};
+        this.reviewDates = {};
+        this.selectedTimeSlot = null;
+        this.selectedExercisesForSession = [];
+
         this.init();
     }
 
@@ -118,22 +108,14 @@ class MaestroApp {
     async updateStats() {
         try {
             this.stats = await this.api.getStats();
-
-            // Load advanced stats if available
-            try {
-                this.advancedStats = await this.api.getAdvancedStats();
-            } catch (e) {
-                console.warn('Advanced stats endpoint not available yet');
-            }
-
             this.renderNavStats();
-            this.renderStatsPage();
         } catch (error) {
             console.error('Erreur stats:', error);
         }
     }
 
     setupEventListeners() {
+        // Status filters
         document.querySelectorAll('[data-status]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('[data-status]').forEach(b => b.classList.remove('active'));
@@ -144,6 +126,7 @@ class MaestroApp {
             });
         });
 
+        // Domain filters
         document.querySelectorAll('[data-domain]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('[data-domain]').forEach(b => b.classList.remove('active'));
@@ -153,45 +136,63 @@ class MaestroApp {
                 this.applyFilters();
             });
         });
+
+        // NOUVEAU: Date filters
+        document.querySelectorAll('[data-date]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-date]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                this.currentDateFilter = e.target.dataset.date;
+                this.pageNum = 1;
+                this.applyFilters();
+            });
+        });
     }
 
     goToPage(page) {
         document.querySelectorAll('.nav-link').forEach(btn => btn.classList.remove('active'));
         event.target.classList.add('active');
-
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(page).classList.add('active');
-
         this.currentPage = page;
 
-        if (page === 'stats') {
-            this.updateStats();
-        } else if (page === 'calendar') {
-            this.renderCalendar();
+        if (page === 'planner') {
+            this.renderPlannerToday();
         }
-    }
-
-    switchStatsTab(tab) {
-        this.currentStatsTab = tab;
-
-        document.querySelectorAll('.stats-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.stats-content').forEach(c => c.classList.remove('active'));
-
-        event.target.classList.add('active');
-        document.getElementById(tab + '-stats').classList.add('active');
     }
 
     applyFilters() {
         let filtered = this.allExercises;
 
+        // Status filter
         if (this.currentStatus === 'pending') {
             filtered = filtered.filter(ex => !ex.completed);
         } else if (this.currentStatus === 'completed') {
             filtered = filtered.filter(ex => ex.completed);
         }
 
+        // Domain filter
         if (this.currentDomain !== 'all') {
             filtered = filtered.filter(ex => ex.domain === this.currentDomain);
+        }
+
+        // NOUVEAU: Date filter
+        if (this.currentDateFilter !== 'all') {
+            const now = new Date();
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+            filtered = filtered.filter(ex => {
+                if (!ex.last_reviewed) return false;
+                const reviewDate = new Date(ex.last_reviewed);
+
+                if (this.currentDateFilter === 'week') {
+                    return reviewDate >= weekAgo;
+                } else if (this.currentDateFilter === 'month') {
+                    return reviewDate >= monthAgo;
+                }
+                return true;
+            });
         }
 
         this.filteredExercises = filtered;
@@ -257,37 +258,13 @@ class MaestroApp {
         });
 
         const total = this.getTotalPages();
-        document.getElementById('pageInfo').textContent = `Page ${this.pageNum}/${total} (${this.filteredExercises.length} total)`;
+        document.getElementById('pageInfo').textContent = `Page ${this.pageNum}/${total}`;
         document.getElementById('prevBtn').disabled = this.pageNum <= 1;
         document.getElementById('nextBtn').disabled = this.pageNum >= total;
     }
 
-    toggleStep(exerciseId, stepIndex) {
-        if (!this.completedSteps[exerciseId]) {
-            this.completedSteps[exerciseId] = [];
-        }
-
-        const idx = this.completedSteps[exerciseId].indexOf(stepIndex);
-        if (idx > -1) {
-            this.completedSteps[exerciseId].splice(idx, 1);
-        } else {
-            this.completedSteps[exerciseId].push(stepIndex);
-        }
-
-        this.renderExerciseDetail();
-    }
-
-    toggleCompletion() {
-        if (!this.selectedExercise) return;
-
-        const ex = this.selectedExercise;
-        const newStatus = ex.completed ? 2 : 3;
-        this.rate(ex.id, newStatus);
-    }
-
     renderExerciseDetail() {
         const detail = document.getElementById('exerciseDetail');
-
         if (!this.selectedExercise) {
             detail.innerHTML = '<div style="text-align: center; color: #888;">Sélectionnez un exercice</div>';
             return;
@@ -295,375 +272,422 @@ class MaestroApp {
 
         const ex = this.selectedExercise;
         const nextReviewText = this.reviewDates[ex.id] || 'Nouveau';
-        const stepsCompleted = this.completedSteps[ex.id] || [];
-        const stepsProgress = `${stepsCompleted.length}/${ex.steps.length}`;
 
-        detail.innerHTML = `
-            <div class="detail-header">
-                <h3>${ex.title}</h3>
-                <p class="detail-description">${ex.description}</p>
+        // Initialize completed steps for this exercise if not exists
+        if (!this.completedSteps[ex.id]) {
+            this.completedSteps[ex.id] = [];
+        }
+
+        // GÉNÉRER HTML DES STEPS AVEC CHECKBOXES
+        const stepsHTML = ex.steps && ex.steps.length > 0 ? `
+        <div class="steps-section">
+            <div class="steps-header">
+                <h4>📝 Étapes</h4>
+                <span class="steps-progress">${this.completedSteps[ex.id].length}/${ex.steps.length} complétées</span>
             </div>
-
-            <div class="next-review-info">
-                <strong>🎯 Prochaine révision:</strong> ${nextReviewText}
-            </div>
-
-            <div class="steps-section">
-                <div class="steps-header">
-                    <strong>📋 Étapes à suivre</strong>
-                    <span class="steps-progress">${stepsProgress}</span>
-                </div>
-                ${ex.steps.map((step, i) => {
-            const isCompleted = stepsCompleted.includes(i);
+            <div class="steps-list">
+                ${ex.steps.map((step, index) => {
+            const isCompleted = this.completedSteps[ex.id].includes(index);
             return `
-                        <div class="step-item ${isCompleted ? 'completed' : ''}" 
-                             onclick="app.toggleStep('${ex.id}', ${i})">
-                            <div class="step-checkbox">${isCompleted ? '✓' : i + 1}</div>
+                        <div class="step-item ${isCompleted ? 'completed' : ''}" onclick="app.toggleStep('${ex.id}', ${index})">
+                            <div class="step-checkbox">
+                                ${isCompleted ? '✓' : (index + 1)}
+                            </div>
                             <div class="step-text">${step}</div>
                         </div>
                     `;
         }).join('')}
             </div>
+        </div>
+    ` : '';
 
-            <pre>${ex.content}</pre>
+        // BOUTON MARQUER COMME TERMINÉ
+        const allStepsCompleted = ex.steps && ex.steps.length > 0 &&
+            this.completedSteps[ex.id].length === ex.steps.length;
 
-            <div class="completion-section">
-                <div class="completion-status">
-                    <div class="status-label">
-                        <strong>📌 Statut d'Exercice</strong>
-                        <div class="current ${ex.completed ? 'completed' : 'pending'}">
-                            ${ex.completed ? '✓ Marqué comme complété' : '○ Non complété'}
-                        </div>
-                    </div>
-                    <button class="toggle-btn ${ex.completed ? 'completed' : 'pending'}" 
-                            onclick="app.toggleCompletion()">
-                        ${ex.completed ? '✓ Marqué' : '○ À Faire'}
-                    </button>
+        const completionButton = `
+        <div class="completion-section">
+            <div class="completion-status">
+                <div class="status-label">
+                    <strong>Statut de l'exercice</strong>
+                    <span class="current ${ex.completed ? 'completed' : 'pending'}">
+                        ${ex.completed ? '✓ Complété' : '○ En cours'}
+                    </span>
                 </div>
-
-                ${ex.last_reviewed ? `
-                    <div style="font-size: 13px; color: #888;">
-                        <strong>Progression:</strong><br>
-                        ✓ Complété: ${ex.completed ? 'Oui' : 'Non'}<br>
-                        📊 EF: ${ex.ease_factor.toFixed(2)}<br>
-                        ⏱ Interval: ${ex.interval_days} jour(s)<br>
-                        🔁 Révisions: ${ex.repetitions}
-                    </div>
-                ` : ''}
+                <button 
+                    class="toggle-btn ${ex.completed ? 'completed' : 'pending'} ${!allStepsCompleted && !ex.completed ? 'disabled' : ''}" 
+                    onclick="app.toggleCompletion('${ex.id}')"
+                    ${!allStepsCompleted && !ex.completed ? 'disabled' : ''}>
+                    ${ex.completed ? '✓ Exercice Terminé' : allStepsCompleted ? '✓ Marquer comme terminé' : '○ Compléter d\'abord toutes les étapes'}
+                </button>
             </div>
-
-            <div class="rating-section">
-                <div class="rating-label">Comment avez-vous trouvé cet exercice?</div>
-                <div class="rating-buttons">
-                    <button class="rating-btn r1" onclick="app.rate('${ex.id}', 1)">1 - Oublié</button>
-                    <button class="rating-btn r2" onclick="app.rate('${ex.id}', 2)">2 - Difficile</button>
-                    <button class="rating-btn r3" onclick="app.rate('${ex.id}', 3)">3 - Normal</button>
-                    <button class="rating-btn r4" onclick="app.rate('${ex.id}', 4)">4 - Facile</button>
+            ${!allStepsCompleted && !ex.completed ? `
+                <div class="completion-hint">
+                    💡 Complétez toutes les étapes ci-dessus pour débloquer la validation
                 </div>
+            ` : ''}
+        </div>
+    `;
+
+        detail.innerHTML = `
+        <div class="detail-header">
+            <h3>${ex.title}</h3>
+            <p class="detail-description">${ex.description}</p>
+        </div>
+        
+        <div class="next-review-info">
+            <strong>🎯 Prochaine révision:</strong> ${nextReviewText}
+        </div>
+
+        ${stepsHTML}
+        ${completionButton}
+
+        <div class="rating-section">
+            <div class="rating-label">Comment avez-vous trouvé cet exercice?</div>
+            <div class="rating-buttons">
+                <button class="rating-btn r1" onclick="app.rate('${ex.id}', 1)">
+                    <span class="rating-icon">😰</span>
+                    <span class="rating-text">1 - Oublié</span>
+                </button>
+                <button class="rating-btn r2" onclick="app.rate('${ex.id}', 2)">
+                    <span class="rating-icon">😓</span>
+                    <span class="rating-text">2 - Difficile</span>
+                </button>
+                <button class="rating-btn r3" onclick="app.rate('${ex.id}', 3)">
+                    <span class="rating-icon">😊</span>
+                    <span class="rating-text">3 - Normal</span>
+                </button>
+                <button class="rating-btn r4" onclick="app.rate('${ex.id}', 4)">
+                    <span class="rating-icon">😎</span>
+                    <span class="rating-text">4 - Facile</span>
+                </button>
             </div>
-        `;
+        </div>
+    `;
     }
 
-    renderNavStats() {
-        const toDoCount = this.allExercises.filter(ex => !ex.completed).length;
-        let totalMastery = 0, count = 0;
-        this.allExercises.forEach(ex => {
-            if (ex.completed) {
-                const mastery = Math.round(((ex.ease_factor - 1.3) / (3.0 - 1.3)) * 100);
-                totalMastery += mastery;
-                count++;
-            }
-        });
-        const avgMastery = count > 0 ? Math.round(totalMastery / count) : 0;
-
-        document.getElementById('navToDo').textContent = toDoCount;
-        document.getElementById('navMastery').textContent = avgMastery + '%';
-
-        if (this.stats.streak) {
-            const display = this.stats.streak.display || '';
-            document.getElementById('navStreak').textContent = `${display || '○'} ${this.stats.streak.current || 0}`;
+    // NOUVELLE MÉTHODE: Toggle step completion
+    toggleStep(exerciseId, stepIndex) {
+        if (!this.completedSteps[exerciseId]) {
+            this.completedSteps[exerciseId] = [];
         }
-    }
 
-    renderStatsPage() {
-        const completed = this.allExercises.filter(ex => ex.completed).length;
-        const total = this.allExercises.length;
-
-        let totalMastery = 0, count = 0;
-        this.allExercises.forEach(ex => {
-            if (ex.completed) {
-                const mastery = Math.round(((ex.ease_factor - 1.3) / (3.0 - 1.3)) * 100);
-                totalMastery += mastery;
-                count++;
-            }
-        });
-        const avgMastery = count > 0 ? Math.round(totalMastery / count) : 0;
-
-        document.getElementById('completedCard').textContent = completed;
-        document.getElementById('totalCard').textContent = total;
-        document.getElementById('masteryCard').textContent = avgMastery + '%';
-        document.getElementById('streakCard').textContent = this.stats.streak?.current || 0;
-        document.getElementById('reviewsCard').textContent = this.stats.total_reviews || 0;
-
-        const domains = {};
-        this.allExercises.forEach(ex => {
-            if (!domains[ex.domain]) {
-                domains[ex.domain] = { completed: 0, total: 0, mastery: 0 };
-            }
-            domains[ex.domain].total++;
-            if (ex.completed) {
-                domains[ex.domain].completed++;
-                const mastery = Math.round(((ex.ease_factor - 1.3) / (3.0 - 1.3)) * 100);
-                domains[ex.domain].mastery = Math.max(domains[ex.domain].mastery, mastery);
-            }
-        });
-
-        const strengths = Object.entries(domains)
-            .filter(([, d]) => d.mastery >= 70)
-            .sort((a, b) => b[1].mastery - a[1].mastery);
-
-        const strengthsList = document.getElementById('strengthsList');
-        if (strengths.length > 0) {
-            strengthsList.innerHTML = strengths.map(([name, data]) => `
-                <li>
-                    <span class="item-label">${name}:</span>
-                    <span class="item-value">${data.mastery}% maîtrisé</span>
-                </li>
-            `).join('');
+        const index = this.completedSteps[exerciseId].indexOf(stepIndex);
+        if (index > -1) {
+            // Uncheck
+            this.completedSteps[exerciseId].splice(index, 1);
         } else {
-            strengthsList.innerHTML = '<li><span class="item-label">Continuez à pratiquer pour débloquer!</span></li>';
+            // Check
+            this.completedSteps[exerciseId].push(stepIndex);
         }
 
-        const weaknesses = Object.entries(domains)
-            .filter(([, d]) => d.mastery < 70)
-            .sort((a, b) => a[1].mastery - b[1].mastery);
-
-        const weaknessList = document.getElementById('weaknessList');
-        if (weaknesses.length > 0) {
-            weaknessList.innerHTML = weaknesses.map(([name, data]) => `
-                <li>
-                    <span class="item-label">${name}:</span>
-                    <span class="item-value">${data.completed}/${data.total} complétés</span>
-                </li>
-            `).join('');
-        } else {
-            weaknessList.innerHTML = '<li><span class="item-label">Excellent! Tous les domaines sont en bonne voie!</span></li>';
-        }
-
-        const domainStats = document.getElementById('domainStats');
-        domainStats.innerHTML = Object.entries(domains).map(([name, data]) => {
-            const percentage = Math.round((data.completed / data.total) * 100);
-            return `
-                <div class="domain-stat">
-                    <div class="domain-name">
-                        <strong>${name}</strong>
-                        <span class="percentage">${percentage}%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${percentage}%"></div>
-                    </div>
-                    <div style="font-size: 12px; color: #888; margin-top: 5px;">
-                        ${data.completed}/${data.total} exercices · Mastery: ${data.mastery}%
-                    </div>
-                </div>
-            `;
-        }).join('');
+        // Re-render to update UI
+        this.renderExerciseDetail();
     }
 
-    // ============= ADVANCED STATS RENDERING =============
+    // NOUVELLE MÉTHODE: Toggle exercise completion
+    async toggleCompletion(exerciseId) {
+        const exercise = this.allExercises.find(ex => ex.id === exerciseId);
+        if (!exercise) return;
 
-    async renderAdvancedStats() {
+        // Si l'exercice n'est pas complété et que toutes les étapes ne sont pas cochées, on ne fait rien
+        const allStepsCompleted = exercise.steps && exercise.steps.length > 0 &&
+            this.completedSteps[exerciseId] &&
+            this.completedSteps[exerciseId].length === exercise.steps.length;
+
+        if (!exercise.completed && !allStepsCompleted) {
+            return; // Bouton désactivé
+        }
+
+        // Toggle completion
+        exercise.completed = !exercise.completed;
+
+        // Si on décoche, reset les steps
+        if (!exercise.completed) {
+            this.completedSteps[exerciseId] = [];
+        }
+
+        // Re-render
+        this.renderExerciseDetail();
+        this.renderExerciseList();
+        this.updateStats();
+    }
+    // ============= PLANNER METHODS =============
+
+    switchPlannerView(view) {
+        document.querySelectorAll('.planner-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.planner-view').forEach(v => v.classList.remove('active'));
+
+        event.target.classList.add('active');
+        document.getElementById('planner-' + view).classList.add('active');
+
+        if (view === 'today') {
+            this.renderPlannerToday();
+        } else if (view === 'week') {
+            this.renderPlannerWeek();
+        } else if (view === 'month') {
+            this.renderPlannerMonth();
+        }
+    }
+
+    async renderPlannerToday() {
         try {
-            const struggling = await this.api.getStruggling().catch(() => []);
-            const mastered = await this.api.getMastered().catch(() => []);
-            const needsPractice = await this.api.getNeedsPractice().catch(() => []);
-            const insights = await this.api.getInsights().catch(() => ({}));
+            const plan = await this.api.getPlannerToday();
 
-            this.renderInsights(insights);
-            this.renderAnalysisExerciseList('struggling', struggling);
-            this.renderAnalysisExerciseList('mastered', mastered);
-            this.renderAnalysisExerciseList('needs-practice', needsPractice);
-            await this.renderDomainAnalysis();
-        } catch (error) {
-            console.error('Erreur chargement stats avancées:', error);
-        }
-    }
+            ['morning', 'afternoon', 'evening'].forEach(slot => {
+                const container = document.getElementById(slot + '-sessions');
+                const sessions = plan.sessions?.filter(s => s.time_slot === slot) || [];
 
-    renderInsights(insights) {
-        document.getElementById('strongestDomain').textContent = insights.strongest_domain || '-';
-        document.getElementById('weakestDomain').textContent = insights.weakest_domain || '-';
-        document.getElementById('successRate').textContent = Math.round(insights.success_rate || 0) + '%';
-        document.getElementById('overdueCount').textContent = insights.overdue || 0;
-        document.getElementById('recommendFocus').innerHTML = '<strong>📌 Recommandation:</strong> ' + (insights.recommend_focus || 'À déterminer');
-    }
+                if (sessions.length > 0) {
+                    container.innerHTML = sessions.map(session => {
+                        const exerciseTitles = session.exercise_ids.map(id => {
+                            const ex = this.allExercises.find(e => e.id === id);
+                            return ex ? ex.title : id;
+                        }).join(', ');
 
-    renderAnalysisExerciseList(category, exercises) {
-        const container = document.getElementById(category + 'List');
+                        return `
+                            <div class="session-card ${session.status}">
+                                <div class="session-header">
+                                    <span>${session.exercise_ids.length} exercice(s): ${exerciseTitles}</span>
+                                    <span style="background: #2a5a72; padding: 3px 10px; border-radius: 4px;">${session.duration} min</span>
+                                </div>
+                                <div class="session-actions">
+                                    <button style="background: #90EE90; color: #000;" onclick="app.completeSession('${session.id}')">✓ Compléter</button>
+                                    <button style="background: #FF6347; color: #fff;" onclick="app.deleteSession('${session.id}')">× Supprimer</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    container.innerHTML = '<p style="text-align: center; color: #888;">Aucune session planifiée</p>';
+                }
+            });
 
-        if (!exercises || exercises.length === 0) {
-            container.innerHTML = '<p style="text-align: center; color: #888;">Aucun exercice dans cette catégorie</p>';
-            return;
-        }
+            const completed = plan.sessions?.filter(s => s.status === 'completed').length || 0;
+            const total = plan.sessions?.length || 0;
+            const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-        container.innerHTML = exercises.map(ex => {
-            const level = ex.level_detected || 'unknown';
-            const levelColor = {
-                'very_easy': '#90EE90',
-                'easy': '#90EE90',
-                'medium': '#FFD700',
-                'hard': '#FF6347',
-                'very_hard': '#FF0000'
-            }[level] || '#888';
-
-            return `
-                <div class="exercise-analysis-card" style="border-left: 4px solid ${levelColor}">
-                    <div class="exercise-analysis-header">
-                        <strong>${ex.title}</strong>
-                        <span style="background: ${levelColor}; color: #000; padding: 4px 8px; border-radius: 3px; font-size: 12px;">
-                            ${level.replace('_', ' ').toUpperCase()}
-                        </span>
-                    </div>
-                    <div class="exercise-analysis-meta">
-                        <div>EF: ${ex.ef ? ex.ef.toFixed(2) : 'N/A'}</div>
-                        <div>Interval: ${ex.interval} j</div>
-                        <div>Reps: ${ex.repetitions}</div>
-                        <div>Mastery: ${ex.mastery || 0}%</div>
-                        ${ex.is_overdue ? '<div style="color: #FF6347;">🔴 OVERDUE</div>' : ''}
-                    </div>
-                    <div class="exercise-analysis-confidence">
-                        Confidence: <strong>${ex.confidence_level || 'Unknown'}</strong>
-                    </div>
-                    <div class="exercise-analysis-recommendation">
-                        ${ex.recommendation}
-                    </div>
+            document.getElementById('plannerDailyStats').innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                    <div><span style="color: #888;">Sessions:</span> <strong style="color: #90EE90;">${completed}/${total}</strong></div>
+                    <div><span style="color: #888;">Progression:</span> <strong style="color: #90EE90;">${progress}%</strong></div>
+                    <div><span style="color: #888;">Temps:</span> <strong style="color: #90EE90;">${plan.total_minutes} min</strong></div>
+                    <div><span style="color: #888;">Statut:</span> <strong style="color: #90EE90;">${completed === total && total > 0 ? '✓ Terminé' : '○ En cours'}</strong></div>
                 </div>
             `;
-        }).join('');
+
+        } catch (error) {
+            console.error('Erreur planner today:', error);
+        }
     }
 
-    async renderDomainAnalysis() {
-        const domains = new Set(this.allExercises.map(ex => ex.domain));
-        const container = document.getElementById('domainAnalysis');
+    async renderPlannerWeek() {
+        try {
+            const plan = await this.api.getPlannerWeek();
+            const weekGrid = document.getElementById('week-grid');
 
-        let html = '';
-        for (const domain of domains) {
-            try {
-                const analysis = await this.api.getDomainAnalysis(domain);
-                html += `
-                    <div class="domain-analysis-card">
-                        <h4>${domain.toUpperCase()}</h4>
-                        <div class="domain-analysis-grid">
-                            <div>Total: ${analysis.total}</div>
-                            <div>Complétés: ${analysis.completed}</div>
-                            <div>Mastery: ${Math.round(analysis.mastery * 100)}%</div>
-                            <div>Avg Reps: ${analysis.avg_repetitions.toFixed(1)}</div>
+            if (!plan || !plan.days || plan.days.length === 0) {
+                weekGrid.innerHTML = '<p style="text-align: center; color: #888;">Aucune session planifiée cette semaine</p>';
+                return;
+            }
+
+            weekGrid.innerHTML = plan.days.map(day => {
+                const date = new Date(day.date);
+                const dayName = date.toLocaleDateString('fr-FR', { weekday: 'long' });
+                const dateStr = date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+                const progress = day.total > 0 ? Math.round((day.completed / day.total) * 100) : 0;
+
+                const timeSlots = ['morning', 'afternoon', 'evening'];
+                const slotEmojis = { morning: '🌅', afternoon: '🌞', evening: '🌙' };
+                const slotNames = { morning: 'Matin', afternoon: 'Après-midi', evening: 'Soir' };
+
+                const slotSummary = timeSlots.map(slot => {
+                    const sessions = day.sessions?.filter(s => s.time_slot === slot) || [];
+                    const count = sessions.length;
+                    const minutes = sessions.reduce((sum, s) => sum + s.duration, 0);
+                    return count > 0 ? `${slotEmojis[slot]} ${slotNames[slot]}: ${count} session(s) (${minutes} min)` : null;
+                }).filter(Boolean).join('<br>');
+
+                return `
+                    <div class="week-day-card">
+                        <div class="week-day-header">
+                            <div>
+                                <div class="week-day-title">${dayName}</div>
+                                <div class="week-day-date">${dateStr}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <strong style="color: #90EE90;">${day.completed}/${day.total} sessions</strong><br>
+                                <span style="color: #888;">${day.total_minutes} min</span>
+                            </div>
                         </div>
-                        <div>
-                            <strong>Struggling:</strong> ${analysis.struggling}
-                            <strong>Mastered:</strong> ${analysis.mastered}
-                        </div>
-                        <div style="color: #90EE90; margin-top: 10px;">
-                            ${analysis.recommendation}
+                        <div>${slotSummary || '<span style="color: #888;">Aucune session</span>'}</div>
+                        <div class="week-day-progress">
+                            <div class="week-day-progress-fill" style="width: ${progress}%"></div>
                         </div>
                     </div>
                 `;
-            } catch (e) {
-                console.warn(`Could not load domain analysis for ${domain}`);
-            }
-        }
+            }).join('');
 
-        container.innerHTML = html;
-    }
-
-    // ============= CALENDAR RENDERING =============
-
-    async renderCalendar() {
-        try {
-            const upcoming = await this.api.getCalendarUpcoming(30);
-
-            // Render overdue
-            const overdueList = document.getElementById('overdueList');
-            if (upcoming.overdue && upcoming.overdue.length > 0) {
-                overdueList.innerHTML = upcoming.overdue.map(ex => {
-                    const daysLate = Math.abs(ex.days_until);
-                    return `
-                        <div class="calendar-item urgent">
-                            <div class="calendar-item-header">
-                                <strong>${ex.title}</strong>
-                                <span class="domain-badge">${ex.domain}</span>
-                            </div>
-                            <div class="calendar-item-meta">
-                                <span class="overdue-badge">-${daysLate}j</span>
-                                <span>EF: ${ex.ef.toFixed(2)}</span>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            } else {
-                overdueList.innerHTML = '<p class="empty-state">✅ Aucun exercice en retard!</p>';
-            }
-
-            // Render today
-            const todayList = document.getElementById('todayList');
-            if (upcoming.today && upcoming.today.length > 0) {
-                todayList.innerHTML = upcoming.today.map(ex => `
-                    <div class="calendar-item today">
-                        <div class="calendar-item-header">
-                            <strong>${ex.title}</strong>
-                            <span class="domain-badge">${ex.domain}</span>
-                        </div>
+            // Week summary
+            weekGrid.innerHTML += `
+                <div class="week-summary">
+                    <h4 style="color: #90EE90; margin-bottom: 15px;">📊 Résumé de la semaine</h4>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                        <div><span style="color: #888;">Total:</span> <strong style="color: #90EE90;">${plan.completed}/${plan.total} sessions</strong></div>
+                        <div><span style="color: #888;">Progression:</span> <strong style="color: #90EE90;">${plan.total > 0 ? Math.round((plan.completed / plan.total) * 100) : 0}%</strong></div>
+                        <div><span style="color: #888;">Temps:</span> <strong style="color: #90EE90;">${plan.total_minutes} min</strong></div>
                     </div>
-                `).join('');
-            } else {
-                todayList.innerHTML = '<p class="empty-state">😊 Rien pour aujourd\'hui</p>';
-            }
-
-            // Render upcoming
-            const upcomingList = document.getElementById('upcomingList');
-            if (upcoming.upcoming && Object.keys(upcoming.upcoming).length > 0) {
-                const sortedDates = Object.keys(upcoming.upcoming).sort();
-
-                upcomingList.innerHTML = sortedDates.map(dateKey => {
-                    const exercises = upcoming.upcoming[dateKey];
-                    const date = new Date(dateKey);
-                    const dayName = date.toLocaleDateString('fr-FR', { weekday: 'long' });
-                    const dateStr = date.toLocaleDateString('fr-FR', {
-                        day: 'numeric',
-                        month: 'long'
-                    });
-
-                    return `
-                        <div class="calendar-day-group">
-                            <div class="calendar-day-header">
-                                <strong>${dayName}</strong> ${dateStr}
-                            </div>
-                            ${exercises.map(ex => `
-                                <div class="calendar-item">
-                                    <div class="calendar-item-header">
-                                        <strong>${ex.title}</strong>
-                                        <span class="domain-badge">${ex.domain}</span>
-                                    </div>
-                                    <div class="calendar-item-meta">
-                                        <span class="days-badge">dans ${ex.days_until}j</span>
-                                        <span>EF: ${ex.ef.toFixed(2)}</span>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `;
-                }).join('');
-            } else {
-                upcomingList.innerHTML = '<p class="empty-state">Rien de prévu pour les 30 prochains jours</p>';
-            }
-
+                </div>
+            `;
         } catch (error) {
-            console.error('Erreur calendar:', error);
-            document.getElementById('overdueList').innerHTML =
-                '<p class="empty-state" style="color: red;">Erreur de chargement</p>';
+            console.error('Erreur planner week:', error);
         }
     }
 
-    // ============= RATING =============
+    async renderPlannerMonth() {
+        try {
+            const response = await this.api.getPlannerMonth();
+            const monthOverview = document.getElementById('month-overview');
+
+            if (!response || !response.weeks || response.weeks.length === 0) {
+                monthOverview.innerHTML = '<p style="text-align: center; color: #888;">Aucune session planifiée ce mois</p>';
+                return;
+            }
+
+            const now = new Date();
+            const currentWeekStart = this.getMonday(now).toISOString().split('T')[0];
+
+            monthOverview.innerHTML = response.weeks.map((week, index) => {
+                const isCurrent = week.start_date === currentWeekStart;
+                const progress = week.total > 0 ? Math.round((week.completed / week.total) * 100) : 0;
+                const blocks = Array(10).fill(0).map((_, i) => i < Math.floor(progress / 10));
+
+                const startDate = new Date(week.start_date);
+                const endDate = new Date(week.end_date);
+                const weekLabel = `${startDate.getDate()}-${endDate.getDate()} ${startDate.toLocaleDateString('fr-FR', { month: 'short' })}`;
+
+                return `
+                    <div class="month-week-card ${isCurrent ? 'current' : ''}">
+                        <div class="month-week-header">
+                            <div class="month-week-title">Semaine ${index + 1} (${weekLabel}) ${isCurrent ? '← ACTUELLE' : ''}</div>
+                            <div style="text-align: right;">
+                                <strong style="color: #90EE90;">${progress}%</strong> (${week.completed}/${week.total})
+                            </div>
+                        </div>
+                        <div class="progress-bar-visual">
+                            ${blocks.map(filled => `<div class="progress-block ${filled ? 'filled' : ''}"></div>`).join('')}
+                        </div>
+                        <div style="color: #888; font-size: 14px;">⏱️ ${week.total_minutes} minutes</div>
+                    </div>
+                `;
+            }).join('');
+
+            // Month summary
+            const totalCompleted = response.weeks.reduce((sum, w) => sum + w.completed, 0);
+            const totalSessions = response.weeks.reduce((sum, w) => sum + w.total, 0);
+            const totalMinutes = response.weeks.reduce((sum, w) => sum + w.total_minutes, 0);
+
+            monthOverview.innerHTML += `
+                <div class="week-summary">
+                    <h4 style="color: #90EE90; margin-bottom: 15px;">📊 Résumé du mois</h4>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                        <div><span style="color: #888;">Total:</span> <strong style="color: #90EE90;">${totalCompleted}/${totalSessions} sessions</strong></div>
+                        <div><span style="color: #888;">Taux:</span> <strong style="color: #90EE90;">${totalSessions > 0 ? Math.round((totalCompleted / totalSessions) * 100) : 0}%</strong></div>
+                        <div><span style="color: #888;">Temps:</span> <strong style="color: #90EE90;">${totalMinutes} min</strong></div>
+                    </div>
+                </div>
+            `;
+        } catch (error) {
+            console.error('Erreur planner month:', error);
+        }
+    }
+
+    getMonday(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        return new Date(d.setDate(diff));
+    }
+
+    addSession(timeSlot) {
+        this.selectedTimeSlot = timeSlot;
+        this.selectedExercisesForSession = [];
+        this.showExerciseSelector();
+    }
+
+    showExerciseSelector() {
+        const modal = document.getElementById('exerciseSelectorModal');
+        const list = document.getElementById('exerciseSelectorList');
+
+        list.innerHTML = this.allExercises.map(ex => `
+            <div class="exercise-selector-item" data-id="${ex.id}" onclick="app.toggleExerciseSelection('${ex.id}')">
+                <div style="font-weight: bold; margin-bottom: 5px;">${ex.title}</div>
+                <div style="display: flex; gap: 10px; font-size: 12px; color: #888;">
+                    <span>${ex.domain}</span>
+                    <span>D${ex.difficulty}</span>
+                    <span>${ex.completed ? '✓ Complété' : '○ À faire'}</span>
+                </div>
+            </div>
+        `).join('');
+
+        modal.classList.add('active');
+    }
+
+    toggleExerciseSelection(exerciseId) {
+        const item = event.currentTarget;
+        item.classList.toggle('selected');
+
+        const index = this.selectedExercisesForSession.indexOf(exerciseId);
+        if (index > -1) {
+            this.selectedExercisesForSession.splice(index, 1);
+        } else {
+            this.selectedExercisesForSession.push(exerciseId);
+        }
+    }
+
+    closeExerciseSelector() {
+        document.getElementById('exerciseSelectorModal').classList.remove('active');
+        this.selectedExercisesForSession = [];
+    }
+
+    async confirmExerciseSelection() {
+        if (this.selectedExercisesForSession.length === 0) {
+            alert('Veuillez sélectionner au moins un exercice');
+            return;
+        }
+
+        const duration = this.selectedExercisesForSession.length * 30;
+        const today = new Date().toISOString().split('T')[0];
+
+        try {
+            await this.api.createSession(today, this.selectedTimeSlot, this.selectedExercisesForSession, duration);
+            this.closeExerciseSelector();
+            this.renderPlannerToday();
+        } catch (error) {
+            console.error('Erreur create session:', error);
+            alert('Erreur lors de la création de la session');
+        }
+    }
+
+    async completeSession(sessionID) {
+        try {
+            await this.api.updateSession(sessionID, 'completed', '');
+            this.renderPlannerToday();
+        } catch (error) {
+            console.error('Erreur complete session:', error);
+        }
+    }
+
+    async deleteSession(sessionID) {
+        if (!confirm('Supprimer cette session?')) return;
+
+        try {
+            await this.api.deleteSession(sessionID);
+            this.renderPlannerToday();
+        } catch (error) {
+            console.error('Erreur delete session:', error);
+        }
+    }
 
     async rate(exerciseId, rating) {
         try {
@@ -672,7 +696,6 @@ class MaestroApp {
             if (exercise && response.exercise) {
                 Object.assign(exercise, response.exercise);
             }
-
             this.updateStats();
             this.applyFilters();
             this.renderExerciseDetail();
