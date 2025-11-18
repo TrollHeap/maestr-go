@@ -2,10 +2,13 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
+	"strconv"
+	"time"
+
 	"maestro/internal/domain"
 	"maestro/internal/models"
 	"maestro/internal/storage"
-	"net/http"
 )
 
 // ExerciseHandler gère les endpoints pour les exercices
@@ -13,18 +16,25 @@ type ExerciseHandler struct {
 	store       storage.Store
 	scheduler   *domain.Scheduler
 	recommender *domain.Recommender
+	streak      *domain.StreakManager
 }
 
 // NewExerciseHandler crée une nouvelle instance ExerciseHandler
-func NewExerciseHandler(store storage.Store, scheduler *domain.Scheduler, recommender *domain.Recommender) *ExerciseHandler {
+func NewExerciseHandler(
+	store storage.Store,
+	scheduler *domain.Scheduler,
+	recommender *domain.Recommender,
+	streak *domain.StreakManager,
+) *ExerciseHandler {
 	return &ExerciseHandler{
 		store:       store,
 		scheduler:   scheduler,
 		recommender: recommender,
+		streak:      streak,
 	}
 }
 
-// GetExercises retourne tous les exercices
+// GetExercises retourne tous les exercices avec pagination
 func (h *ExerciseHandler) GetExercises(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -34,9 +44,49 @@ func (h *ExerciseHandler) GetExercises(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Pagination
+	page := 1
+	pageSize := 10
+
+	if p := r.URL.Query().Get("page"); p != "" {
+		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+
+	if ps := r.URL.Query().Get("page_size"); ps != "" {
+		if parsed, err := strconv.Atoi(ps); err == nil && parsed > 0 && parsed <= 100 {
+			pageSize = parsed
+		}
+	}
+
+	// Calculer pagination
+	start := (page - 1) * pageSize
+	end := start + pageSize
+
+	if start > len(exercises) {
+		start = len(exercises)
+	}
+	if end > len(exercises) {
+		end = len(exercises)
+	}
+
+	paginatedExercises := exercises[start:end]
+
+	// Ajouter les dates de révision
+	reviewDates := domain.CalculateNextReviewDates(exercises)
+
+	response := map[string]interface{}{
+		"total":        len(exercises),
+		"page":         page,
+		"page_size":    pageSize,
+		"exercises":    paginatedExercises,
+		"review_dates": reviewDates,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	json.NewEncoder(w).Encode(exercises)
+	json.NewEncoder(w).Encode(response)
 }
 
 // GetRecommended retourne les exercices recommandés
@@ -52,9 +102,17 @@ func (h *ExerciseHandler) GetRecommended(w http.ResponseWriter, r *http.Request)
 	// Obtenir les 3 recommandés
 	recommended := h.recommender.GetNextExercises(exercises, 3)
 
+	// Ajouter les dates de révision
+	reviewDates := domain.CalculateNextReviewDates(exercises)
+
+	response := map[string]interface{}{
+		"recommended":  recommended,
+		"review_dates": reviewDates,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	json.NewEncoder(w).Encode(recommended)
+	json.NewEncoder(w).Encode(response)
 }
 
 // RateExercise met à jour la note d'un exercice
@@ -87,6 +145,9 @@ func (h *ExerciseHandler) RateExercise(w http.ResponseWriter, r *http.Request) {
 
 	// Appliquer l'algorithme SM-2
 	h.scheduler.ReviewExercise(exercise, input.Rating)
+
+	// Mettre à jour le streak
+	h.streak.UpdateStreak(time.Now())
 
 	// Persister
 	if err := h.store.Update(ctx, exercise); err != nil {
@@ -126,9 +187,23 @@ func (h *ExerciseHandler) GetStats(w http.ResponseWriter, r *http.Request) {
 
 	stats := h.recommender.CalculateStats(exercises)
 
+	// Ajouter les infos de streak
+	streakStats := h.streak.GetStats()
+
+	response := map[string]interface{}{
+		"total_completed": stats.TotalCompleted,
+		"total_reviews":   stats.TotalReviews,
+		"domain_stats":    stats.DomainStats,
+		"streak": map[string]interface{}{
+			"current":      streakStats.CurrentStreak,
+			"display":      streakStats.StreakDisplay,
+			"last_session": streakStats.LastSessionAt,
+		},
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	json.NewEncoder(w).Encode(stats)
+	json.NewEncoder(w).Encode(response)
 }
 
 // HealthCheck endpoint pour vérifier que l'API est alive

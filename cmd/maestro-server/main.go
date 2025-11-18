@@ -28,7 +28,7 @@ func main() {
 	}
 
 	// Create directory if it doesn't exist
-	if err := os.MkdirAll(*dataDir, 0755); err != nil {
+	if err := os.MkdirAll(*dataDir, 0o755); err != nil {
 		log.Fatal(err)
 	}
 
@@ -40,8 +40,11 @@ func main() {
 	scheduler := domain.NewScheduler()
 	recommender := domain.NewRecommender(scheduler)
 
-	// Initialize handlers
-	exerciseHandler := api.NewExerciseHandler(store, scheduler, recommender)
+	// ✅ NOUVEAU: Initialiser StreakManager
+	streak := domain.NewStreakManager()
+
+	// ✅ MODIFIÉ: Ajouter streak au handler
+	exerciseHandler := api.NewExerciseHandler(store, scheduler, recommender, streak)
 
 	// Setup routes
 	http.HandleFunc("/api/health", exerciseHandler.HealthCheck)
