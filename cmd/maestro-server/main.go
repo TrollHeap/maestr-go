@@ -14,6 +14,7 @@ import (
 )
 
 func main() {
+	// Configuration
 	port := flag.String("port", "8080", "Port to listen on")
 	dataDir := flag.String("data-dir", "", "Data directory")
 	flag.Parse()
@@ -39,12 +40,16 @@ func main() {
 	// Initialize domain logic
 	scheduler := domain.NewScheduler()
 	recommender := domain.NewRecommender(scheduler)
-
-	// ✅ NOUVEAU: Initialiser StreakManager
 	streak := domain.NewStreakManager()
 
-	// ✅ MODIFIÉ: Ajouter streak au handler
+	// ============= NOUVEAU: Initialize planner =============
+	planner := domain.NewPlanner()
+
+	// Initialize handlers
 	exerciseHandler := api.NewExerciseHandler(store, scheduler, recommender, streak)
+
+	// ============= NOUVEAU: Initialize planner handler =============
+	plannerHandler := api.NewPlannerHandler(planner, store)
 
 	// Setup routes
 	http.HandleFunc("/api/health", exerciseHandler.HealthCheck)
@@ -53,21 +58,30 @@ func main() {
 	http.HandleFunc("/api/rate", exerciseHandler.RateExercise)
 	http.HandleFunc("/api/stats", exerciseHandler.GetStats)
 
-	// Serve frontend (static files)
+	// ============= NOUVEAU: Planner routes =============
+	plannerHandler.RegisterRoutes(http.DefaultServeMux)
+
+	// Serve frontend static files
 	fs := http.FileServer(http.Dir("public"))
 	http.Handle("/", fs)
 
-	fmt.Printf("🎯 Maestro Backend listening on http://localhost:%s\n", *port)
-	fmt.Printf("📁 Data directory: %s\n", *dataDir)
+	// Server info
+	fmt.Printf("🚀 Maestro Backend listening on http://localhost:%s\n", *port)
+	fmt.Printf("📂 Data directory: %s\n", *dataDir)
 	fmt.Printf("📄 Exercises file: %s\n", storeFilepath)
-	fmt.Printf("\n✨ Endpoints:\n")
-	fmt.Printf("  GET  http://localhost:%s/api/health\n", *port)
-	fmt.Printf("  GET  http://localhost:%s/api/exercises\n", *port)
-	fmt.Printf("  GET  http://localhost:%s/api/recommended\n", *port)
-	fmt.Printf("  POST http://localhost:%s/api/rate\n", *port)
-	fmt.Printf("  GET  http://localhost:%s/api/stats\n", *port)
-	fmt.Printf("\n🌐 Web UI: http://localhost:%s\n", *port)
+	fmt.Println("\n📡 Endpoints:")
+	fmt.Printf("   GET  http://localhost:%s/api/health\n", *port)
+	fmt.Printf("   GET  http://localhost:%s/api/exercises\n", *port)
+	fmt.Printf("   GET  http://localhost:%s/api/recommended\n", *port)
+	fmt.Printf("   POST http://localhost:%s/api/rate\n", *port)
+	fmt.Printf("   GET  http://localhost:%s/api/stats\n", *port)
+	fmt.Printf("\n   📋 PLANNER:\n")
+	fmt.Printf("   POST http://localhost:%s/api/planner/session\n", *port)
+	fmt.Printf("   GET  http://localhost:%s/api/planner/today\n", *port)
+	fmt.Printf("   GET  http://localhost:%s/api/planner/week\n", *port)
+	fmt.Printf("\n🌐 Web UI: http://localhost:%s\n\n", *port)
 
+	// Start server
 	if err := http.ListenAndServe(":"+*port, nil); err != nil {
 		log.Fatal(err)
 	}
