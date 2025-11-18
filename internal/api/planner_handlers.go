@@ -3,8 +3,9 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 	"time"
+
+	"github.com/gorilla/mux"
 
 	"maestro/internal/domain"
 	"maestro/internal/storage"
@@ -27,11 +28,6 @@ func NewPlannerHandler(planner *domain.Planner, store *storage.JSONStore) *Plann
 // CreateSession crée une nouvelle session planifiée
 // POST /api/planner/session
 func (h *PlannerHandler) CreateSession(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var req struct {
 		Date        string   `json:"date"`      // YYYY-MM-DD
 		TimeSlot    string   `json:"time_slot"` // morning, afternoon, evening
@@ -71,14 +67,8 @@ func (h *PlannerHandler) CreateSession(w http.ResponseWriter, r *http.Request) {
 // UpdateSession met à jour une session
 // PUT /api/planner/session/{id}
 func (h *PlannerHandler) UpdateSession(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPut {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// Extract session ID from path
-	path := strings.TrimPrefix(r.URL.Path, "/api/planner/session/")
-	sessionID := path
+	vars := mux.Vars(r)
+	sessionID := vars["id"]
 
 	var req struct {
 		Status string `json:"status"` // planned, completed, skipped
@@ -103,14 +93,8 @@ func (h *PlannerHandler) UpdateSession(w http.ResponseWriter, r *http.Request) {
 // DeleteSession supprime une session
 // DELETE /api/planner/session/{id}
 func (h *PlannerHandler) DeleteSession(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	// Extract session ID from path
-	path := strings.TrimPrefix(r.URL.Path, "/api/planner/session/")
-	sessionID := path
+	vars := mux.Vars(r)
+	sessionID := vars["id"]
 
 	// Delete session
 	if err := h.planner.DeleteSession(sessionID); err != nil {
@@ -156,7 +140,7 @@ func (h *PlannerHandler) GetWeek(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(plan)
 }
 
-// GetMonth retourne le plan du mois (4 semaines)
+// GetMonth retourne le plan du mois
 // GET /api/planner/month?start=YYYY-MM-DD
 func (h *PlannerHandler) GetMonth(w http.ResponseWriter, r *http.Request) {
 	startStr := r.URL.Query().Get("start")
@@ -191,28 +175,15 @@ func (h *PlannerHandler) GetStats(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(stats)
 }
 
-// RegisterRoutes enregistre les routes du planner
-func (h *PlannerHandler) RegisterRoutes(router *http.ServeMux) {
-	router.HandleFunc("/api/planner/session", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost {
-			h.CreateSession(w, r)
-		} else {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
+// RegisterRoutes enregistre les routes du planner avec mux.Router
+func (h *PlannerHandler) RegisterRoutes(router *mux.Router) {
+	router.HandleFunc("/api/planner/session", h.CreateSession).Methods("POST")
+	router.HandleFunc("/api/planner/session/{id}", h.UpdateSession).Methods("PUT")
+	router.HandleFunc("/api/planner/session/{id}", h.DeleteSession).Methods("DELETE")
 
-	router.HandleFunc("/api/planner/session/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPut {
-			h.UpdateSession(w, r)
-		} else if r.Method == http.MethodDelete {
-			h.DeleteSession(w, r)
-		} else {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		}
-	})
+	router.HandleFunc("/api/planner/today", h.GetToday).Methods("GET")
+	router.HandleFunc("/api/planner/week", h.GetWeek).Methods("GET")
+	router.HandleFunc("/api/planner/month", h.GetMonth).Methods("GET")
 
-	router.HandleFunc("/api/planner/today", h.GetToday)
-	router.HandleFunc("/api/planner/week", h.GetWeek)
-	router.HandleFunc("/api/planner/month", h.GetMonth)
-	router.HandleFunc("/api/planner/stats", h.GetStats)
+	router.HandleFunc("/api/planner/stats", h.GetStats).Methods("GET")
 }
