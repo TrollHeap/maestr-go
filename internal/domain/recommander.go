@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"math"
+
 	"maestro/internal/models"
 )
 
@@ -82,7 +84,7 @@ func (r *Recommender) CalculateStats(exercises []models.Exercise) models.Stats {
 		// EF = 2.5 (max) → 100%
 		// EF = 1.3 (min) → 50%
 		if ex.Completed {
-			mastery := int((ex.EaseFactor - 1.3) / (2.5 - 1.3) * 100)
+			mastery := math.Round(((ex.EaseFactor - 1.3) / (2.5 - 1.3)) * 100) // ✅ Remove int()
 			if mastery > domainStat.Mastery {
 				domainStat.Mastery = mastery
 			}
