@@ -5,183 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maestro - Ultra-Learning</title>
     <link rel="stylesheet" href="css/style.css">
+
 </head>
 <body>
-    <div id="app" class="app">
-        <!-- Loading -->
-        <div id="loading-view" class="view active">
-            <div class="loading-spinner">
-                <div class="spinner"></div>
-                <p>Chargement de Maestro...</p>
+    <div class="container">
+        <header>
+            <h1>🎯 MAESTRO v2</h1>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">Streak</div>
+                    <div class="streak-display" id="streak">○ 0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Complétés</div>
+                    <div class="stat-value"><span id="completed">0</span>/10</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Mastery</div>
+                    <div class="stat-value"><span id="mastery">0</span>%</div>
+                </div>
             </div>
-        </div>
+        </header>
 
-        <!-- Dashboard -->
-        <div id="dashboard-view" class="view">
-            <nav class="navbar">
-                <div class="navbar-brand">🎯 MAESTRO</div>
-                <div class="navbar-menu">
-                    <button class="nav-btn active" data-view="dashboard">Tableau de bord</button>
-                    <button id="btn-browse" class="btn btn-secondary">
-                        Parcourir
-                    </button>
-                    <button class="nav-btn" data-view="stats">Statistiques</button>
-                </div>
-            </nav>
-
-            <main class="dashboard-container">
-                <section class="welcome-section">
-                    <h1>Bienvenue sur Maestro</h1>
-                </section>
-
-                <section class="quick-actions">
-                    <button id="btn-quick-start" class="btn btn-primary btn-large">
-                        ⚡ Commencer une session de 15 min
-                    </button>
-                </section>
-                    <br/>
-
-                <section class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon">✓</div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="total-completed">0</div>
-                            <div class="stat-label">Exercices complétés</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon">🔄</div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="total-reviews">0</div>
-                            <div class="stat-label">Révisions</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon">🎯</div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="streak-days">0</div>
-                            <div class="stat-label">Jours de suite</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon">📊</div>
-                        <div class="stat-content">
-                            <div class="stat-value" id="overall-progress">0%</div>
-                            <div class="stat-label">Progression globale</div>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="recommended-section">
-                    <h2>Exercices recommandés</h2>
-                    <div id="recommended-list" class="exercise-list">
-                        <!-- Rempli par JS -->
-                    </div>
-                </section>
-
-            </main>
-        </div>
-
-        <!-- Quick Start -->
-        <div id="quick-start-view" class="view">
-            <nav class="navbar">
-                <div class="navbar-brand">⚡ Quick Session</div>
-                <button class="nav-back-btn">← Retour</button>
-            </nav>
-
-            <main class="quick-container">
-                <div class="timer-section">
-                    <div class="timer">
-                        <div id="quick-timer">15:00</div>
-                        <p>Temps restant</p>
-                    </div>
+        <div class="main-content">
+            <!-- LEFT: Exercise List -->
+            <div class="card">
+                <h2>📚 Exercices</h2>
+                
+                <div class="filters">
+                    <button class="filter-btn active" data-domain="all">Tous</button>
+                    <button class="filter-btn" data-domain="golang">Go</button>
+                    <button class="filter-btn" data-domain="linux">Linux</button>
+                    <button class="filter-btn" data-domain="architecture">Arch</button>
                 </div>
 
-                <div id="quick-exercises" class="quick-exercises-list">
-                    <!-- Rempli par JS -->
+                <div id="exerciseList" class="exercise-list">
+                    <div class="loading">Chargement...</div>
                 </div>
 
-                <button class="btn btn-secondary btn-full" id="btn-skip-session">
-                    Terminer la session
-                </button>
-            </main>
-        </div>
+                <div class="pagination" id="pagination"></div>
+            </div>
 
-        <!-- Browse Exercises -->
-        <div id="browse-view" class="view">
-            <nav class="navbar">
-                <div class="navbar-brand">📖 Exercices</div>
-                <button class="nav-back-btn">← Retour</button>
-            </nav>
-
-            <main class="browse-container">
-                <div class="filter-bar">
-                    <input type="text" id="search-input" class="search-input" placeholder="Chercher...">
-                    <select id="domain-filter" class="filter-select">
-                        <option value="">Tous les domaines</option>
-                        <option value="golang">Go</option>
-                        <option value="linux">Linux</option>
-                        <option value="architecture">Architecture</option>
-                    </select>
-                </div>
-
-                <div id="exercises-list" class="exercise-list">
-                    <!-- Rempli par JS -->
-                </div>
-            </main>
-        </div>
-
-        <!-- Exercise Detail -->
-        <div id="exercise-view" class="view">
-            <nav class="navbar">
-                <div class="navbar-brand" id="exercise-title-nav">Exercice</div>
-                <button class="nav-back-btn">← Retour</button>
-            </nav>
-
-            <main class="exercise-container">
-                <div id="exercise-content">
-                    <!-- Rempli par JS -->
-                </div>
-            </main>
-        </div>
-
-        <!-- Statistics -->
-        <div id="stats-view" class="view">
-            <nav class="navbar">
-                <div class="navbar-brand">📊 Statistiques</div>
-                <button class="nav-back-btn">← Retour</button>
-            </nav>
-
-            <main class="stats-container">
-                <section class="stats-overview">
-                    <div class="stat-card-large">
-                        <div class="stat-title">Exercices complétés</div>
-                        <div class="stat-value-large" id="total-completed-stats">0</div>
-                    </div>
-
-                    <div class="stat-card-large">
-                        <div class="stat-title">Révisions totales</div>
-                        <div class="stat-value-large" id="total-reviews-stats">0</div>
-                    </div>
-                </section>
-
-                <section class="domain-stats-section">
-                    <h2>Progression par domaine</h2>
-                    <div id="domain-breakdown">
-                        <!-- Rempli par JS -->
-                    </div>
-                </section>
-
-                <section class="review-schedule-section">
-                    <h2>Prochaines révisions</h2>
-                    <div id="review-list" class="review-list">
-                        <!-- Rempli par JS -->
-                    </div>
-                </section>
-            </main>
+            <!-- RIGHT: Exercise Detail -->
+            <div class="card exercise-detail" id="exerciseDetail">
+                <div class="loading">Sélectionnez un exercice</div>
+            </div>
         </div>
     </div>
 
