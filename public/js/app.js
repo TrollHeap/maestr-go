@@ -29,6 +29,12 @@ class MaestroAPI {
             body: JSON.stringify({ exercise_id: exerciseId, rating: rating })
         });
     }
+    updateExerciseSteps(exerciseId, completedSteps) {
+        return this.request(`/api/exercises/${exerciseId}/steps`, {
+            method: 'PUT',
+            body: JSON.stringify({ completed_steps: completedSteps })
+        });
+    }
 
     getStats() {
         return this.request('/api/stats');
@@ -46,6 +52,14 @@ class MaestroAPI {
     getPlannerMonth(startDate) {
         const query = startDate ? `?start=${startDate}` : '';
         return this.request(`/api/planner/month${query}`);
+    }
+
+
+    toggleExerciseCompletion(exerciseId, completed) {
+        return this.request(`/api/exercises/${exerciseId}/completion`, {
+            method: 'PUT',
+            body: JSON.stringify({ completed: completed })
+        });
     }
 
     createSession(date, timeSlot, exerciseIDs, duration) {
@@ -100,6 +114,14 @@ class MaestroApp {
             const response = await this.api.getExercises(1, 1000);
             this.allExercises = response.exercises || [];
             this.reviewDates = response.review_dates || {};
+
+            // NOUVEAU: Charger les completed steps depuis le backend
+            this.completedSteps = {};
+            this.allExercises.forEach(ex => {
+                if (ex.completed_steps && ex.completed_steps.length > 0) {
+                    this.completedSteps[ex.id] = ex.completed_steps;
+                }
+            });
         } catch (error) {
             console.error('Erreur chargement:', error);
         }
@@ -366,8 +388,7 @@ class MaestroApp {
     `;
     }
 
-    // NOUVELLE MÉTHODE: Toggle step completion
-    toggleStep(exerciseId, stepIndex) {
+    async toggleStep(exerciseId, stepIndex) {
         if (!this.completedSteps[exerciseId]) {
             this.completedSteps[exerciseId] = [];
         }
@@ -381,7 +402,30 @@ class MaestroApp {
             this.completedSteps[exerciseId].push(stepIndex);
         }
 
-        // Re-render to update UI
+        // NOUVEAU: Sauvegarder au backend
+        try {
+            await this.api.updateExerciseSteps(exerciseId, this.completedSteps[exerciseId]);
+
+            // Mettre à jour l'exercice local
+            const exercise = this.allExercises.find(ex => ex.id === exerciseId);
+            if (exercise) {
+                exercise.completed_steps = this.completedSteps[exerciseId];
+            }
+        } catch (error) {
+            console.error('Erreur sauvegarde steps:', error);
+            // Si erreur, on revert le changement local
+            if (index > -1) {
+                this.completedSteps[exerciseId].push(stepIndex);
+            } else {
+                const revertIndex = this.completedSteps[exerciseId].indexOf(stepIndex);
+                if (revertIndex > -1) {
+                    this.completedSteps[exerciseId].splice(revertIndex, 1);
+                }
+            }
+            alert('Erreur lors de la sauvegarde. Vérifiez votre connexion.');
+        }
+
+        // Re-render
         this.renderExerciseDetail();
     }
 
@@ -390,27 +434,38 @@ class MaestroApp {
         const exercise = this.allExercises.find(ex => ex.id === exerciseId);
         if (!exercise) return;
 
-        // Si l'exercice n'est pas complété et que toutes les étapes ne sont pas cochées, on ne fait rien
         const allStepsCompleted = exercise.steps && exercise.steps.length > 0 &&
             this.completedSteps[exerciseId] &&
             this.completedSteps[exerciseId].length === exercise.steps.length;
 
         if (!exercise.completed && !allStepsCompleted) {
-            return; // Bouton désactivé
+            return;
         }
 
         // Toggle completion
-        exercise.completed = !exercise.completed;
+        const newCompleted = !exercise.completed;
 
-        // Si on décoche, reset les steps
-        if (!exercise.completed) {
-            this.completedSteps[exerciseId] = [];
+        try {
+            // Sauvegarder au backend
+            await this.api.toggleExerciseCompletion(exerciseId, newCompleted);
+
+            // Mettre à jour local
+            exercise.completed = newCompleted;
+
+            // Si on décoche, reset les steps
+            if (!exercise.completed) {
+                this.completedSteps[exerciseId] = [];
+                await this.api.updateExerciseSteps(exerciseId, []);
+            }
+
+            // Re-render
+            this.renderExerciseDetail();
+            this.renderExerciseList();
+            this.updateStats();
+        } catch (error) {
+            console.error('Erreur toggle completion:', error);
+            alert('Erreur lors de la sauvegarde. Vérifiez votre connexion.');
         }
-
-        // Re-render
-        this.renderExerciseDetail();
-        this.renderExerciseList();
-        this.updateStats();
     }
     // ============= PLANNER METHODS =============
 
