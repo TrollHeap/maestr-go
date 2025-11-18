@@ -8,47 +8,125 @@
 
 </head>
 <body>
+    <!-- NAVBAR -->
+    <div class="navbar">
+        <div class="navbar-brand" onclick="app.goToPage('exercises')">🎯 MAESTRO v2.5</div>
+        
+        <div class="navbar-menu">
+            <button class="nav-link active" onclick="app.goToPage('exercises')">📚 Exercices</button>
+            <button class="nav-link" onclick="app.goToPage('stats')">📊 Statistiques</button>
+        </div>
+
+        <div class="navbar-stats">
+            <div class="stat-mini">
+                <div class="stat-mini-label">Streak</div>
+                <div class="stat-mini-value" id="navStreak">○ 0</div>
+            </div>
+            <div class="stat-mini">
+                <div class="stat-mini-label">À Faire</div>
+                <div class="stat-mini-value" id="navToDo">0</div>
+            </div>
+            <div class="stat-mini">
+                <div class="stat-mini-label">Mastery</div>
+                <div class="stat-mini-value" id="navMastery">0%</div>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
-        <header>
-            <h1>🎯 MAESTRO v2</h1>
-            <div class="stats">
-                <div class="stat">
-                    <div class="stat-label">Streak</div>
-                    <div class="streak-display" id="streak">○ 0</div>
+        <!-- ============= EXERCISES PAGE ============= -->
+        <div id="exercises" class="page active">
+            <div class="main-content">
+                <!-- LEFT: Exercise List -->
+                <div class="card">
+                    <h2>📚 Exercices</h2>
+                    
+                    <div class="filters">
+                        <div class="filter-section">
+                            <div class="filter-label">📋 Statut</div>
+                            <div class="filter-buttons">
+                                <button class="filter-btn active" data-status="all">Tous</button>
+                                <button class="filter-btn" data-status="pending">À Faire</button>
+                                <button class="filter-btn" data-status="completed">✓ Fait</button>
+                            </div>
+                        </div>
+                        
+                        <div class="filter-section">
+                            <div class="filter-label">🏷️ Domaine</div>
+                            <div class="filter-buttons">
+                                <button class="filter-btn active" data-domain="all">Tous</button>
+                                <button class="filter-btn" data-domain="golang">Go</button>
+                                <button class="filter-btn" data-domain="linux">Linux</button>
+                                <button class="filter-btn" data-domain="architecture">Arch</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="exerciseList"></div>
+
+                    <div class="pagination">
+                        <button class="pagination-btn" id="prevBtn" onclick="app.previousPage()">← Précédent</button>
+                        <span id="pageInfo"></span>
+                        <button class="pagination-btn" id="nextBtn" onclick="app.nextPage()">Suivant →</button>
+                    </div>
                 </div>
-                <div class="stat">
-                    <div class="stat-label">Complétés</div>
-                    <div class="stat-value"><span id="completed">0</span>/10</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-label">Mastery</div>
-                    <div class="stat-value"><span id="mastery">0</span>%</div>
+
+                <!-- RIGHT: Exercise Detail -->
+                <div class="card exercise-detail" id="exerciseDetail">
+                    <div style="text-align: center; color: #888;">Sélectionnez un exercice</div>
                 </div>
             </div>
-        </header>
+        </div>
 
-        <div class="main-content">
-            <!-- LEFT: Exercise List -->
-            <div class="card">
-                <h2>📚 Exercices</h2>
-                
-                <div class="filters">
-                    <button class="filter-btn active" data-domain="all">Tous</button>
-                    <button class="filter-btn" data-domain="golang">Go</button>
-                    <button class="filter-btn" data-domain="linux">Linux</button>
-                    <button class="filter-btn" data-domain="architecture">Arch</button>
+        <!-- ============= STATS PAGE ============= -->
+        <div id="stats" class="page">
+            <h2 style="color: #90EE90; margin-bottom: 30px; font-size: 24px;">📊 Tableau de Bord</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Exercices Complétés</h3>
+                    <div class="value" id="completedCard">0</div>
+                    <div class="unit">/ <span id="totalCard">10</span></div>
                 </div>
 
-                <div id="exerciseList" class="exercise-list">
-                    <div class="loading">Chargement...</div>
+                <div class="stat-card">
+                    <h3>Mastery Moyen</h3>
+                    <div class="value" id="masteryCard">0%</div>
+                    <div class="unit">Efficacité d'apprentissage</div>
                 </div>
 
-                <div class="pagination" id="pagination"></div>
+                <div class="stat-card">
+                    <h3>Streak Actuel</h3>
+                    <div class="value" id="streakCard">0</div>
+                    <div class="unit">Jours consécutifs</div>
+                </div>
+
+                <div class="stat-card">
+                    <h3>Révisions Total</h3>
+                    <div class="value" id="reviewsCard">0</div>
+                    <div class="unit">Répétitions</div>
+                </div>
             </div>
 
-            <!-- RIGHT: Exercise Detail -->
-            <div class="card exercise-detail" id="exerciseDetail">
-                <div class="loading">Sélectionnez un exercice</div>
+            <div class="strengths-weaknesses">
+                <div class="strength-card">
+                    <h4>💪 Points Forts</h4>
+                    <ul class="item-list" id="strengthsList">
+                        <li><span class="item-label">Aucun domaine maîtrisé pour l'instant</span></li>
+                    </ul>
+                </div>
+
+                <div class="weakness-card">
+                    <h4>⚠️ Points Faibles</h4>
+                    <ul class="item-list" id="weaknessList">
+                        <li><span class="item-label">Aucun domaine à améliorer encore</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="chart-section">
+                <h3>📈 Progression par Domaine</h3>
+                <div id="domainStats"></div>
             </div>
         </div>
     </div>
