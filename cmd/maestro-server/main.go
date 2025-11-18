@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/gorilla/mux"
+
 	"maestro/internal/api"
 	"maestro/internal/domain"
 	"maestro/internal/storage"
@@ -41,48 +43,27 @@ func main() {
 	scheduler := domain.NewScheduler()
 	recommender := domain.NewRecommender(scheduler)
 	streak := domain.NewStreakManager()
-
-	// ============= NOUVEAU: Initialize planner =============
 	planner := domain.NewPlanner()
 
 	// Initialize handlers
 	exerciseHandler := api.NewExerciseHandler(store, scheduler, recommender, streak)
-
-	// ============= NOUVEAU: Initialize planner handler =============
 	plannerHandler := api.NewPlannerHandler(planner, store)
 
-	// Setup routes
-	http.HandleFunc("/api/health", exerciseHandler.HealthCheck)
-	http.HandleFunc("/api/exercises", exerciseHandler.GetExercises)
-	http.HandleFunc("/api/recommended", exerciseHandler.GetRecommended)
-	http.HandleFunc("/api/rate", exerciseHandler.RateExercise)
-	http.HandleFunc("/api/stats", exerciseHandler.GetStats)
+	// Create router mux
+	router := mux.NewRouter()
 
-	// ============= NOUVEAU: Planner routes =============
-	plannerHandler.RegisterRoutes(http.DefaultServeMux)
+	// Register all API routes
+	exerciseHandler.RegisterRoutes(router)
+	plannerHandler.RegisterRoutes(router)
 
 	// Serve frontend static files
-	fs := http.FileServer(http.Dir("public"))
-	http.Handle("/", fs)
+	router.PathPrefix("/").Handler(http.FileServer(http.Dir("public")))
 
 	// Server info
 	fmt.Printf("🚀 Maestro Backend listening on http://localhost:%s\n", *port)
 	fmt.Printf("📂 Data directory: %s\n", *dataDir)
-	fmt.Printf("📄 Exercises file: %s\n", storeFilepath)
-	fmt.Println("\n📡 Endpoints:")
-	fmt.Printf("   GET  http://localhost:%s/api/health\n", *port)
-	fmt.Printf("   GET  http://localhost:%s/api/exercises\n", *port)
-	fmt.Printf("   GET  http://localhost:%s/api/recommended\n", *port)
-	fmt.Printf("   POST http://localhost:%s/api/rate\n", *port)
-	fmt.Printf("   GET  http://localhost:%s/api/stats\n", *port)
-	fmt.Printf("\n   📋 PLANNER:\n")
-	fmt.Printf("   POST http://localhost:%s/api/planner/session\n", *port)
-	fmt.Printf("   GET  http://localhost:%s/api/planner/today\n", *port)
-	fmt.Printf("   GET  http://localhost:%s/api/planner/week\n", *port)
-	fmt.Printf("\n🌐 Web UI: http://localhost:%s\n\n", *port)
+	fmt.Printf("📄 Exercises file: %s\n\n", storeFilepath)
 
 	// Start server
-	if err := http.ListenAndServe(":"+*port, nil); err != nil {
-		log.Fatal(err)
-	}
+	log.Fatal(http.ListenAndServe(":"+*port, router))
 }
