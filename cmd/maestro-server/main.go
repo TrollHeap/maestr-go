@@ -35,7 +35,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// ✅ CORRECTION: NewJSONStore retourne (store, error)
+	// CORRECTION: NewJSONStore retourne (store, error)
 	store, err := storage.NewJSONStore(*dataDir)
 	if err != nil {
 		log.Fatalf("Failed to create store: %v", err)
@@ -44,9 +44,9 @@ func main() {
 	// Initialize domain services
 	scheduler := domain.NewScheduler()
 	recommender := domain.NewRecommender(scheduler)
-	planner := domain.NewPlanner()
+	planner := domain.NewPlanner() // ✅ AJOUTÉ: Création du planner
 
-	// Initialize API handler
+	// ✅ CORRECTION: Passer planner au lieu de streak
 	handler := api.NewExerciseHandler(store, scheduler, recommender, planner)
 
 	// Setup router
