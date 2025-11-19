@@ -30,40 +30,35 @@ func main() {
 		*dataDir = filepath.Join(home, ".maestro")
 	}
 
-	// Create directory if it doesn't exist
+	// Create data directory
 	if err := os.MkdirAll(*dataDir, 0o755); err != nil {
 		log.Fatal(err)
 	}
 
-	// Initialize store
-	storeFilepath := filepath.Join(*dataDir, "exercises.json")
-	store := storage.NewJSONStore(storeFilepath)
+	// ✅ CORRECTION: NewJSONStore retourne (store, error)
+	store, err := storage.NewJSONStore(*dataDir)
+	if err != nil {
+		log.Fatalf("Failed to create store: %v", err)
+	}
 
-	// Initialize domain logic
+	// Initialize domain services
 	scheduler := domain.NewScheduler()
 	recommender := domain.NewRecommender(scheduler)
-	streak := domain.NewStreakManager()
 	planner := domain.NewPlanner()
 
-	// Initialize handlers
-	exerciseHandler := api.NewExerciseHandler(store, scheduler, recommender, streak)
-	plannerHandler := api.NewPlannerHandler(planner, store)
+	// Initialize API handler
+	handler := api.NewExerciseHandler(store, scheduler, recommender, planner)
 
-	// Create router mux
+	// Setup router
 	router := mux.NewRouter()
+	handler.RegisterRoutes(router)
 
-	// Register all API routes
-	exerciseHandler.RegisterRoutes(router)
-	plannerHandler.RegisterRoutes(router)
-
-	// Serve frontend static files
-	router.PathPrefix("/").Handler(http.FileServer(http.Dir("public")))
-
-	// Server info
-	fmt.Printf("🚀 Maestro Backend listening on http://localhost:%s\n", *port)
-	fmt.Printf("📂 Data directory: %s\n", *dataDir)
-	fmt.Printf("📄 Exercises file: %s\n\n", storeFilepath)
+	// Serve static files
+	staticDir := filepath.Join(".", "public")
+	router.PathPrefix("/").Handler(http.FileServer(http.Dir(staticDir)))
 
 	// Start server
-	log.Fatal(http.ListenAndServe(":"+*port, router))
+	addr := fmt.Sprintf(":%s", *port)
+	log.Printf("Server starting on http://localhost%s", addr)
+	log.Fatal(http.ListenAndServe(addr, router))
 }
