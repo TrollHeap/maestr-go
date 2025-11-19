@@ -1,272 +1,197 @@
 package domain
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"sort"
+	"fmt"
 	"time"
 
 	"maestro/internal/models"
 )
 
-// Planner gère la planification des sessions
+// Planner gère la planification des sessions d'exercices
 type Planner struct {
 	sessions []models.PlannedSession
 }
 
-// NewPlanner crée un nouveau planner
+// NewPlanner crée un nouveau Planner
 func NewPlanner() *Planner {
 	return &Planner{
 		sessions: []models.PlannedSession{},
 	}
 }
 
-// LoadSessions charge les sessions depuis le storage
-func (p *Planner) LoadSessions(sessions []models.PlannedSession) {
-	p.sessions = sessions
-}
-
-// GetSessions retourne toutes les sessions
-func (p *Planner) GetSessions() []models.PlannedSession {
-	return p.sessions
-}
-
-// CreateSession crée une nouvelle session planifiée
-func (p *Planner) CreateSession(
-	date time.Time,
-	timeSlot string,
-	exerciseIDs []string,
-	duration int,
-) models.PlannedSession {
-	now := time.Now()
-
-	session := models.PlannedSession{
-		ID:          generateID(),
-		Date:        date,
-		TimeSlot:    timeSlot,
-		ExerciseIDs: exerciseIDs,
-		Duration:    duration,
-		Status:      "planned",
-		CreatedAt:   now,
-		UpdatedAt:   now,
-	}
-
+// AddSession ajoute une session planifiée
+func (p *Planner) AddSession(session models.PlannedSession) {
 	p.sessions = append(p.sessions, session)
-	return session
 }
 
-// UpdateSession met à jour une session
-func (p *Planner) UpdateSession(sessionID string, status string, notes string) error {
+// UpdateSession met à jour une session existante
+func (p *Planner) UpdateSession(session models.PlannedSession) error {
 	for i := range p.sessions {
-		if p.sessions[i].ID == sessionID {
-			p.sessions[i].Status = status
-			p.sessions[i].Notes = notes
-			p.sessions[i].UpdatedAt = time.Now()
-
-			if status == "completed" {
-				now := time.Now()
-				p.sessions[i].CompletedAt = &now
-			}
-
+		if p.sessions[i].ID == session.ID {
+			p.sessions[i] = session
 			return nil
 		}
 	}
-	return nil
+	return fmt.Errorf("session not found: %s", session.ID)
 }
 
 // DeleteSession supprime une session
-func (p *Planner) DeleteSession(sessionID string) error {
-	for i, session := range p.sessions {
-		if session.ID == sessionID {
+func (p *Planner) DeleteSession(id string) error {
+	for i := range p.sessions {
+		if p.sessions[i].ID == id {
 			p.sessions = append(p.sessions[:i], p.sessions[i+1:]...)
 			return nil
 		}
 	}
-	return nil
+	return fmt.Errorf("session not found: %s", id)
 }
 
-// GetDailyPlan retourne le plan d'une journée
-func (p *Planner) GetDailyPlan(date time.Time) models.DailyPlan {
+// ✅ HELPER: Filtrer par date exacte
+func (p *Planner) filterSessionsByDate(date time.Time) []models.PlannedSession {
 	dateKey := date.Format("2006-01-02")
-
-	// Filter sessions for this day
-	daySessions := []models.PlannedSession{}
-	totalMinutes := 0
-	completed := 0
+	filtered := []models.PlannedSession{}
 
 	for _, session := range p.sessions {
 		if session.Date.Format("2006-01-02") == dateKey {
-			daySessions = append(daySessions, session)
-			totalMinutes += session.Duration
-			if session.Status == "completed" {
-				completed++
-			}
+			filtered = append(filtered, session)
 		}
 	}
 
-	// Sort by time slot
-	sort.Slice(daySessions, func(i, j int) bool {
-		order := map[string]int{"morning": 1, "afternoon": 2, "evening": 3}
-		return order[daySessions[i].TimeSlot] < order[daySessions[j].TimeSlot]
-	})
+	return filtered
+}
+
+// ✅ HELPER: Filtrer par plage de dates
+func (p *Planner) filterSessionsByDateRange(start, end time.Time) []models.PlannedSession {
+	filtered := []models.PlannedSession{}
+
+	startDate := start.Truncate(24 * time.Hour)
+	endDate := end.Truncate(24 * time.Hour)
+
+	for _, session := range p.sessions {
+		sessionDate := session.Date.Truncate(24 * time.Hour)
+
+		if (sessionDate.Equal(startDate) || sessionDate.After(startDate)) &&
+			sessionDate.Before(endDate.AddDate(0, 0, 1)) {
+			filtered = append(filtered, session)
+		}
+	}
+
+	return filtered
+}
+
+// ✅ HELPER: Compter sessions complétées
+func countCompleted(sessions []models.PlannedSession) int {
+	count := 0
+	for _, s := range sessions {
+		if s.Status == "completed" {
+			count++
+		}
+	}
+	return count
+}
+
+// ✅ HELPER: Calculer durée totale
+func totalDuration(sessions []models.PlannedSession) int {
+	total := 0
+	for _, s := range sessions {
+		total += s.Duration
+	}
+	return total
+}
+
+// ✅ HELPER: Obtenir lundi de la semaine
+func getMonday(date time.Time) time.Time {
+	weekday := int(date.Weekday())
+	if weekday == 0 {
+		weekday = 7 // Dimanche = 7
+	}
+	return date.AddDate(0, 0, -(weekday - 1))
+}
+
+// GetToday retourne le plan du jour
+func (p *Planner) GetToday() models.DailyPlan {
+	today := time.Now().Truncate(24 * time.Hour)
+	sessions := p.filterSessionsByDate(today)
 
 	return models.DailyPlan{
-		Date:         dateKey,
-		Sessions:     daySessions,
-		TotalMinutes: totalMinutes,
-		Completed:    completed,
-		Total:        len(daySessions),
+		Date:         today.Format("2006-01-02"),
+		Sessions:     sessions,
+		TotalMinutes: totalDuration(sessions),
+		Completed:    countCompleted(sessions),
+		Total:        len(sessions),
 	}
 }
 
-// GetWeeklyPlan retourne le plan d'une semaine
-func (p *Planner) GetWeeklyPlan(startDate time.Time) models.WeeklyPlan {
-	// Ensure start is Monday
-	weekday := int(startDate.Weekday())
-	if weekday == 0 {
-		weekday = 7 // Sunday
-	}
-	monday := startDate.AddDate(0, 0, -(weekday - 1))
+// GetWeek retourne le plan de la semaine
+func (p *Planner) GetWeek() models.WeeklyPlan {
+	today := time.Now().Truncate(24 * time.Hour)
+	monday := getMonday(today)
 	sunday := monday.AddDate(0, 0, 6)
 
-	days := []models.DailyPlan{}
-	totalMinutes := 0
-	totalCompleted := 0
-	totalSessions := 0
+	weekSessions := p.filterSessionsByDateRange(monday, sunday)
 
-	// Generate daily plans for each day of week
-	for d := monday; !d.After(sunday); d = d.AddDate(0, 0, 1) {
-		dailyPlan := p.GetDailyPlan(d)
-		days = append(days, dailyPlan)
-		totalMinutes += dailyPlan.TotalMinutes
-		totalCompleted += dailyPlan.Completed
-		totalSessions += dailyPlan.Total
+	// Générer les plans journaliers
+	days := []models.DailyPlan{}
+	for i := 0; i < 7; i++ {
+		date := monday.AddDate(0, 0, i)
+		daySessions := p.filterSessionsByDate(date)
+
+		days = append(days, models.DailyPlan{
+			Date:         date.Format("2006-01-02"),
+			Sessions:     daySessions,
+			TotalMinutes: totalDuration(daySessions),
+			Completed:    countCompleted(daySessions),
+			Total:        len(daySessions),
+		})
 	}
 
 	return models.WeeklyPlan{
 		StartDate:    monday.Format("2006-01-02"),
 		EndDate:      sunday.Format("2006-01-02"),
 		Days:         days,
-		TotalMinutes: totalMinutes,
-		Completed:    totalCompleted,
-		Total:        totalSessions,
+		TotalMinutes: totalDuration(weekSessions),
+		Completed:    countCompleted(weekSessions),
+		Total:        len(weekSessions),
 	}
 }
 
-// GetMonthlyPlan retourne le plan d'un mois (4 semaines)
-func (p *Planner) GetMonthlyPlan(startDate time.Time) []models.WeeklyPlan {
-	weeks := []models.WeeklyPlan{}
-
-	for i := 0; i < 4; i++ {
-		weekStart := startDate.AddDate(0, 0, i*7)
-		week := p.GetWeeklyPlan(weekStart)
-		weeks = append(weeks, week)
-	}
-
-	return weeks
-}
-
-// GetStats retourne les statistiques du planner
+// GetStats retourne les statistiques du planner (✅ refactoré)
 func (p *Planner) GetStats() models.PlannerStats {
-	now := time.Now()
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-
-	// Get week range
-	weekday := int(now.Weekday())
-	if weekday == 0 {
-		weekday = 7
-	}
-	monday := today.AddDate(0, 0, -(weekday - 1))
+	today := time.Now().Truncate(24 * time.Hour)
+	monday := getMonday(today)
 	sunday := monday.AddDate(0, 0, 6)
 
-	todayPlanned := 0
-	todayCompleted := 0
-	weekPlanned := 0
-	weekCompleted := 0
-	totalDuration := 0
-	totalSessions := 0
+	// ✅ Utiliser helpers
+	todaySessions := p.filterSessionsByDate(today)
+	weekSessions := p.filterSessionsByDateRange(monday, sunday)
 
-	for _, session := range p.sessions {
-		sessionDate := time.Date(
-			session.Date.Year(),
-			session.Date.Month(),
-			session.Date.Day(),
-			0,
-			0,
-			0,
-			0,
-			time.UTC,
-		)
+	todayCompleted := countCompleted(todaySessions)
+	weekCompleted := countCompleted(weekSessions)
 
-		// Today stats
-		if sessionDate.Equal(today) {
-			todayPlanned++
-			if session.Status == "completed" {
-				todayCompleted++
-			}
-		}
-
-		// Week stats
-		if (sessionDate.Equal(monday) || sessionDate.After(monday)) &&
-			sessionDate.Before(sunday.AddDate(0, 0, 1)) {
-			weekPlanned++
-			if session.Status == "completed" {
-				weekCompleted++
-				totalDuration += session.Duration
-				totalSessions++
-			}
-		}
+	// Calculer taux de complétion
+	var completionRate float64
+	if len(weekSessions) > 0 {
+		completionRate = float64(weekCompleted) / float64(len(weekSessions)) * 100
 	}
 
-	completionRate := 0.0
-	if weekPlanned > 0 {
-		completionRate = float64(weekCompleted) / float64(weekPlanned) * 100
-	}
-
-	averageDuration := 0
-	if totalSessions > 0 {
-		averageDuration = totalDuration / totalSessions
+	// Calculer durée moyenne
+	var avgDuration int
+	if weekCompleted > 0 {
+		totalTime := 0
+		for _, s := range weekSessions {
+			if s.Status == "completed" {
+				totalTime += s.Duration
+			}
+		}
+		avgDuration = totalTime / weekCompleted
 	}
 
 	return models.PlannerStats{
-		TodayPlanned:    todayPlanned,
+		TodayPlanned:    len(todaySessions),
 		TodayCompleted:  todayCompleted,
-		WeekPlanned:     weekPlanned,
+		WeekPlanned:     len(weekSessions),
 		WeekCompleted:   weekCompleted,
 		CompletionRate:  completionRate,
-		AverageDuration: averageDuration,
+		AverageDuration: avgDuration,
 	}
-}
-
-// GetTodaySessions retourne les sessions du jour
-func (p *Planner) GetTodaySessions() []models.PlannedSession {
-	today := time.Now()
-	return p.GetSessionsByDate(today)
-}
-
-// GetSessionsByDate retourne les sessions d'une date
-func (p *Planner) GetSessionsByDate(date time.Time) []models.PlannedSession {
-	dateKey := date.Format("2006-01-02")
-	sessions := []models.PlannedSession{}
-
-	for _, session := range p.sessions {
-		if session.Date.Format("2006-01-02") == dateKey {
-			sessions = append(sessions, session)
-		}
-	}
-
-	// Sort by time slot
-	sort.Slice(sessions, func(i, j int) bool {
-		order := map[string]int{"morning": 1, "afternoon": 2, "evening": 3}
-		return order[sessions[i].TimeSlot] < order[sessions[j].TimeSlot]
-	})
-
-	return sessions
-}
-
-// generateID génère un ID unique
-func generateID() string {
-	b := make([]byte, 8)
-	rand.Read(b)
-	return hex.EncodeToString(b)
 }
