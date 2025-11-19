@@ -5,11 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maestro - Ultra-Learning</title>
     <link rel="stylesheet" href="css/style.css">
-
 </head>
 <body>
     <div class="navbar">
-        <div class="navbar-brand">🎯 MAESTRO v3.1</div>
+        <div class="navbar-brand">🎯 MAESTRO v3.2</div>
         <div class="navbar-menu">
             <button class="nav-link active" onclick="app.goToPage('exercises')">📚 Exercices</button>
             <button class="nav-link" onclick="app.goToPage('stats')">📊 Stats</button>
@@ -52,13 +51,14 @@
                             <div class="filter-label">🏷️ Domaine</div>
                             <div class="filter-buttons">
                                 <button class="filter-btn active" data-domain="all">Tous</button>
-                                <button class="filter-btn" data-domain="golang">Go</button>
-                                <button class="filter-btn" data-domain="linux">Linux</button>
-                                <button class="filter-btn" data-domain="architecture">Arch</button>
+                                <button class="filter-btn" data-domain="Algorithms">Algos</button>
+                                <button class="filter-btn" data-domain="Data Structures">Data</button>
+                                <button class="filter-btn" data-domain="Go Programming">Go</button>
+                                <button class="filter-btn" data-domain="Docker">Docker</button>
+                                <button class="filter-btn" data-domain="Linux Administration">Linux</button>
                             </div>
                         </div>
 
-                        <!-- NOUVEAU: Filtre Date -->
                         <div class="filter-section">
                             <div class="filter-label">📅 Date Révision</div>
                             <div class="filter-buttons">
@@ -101,6 +101,8 @@
                     <div class="value" id="streakCard">0</div>
                 </div>
             </div>
+
+            <div id="navStats"></div>
         </div>
 
         <!-- PLANNER PAGE -->
@@ -110,7 +112,6 @@
             <div class="planner-tabs">
                 <button class="planner-tab active" onclick="app.switchPlannerView('today')">Aujourd'hui</button>
                 <button class="planner-tab" onclick="app.switchPlannerView('week')">Cette Semaine</button>
-                <button class="planner-tab" onclick="app.switchPlannerView('month')">Ce Mois</button>
             </div>
             
             <!-- Today View -->
@@ -143,11 +144,6 @@
             <div id="planner-week" class="planner-view">
                 <div id="week-grid"></div>
             </div>
-            
-            <!-- Month View -->
-            <div id="planner-month" class="planner-view">
-                <div id="month-overview"></div>
-            </div>
         </div>
     </div>
 
@@ -155,16 +151,30 @@
     <div id="exerciseSelectorModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 style="color: #90EE90;">Choisir les exercices</h3>
+                <h3 style="color: #90EE90;">📚 Choisir les exercices</h3>
                 <button class="modal-close" onclick="app.closeExerciseSelector()">×</button>
             </div>
-            <div id="exerciseSelectorList"></div>
+            <div class="modal-body">
+                <div class="modal-search">
+                    <input 
+                        type="text" 
+                        id="exerciseSearch" 
+                        placeholder="🔍 Rechercher un exercice..." 
+                        oninput="app.filterExerciseSelector(this.value)">
+                </div>
+                <div id="exerciseSelectorList" class="exercise-selector-list"></div>
+            </div>
             <div class="modal-footer">
-                <button style="background: #555; color: #fff;" onclick="app.closeExerciseSelector()">Annuler</button>
-                <button style="background: #90EE90; color: #000;" onclick="app.confirmExerciseSelection()">Planifier</button>
+                <button class="btn-secondary" onclick="app.closeExerciseSelector()">Annuler</button>
+                <button id="confirmExerciseBtn" class="btn-primary" onclick="app.confirmExerciseSelection()" disabled>
+                    Sélectionner des exercices
+                </button>
             </div>
         </div>
     </div>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer"></div>
 
     <script src="js/app.js"></script>
 </body>
