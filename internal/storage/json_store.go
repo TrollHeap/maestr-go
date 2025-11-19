@@ -5,103 +5,83 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
-	"time"
 
 	"maestro/internal/models"
 )
 
-// JSONStore implémente Store avec JSON persistence
+// JSONStore implémente Store en utilisant des fichiers JSON
 type JSONStore struct {
-	filepath  string
-	exercises []models.Exercise
-	mu        sync.RWMutex
+	mu       sync.RWMutex
+	dataPath string
 }
 
-// NewJSONStore crée une nouvelle instance JSONStore
-func NewJSONStore(filepath string) *JSONStore {
-	return &JSONStore{
-		filepath:  filepath,
-		exercises: []models.Exercise{},
+// NewJSONStore crée un nouveau JSONStore
+func NewJSONStore(dataPath string) (*JSONStore, error) {
+	// Créer le dossier si nécessaire
+	if err := os.MkdirAll(dataPath, 0o755); err != nil {
+		return nil, fmt.Errorf("failed to create data directory: %w", err)
 	}
+
+	return &JSONStore{
+		dataPath: dataPath,
+	}, nil
 }
 
 // Load charge tous les exercices depuis le fichier JSON
 func (s *JSONStore) Load(ctx context.Context) ([]models.Exercise, error) {
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	default:
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	filePath := filepath.Join(s.dataPath, "exercises.json")
+
+	// Si le fichier n'existe pas, retourner liste vide
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return []models.Exercise{}, nil
 	}
 
-	data, err := os.ReadFile(s.filepath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
-		// Si le fichier n'existe pas, retourner une liste vide
-		if os.IsNotExist(err) {
-			return []models.Exercise{}, nil
-		}
-		return nil, fmt.Errorf("read file: %w", err)
+		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
 	var exercises []models.Exercise
 	if err := json.Unmarshal(data, &exercises); err != nil {
-		return nil, fmt.Errorf("parse JSON: %w", err)
+		return nil, fmt.Errorf("failed to unmarshal exercises: %w", err)
 	}
-
-	s.mu.Lock()
-	s.exercises = exercises
-	s.mu.Unlock()
 
 	return exercises, nil
 }
 
-// Save persiste les exercices dans le fichier JSON
+// Save sauvegarde tous les exercices dans le fichier JSON
 func (s *JSONStore) Save(ctx context.Context, exercises []models.Exercise) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	filePath := filepath.Join(s.dataPath, "exercises.json")
 
 	data, err := json.MarshalIndent(exercises, "", "  ")
 	if err != nil {
-		return fmt.Errorf("marshal JSON: %w", err)
+		return fmt.Errorf("failed to marshal exercises: %w", err)
 	}
 
-	if err := os.WriteFile(s.filepath, data, 0o644); err != nil {
-		return fmt.Errorf("write file: %w", err)
-	}
-
-	s.mu.Lock()
-	s.exercises = exercises
-	s.mu.Unlock()
-
-	return nil
-}
-
-// saveToFile sauvegarde l'état actuel dans le fichier
-func (s *JSONStore) saveToFile() error {
-	data, err := json.MarshalIndent(s.exercises, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshal JSON: %w", err)
-	}
-
-	if err := os.WriteFile(s.filepath, data, 0o644); err != nil {
-		return fmt.Errorf("write file: %w", err)
+	if err := os.WriteFile(filePath, data, 0o644); err != nil {
+		return fmt.Errorf("failed to write file: %w", err)
 	}
 
 	return nil
 }
 
-// GetByID récupère un exercice par ID
+// GetByID récupère un exercice par son ID
 func (s *JSONStore) GetByID(ctx context.Context, id string) (*models.Exercise, error) {
 	exercises, err := s.Load(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	for i, ex := range exercises {
-		if ex.ID == id {
+	for i := range exercises {
+		if exercises[i].ID == id {
 			return &exercises[i], nil
 		}
 	}
@@ -109,47 +89,50 @@ func (s *JSONStore) GetByID(ctx context.Context, id string) (*models.Exercise, e
 	return nil, fmt.Errorf("exercise not found: %s", id)
 }
 
-// Update met à jour un exercice
+// Update met à jour un exercice existant
 func (s *JSONStore) Update(ctx context.Context, ex *models.Exercise) error {
 	exercises, err := s.Load(ctx)
 	if err != nil {
 		return err
 	}
 
+	found := false
 	for i := range exercises {
 		if exercises[i].ID == ex.ID {
 			exercises[i] = *ex
-			return s.Save(ctx, exercises)
+			found = true
+			break
 		}
 	}
 
-	return fmt.Errorf("exercise not found: %s", ex.ID)
+	if !found {
+		return fmt.Errorf("exercise not found: %s", ex.ID)
+	}
+
+	return s.Save(ctx, exercises)
 }
 
-// GetExercise récupère un exercice par ID (version sans context)
-func (s *JSONStore) GetExercise(id string) (*models.Exercise, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+// Delete supprime un exercice par son ID
+func (s *JSONStore) Delete(ctx context.Context, id string) error {
+	exercises, err := s.Load(ctx)
+	if err != nil {
+		return err
+	}
 
-	for i := range s.exercises {
-		if s.exercises[i].ID == id {
-			return &s.exercises[i], nil
+	filtered := make([]models.Exercise, 0, len(exercises))
+	found := false
+
+	for i := range exercises {
+		if exercises[i].ID != id {
+			filtered = append(filtered, exercises[i])
+		} else {
+			found = true
 		}
 	}
-	return nil, fmt.Errorf("exercise not found: %s", id)
-}
 
-// UpdateExercise met à jour un exercice existant (version sans context)
-func (s *JSONStore) UpdateExercise(exercise *models.Exercise) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	for i := range s.exercises {
-		if s.exercises[i].ID == exercise.ID {
-			exercise.UpdatedAt = time.Now()
-			s.exercises[i] = *exercise
-			return s.saveToFile()
-		}
+	if !found {
+		return fmt.Errorf("exercise not found: %s", id)
 	}
-	return fmt.Errorf("exercise not found: %s", exercise.ID)
+
+	return s.Save(ctx, filtered)
 }

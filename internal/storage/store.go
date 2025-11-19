@@ -6,15 +6,20 @@ import (
 	"maestro/internal/models"
 )
 
-// Store est l'interface pour la persistance
+// Store définit l'interface pour la persistance des exercices
 type Store interface {
-	// Méthodes avec context
+	// Load charge tous les exercices depuis le stockage
 	Load(ctx context.Context) ([]models.Exercise, error)
+
+	// Save sauvegarde tous les exercices dans le stockage
 	Save(ctx context.Context, exercises []models.Exercise) error
+
+	// GetByID récupère un exercice par son ID
 	GetByID(ctx context.Context, id string) (*models.Exercise, error)
+
+	// Update met à jour un exercice existant
 	Update(ctx context.Context, ex *models.Exercise) error
 
-	// Méthodes sans context (pour les handlers API)
-	GetExercise(id string) (*models.Exercise, error)
-	UpdateExercise(exercise *models.Exercise) error
+	// Delete supprime un exercice par son ID
+	Delete(ctx context.Context, id string) error
 }
