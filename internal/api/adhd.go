@@ -19,10 +19,10 @@ func (h *ExerciseHandler) GetQuickWins(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Filtrer les quick-wins (non complétés, pas supprimés, durée courte)
-	quickWins := []interface{}{}
+	quickWins := []any{}
 	for _, ex := range exercises {
 		if !ex.Completed && !ex.Deleted && len(ex.Steps) <= 3 {
-			quickWins = append(quickWins, map[string]interface{}{
+			quickWins = append(quickWins, map[string]any{
 				"id":          ex.ID,
 				"title":       ex.Title,
 				"description": ex.Description,
@@ -47,10 +47,10 @@ func (h *ExerciseHandler) GetVisualExercises(w http.ResponseWriter, r *http.Requ
 	}
 
 	// Filtrer les exercices avec du contenu visuel
-	visual := []interface{}{}
+	visual := []any{}
 	for _, ex := range exercises {
 		if !ex.Deleted {
-			visual = append(visual, map[string]interface{}{
+			visual = append(visual, map[string]any{
 				"id":          ex.ID,
 				"title":       ex.Title,
 				"description": ex.Description,
@@ -76,7 +76,7 @@ func (h *ExerciseHandler) StartFocusSession(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Créer session de focus
-	session := map[string]interface{}{
+	session := map[string]any{
 		"exercise_ids": input.ExerciseIDs,
 		"duration":     input.Duration,
 		"started_at":   time.Now(),
@@ -99,7 +99,7 @@ func (h *ExerciseHandler) TakeBreak(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	breakInfo := map[string]interface{}{
+	breakInfo := map[string]any{
 		"duration":   input.Duration,
 		"started_at": time.Now(),
 		"type":       "break",
