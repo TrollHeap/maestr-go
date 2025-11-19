@@ -20,9 +20,9 @@ type Exercise struct {
 	IntervalDays   int        `json:"interval_days"`
 	Repetitions    int        `json:"repetitions"`
 
-	// ✅ AJOUT pour ADHD features
+	// ✅ ADHD features - AJOUT DES CHAMPS MANQUANTS
 	SkippedCount int        `json:"skipped_count"`
-	LastSkipped  *time.Time `json:"last_skipped"`
+	LastSkipped  *time.Time `json:"last_skipped"` // ✅ AJOUTÉ
 	Deleted      bool       `json:"deleted"`
 	DeletedAt    *time.Time `json:"deleted_at"`
 
@@ -42,20 +42,20 @@ type ReviewResponse struct {
 	NextReview *time.Time `json:"next_review"`
 }
 
-// Stats représente les statistiques globales
+// ✅ Stats avec ByDomain
 type Stats struct {
 	Total      int                   `json:"total"`
 	Completed  int                   `json:"completed"`
 	InProgress int                   `json:"in_progress"`
 	DueReview  int                   `json:"due_review"`
-	ByDomain   map[string]DomainStat `json:"by_domain"`
+	ByDomain   map[string]DomainStat `json:"by_domain"` // ✅ AJOUTÉ
 }
 
-// DomainStat représente les statistiques par domaine
+// ✅ DomainStat pour les stats par domaine
 type DomainStat struct {
 	Completed int     `json:"completed"`
 	Total     int     `json:"total"`
-	Mastery   float64 `json:"mastery"`
+	Mastery   float64 `json:"mastery"` // Pourcentage 0-100
 }
 
 // PlannedSession représente une session planifiée
