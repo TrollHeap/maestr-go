@@ -73,10 +73,15 @@ func (r *Recommender) CalculateStats(exercises []models.Exercise) models.Stats {
 		Completed:  0,
 		InProgress: 0,
 		DueReview:  0,
-		ByDomain:   make(map[string]models.DomainStat),
+		ByDomain:   make(map[string]models.DomainStat), // ✅ INITIALISÉ
 	}
 
 	for _, ex := range exercises {
+		// Skip deleted
+		if ex.Deleted {
+			continue
+		}
+
 		// Statistiques de domaine
 		domainStat := stats.ByDomain[ex.Domain]
 		domainStat.Total++
@@ -85,10 +90,8 @@ func (r *Recommender) CalculateStats(exercises []models.Exercise) models.Stats {
 			stats.Completed++
 			domainStat.Completed++
 
-			// ✅ Garder float64 pour précision
+			// Calculer mastery (0-100)
 			mastery := ((ex.EaseFactor - 1.3) / (2.5 - 1.3)) * 100
-
-			// Clamp 0-100
 			if mastery < 0 {
 				mastery = 0
 			}
@@ -96,7 +99,7 @@ func (r *Recommender) CalculateStats(exercises []models.Exercise) models.Stats {
 				mastery = 100
 			}
 
-			// Moyenne pondérée si plusieurs exercices
+			// Moyenne pondérée
 			if domainStat.Mastery == 0 {
 				domainStat.Mastery = mastery
 			} else {
@@ -110,6 +113,7 @@ func (r *Recommender) CalculateStats(exercises []models.Exercise) models.Stats {
 			stats.DueReview++
 		}
 
+		// ✅ IMPORTANT: Sauvegarder les modifications dans la map
 		stats.ByDomain[ex.Domain] = domainStat
 	}
 
