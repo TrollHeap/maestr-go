@@ -121,10 +121,10 @@ func (h *ExerciseHandler) SkipExercise(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Incrémenter skip count
+	// ✅ Incrémenter skip count
 	exercise.SkippedCount++
 	now := time.Now()
-	exercise.LastSkipped = &now
+	exercise.LastSkipped = &now // ✅ Utilise le champ qui existe maintenant
 	exercise.UpdatedAt = now
 
 	if err := h.store.Update(ctx, exercise); err != nil {

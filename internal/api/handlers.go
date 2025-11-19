@@ -310,6 +310,7 @@ func (h *ExerciseHandler) ToggleExerciseCompletion(w http.ResponseWriter, r *htt
 }
 
 // ReviewExercise enregistre une révision
+// ReviewExercise enregistre une révision
 func (h *ExerciseHandler) ReviewExercise(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
@@ -327,6 +328,7 @@ func (h *ExerciseHandler) ReviewExercise(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Appliquer l'algorithme SM-2
 	h.scheduler.ReviewExercise(exercise, input.Rating)
 
 	if err := h.store.Update(ctx, exercise); err != nil {
@@ -335,9 +337,12 @@ func (h *ExerciseHandler) ReviewExercise(w http.ResponseWriter, r *http.Request)
 	}
 
 	nextReview := h.scheduler.GetNextReviewDate(exercise)
+
+	// ✅ CORRECTION: Déréférencer le pointeur et enlever Message
 	response := models.ReviewResponse{
-		Exercise:   *exercise,
+		Exercise:   *exercise, // ✅ Déréférencer le pointeur
 		NextReview: nextReview,
+		// ❌ Pas de Message dans ReviewResponse
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -376,16 +381,17 @@ func (h *ExerciseHandler) GetStats(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(stats)
 }
 
+// ✅ CORRECTION 2: GetTodayPlan avec GetTodayPlan()
 // GetTodayPlan retourne le plan du jour
 func (h *ExerciseHandler) GetTodayPlan(w http.ResponseWriter, r *http.Request) {
-	plan := h.planner.GetToday()
+	plan := h.planner.GetToday() // ✅ Utilise GetToday() au lieu de GetTodayPlan()
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(plan)
 }
 
 // GetWeekPlan retourne le plan de la semaine
 func (h *ExerciseHandler) GetWeekPlan(w http.ResponseWriter, r *http.Request) {
-	plan := h.planner.GetWeek()
+	plan := h.planner.GetWeek() // ✅ Utilise GetWeek() au lieu de GetWeekPlan()
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(plan)
 }
@@ -445,14 +451,13 @@ func (h *ExerciseHandler) CreatePlannerSession(w http.ResponseWriter, r *http.Re
 		Notes:       input.Notes,
 	}
 
-	h.planner.AddSession(session)
+	h.planner.AddSession(session) // ✅ CORRECTION 4: Méthode existe dans planner.go
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(session)
 }
 
-// UpdatePlannerSession met à jour une session
 func (h *ExerciseHandler) UpdatePlannerSession(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -464,8 +469,10 @@ func (h *ExerciseHandler) UpdatePlannerSession(w http.ResponseWriter, r *http.Re
 	}
 
 	session.ID = id
+
+	// ✅ CORRECTION: Appeler UpdateSession avec session complet
 	if err := h.planner.UpdateSession(session); err != nil {
-		http.Error(w, "Session not found", http.StatusNotFound)
+		http.Error(w, fmt.Sprintf("Failed to update session: %v", err), http.StatusNotFound)
 		return
 	}
 
@@ -479,7 +486,7 @@ func (h *ExerciseHandler) DeletePlannerSession(w http.ResponseWriter, r *http.Re
 	id := vars["id"]
 
 	if err := h.planner.DeleteSession(id); err != nil {
-		http.Error(w, "Session not found", http.StatusNotFound)
+		http.Error(w, fmt.Sprintf("Failed to delete session: %v", err), http.StatusNotFound)
 		return
 	}
 
