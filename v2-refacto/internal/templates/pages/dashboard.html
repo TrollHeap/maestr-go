@@ -1,15 +1,8 @@
-{{define "dashboard"}}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Dashboard - Maestro</title>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    <link rel="stylesheet" href="public/css/exercice.css">
-</head>
-<body>
-    {{template "navbar" .}}
-    
+<!-- Tu dis : "Utilise le layout 'base'..." -->
+{{template "base" .}}
+
+<!-- "...et remplace le bloc 'content' par ceci :" -->
+{{define "content"}}
     <div class="container">
         <!-- Colonne gauche : Liste des exercices -->
         <div class="sidebar">
@@ -28,7 +21,5 @@
             </div>
         </div>
     </div>
-
-</body>
-</html>
 {{end}}
+

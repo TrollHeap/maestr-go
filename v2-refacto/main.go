@@ -79,7 +79,7 @@ func main() {
 		data := map[string]any{
 			"Exercises": exercises,
 		}
-		tmpl.ExecuteTemplate(w, "dashboard", data)
+		tmpl.ExecuteTemplate(w, "base", data)
 	})
 
 	http.HandleFunc("/exercises", func(w http.ResponseWriter, r *http.Request) {
