@@ -1,0 +1,24 @@
+{{define "badge-difficulty"}}
+<span class="badge badge--difficulty-{{.Difficulty}} badge--md">
+    D{{.Difficulty}}
+</span>
+{{end}}
+
+{{define "badge-domain"}}
+<span class="badge badge--domain-{{.Domain | lower}} badge--md">
+    {{.Domain}}
+</span>
+{{end}}
+
+{{define "badge-progress"}}
+<span class="badge badge--progress badge--md">
+    {{len .CompletedSteps}}/{{len .Steps}} étapes
+</span>
+{{end}}
+
+{{define "status-indicator"}}
+<div class="status-indicator 
+    status-indicator--{{if .Done}}done{{else if gt (len .CompletedSteps) 0}}wip{{else}}todo{{end}}">
+    {{if .Done}}✓{{else if gt (len .CompletedSteps) 0}}•{{else}} {{end}}
+</div>
+{{end}}
