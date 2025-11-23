@@ -1,25 +1,36 @@
-<!-- Tu dis : "Utilise le layout 'base'..." -->
 {{template "base" .}}
 
-<!-- "...et remplace le bloc 'content' par ceci :" -->
 {{define "content"}}
-    <div class="container">
-        <!-- Colonne gauche : Liste des exercices -->
-        <div class="sidebar">
-            <div id="exercise-list-container">
+    
+    <div class="container" style="display: flex; gap: 20px;">
+        
+        <!-- COLONNE GAUCHE : Navigation & Liste -->
+        <div class="sidebar" style="flex: 1; min-width: 300px;">
+            
+            <!-- 1. La Télécommande (Filtres) -->
+            <div class="filters-section" style="margin-bottom: 15px;">
+                {{template "filters" .}}
+            </div>
+
+            <!-- 2. La TV (Liste filtrable) -->
+            <!-- L'ID "exercise-list" est la cible des filtres -->
+            <div id="exercise-list" class="exercise-list-container">
                 {{template "exercise-list" .Exercises}}
             </div>
         </div>
 
-        <!-- Colonne droite : Détail de l'exercice -->
-        <div class="main-content">
+        <!-- COLONNE DROITE : Zone de travail -->
+        <div class="main-content" style="flex: 2; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            
+            <!-- Zone cible pour le détail (hx-target="#exercise-detail") -->
             <div id="exercise-detail">
-                <div class="empty-state">
-                    <h2>👈 Sélectionnez un exercice</h2>
-                    <p>Cliquez sur "Détails" pour voir le contenu complet.</p>
+                <div class="empty-state" style="text-align: center; padding: 40px; color: #666;">
+                    <h2 style="font-size: 3rem; margin: 0;">👈</h2>
+                    <h3>Sélectionnez un exercice</h3>
+                    <p>Utilisez la liste à gauche pour naviguer.</p>
                 </div>
             </div>
+
         </div>
     </div>
 {{end}}
-

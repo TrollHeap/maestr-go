@@ -1,0 +1,16 @@
+{{define "status-indicator"}}
+<button 
+    class="status-indicator {{if .Done}}status-indicator--done{{else}}status-indicator--pending{{end}}"
+    hx-post="/toggle-done?id={{.ID}}"
+    hx-target="#exercise-{{.ID}}"
+    hx-swap="outerHTML"
+    onclick="event.stopPropagation()"
+    aria-label="{{if .Done}}Marquer comme non terminé{{else}}Marquer comme terminé{{end}}"
+>
+    {{if .Done}}
+        ✅
+    {{else}}
+        X
+    {{end}}
+</button>
+{{end}}

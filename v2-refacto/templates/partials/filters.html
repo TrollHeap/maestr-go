@@ -1,0 +1,37 @@
+{{define "filters"}}
+<div class="filters-bar" style="margin-bottom: 20px; padding: 10px; background: #f0f0f0; border-radius: 8px;">
+    <strong>Filtrer par statut :</strong>
+    
+    <!-- Bouton "Tous" -->
+    <button 
+        hx-get="/exercises" 
+        hx-target="#exercise-list"
+        class="filter-btn"
+        name="status" 
+        value=""
+    >
+        Tout voir
+    </button>
+
+    <!-- Bouton "À faire" -->
+    <button 
+        hx-get="/exercises?status=todo" 
+        hx-target="#exercise-list"
+        class="filter-btn"
+    >
+        ⏳ À faire
+    </button>
+
+    <!-- Bouton "Terminé" -->
+    <button 
+        hx-get="/exercises?status=done" 
+        hx-target="#exercise-list"
+        class="filter-btn"
+    >
+        ✅ Terminé
+    </button>
+    
+    <!-- Indicateur visuel (spinner) -->
+    <span class="htmx-indicator">Chargement...</span>
+</div>
+{{end}}

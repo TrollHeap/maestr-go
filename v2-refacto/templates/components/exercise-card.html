@@ -8,7 +8,7 @@
 >
     <!-- Header -->
     <div class="exercise-card__header">
-        {{template "status-indicator" .}}
+        {{template "status-indicator" .}}  <!-- ← Appelle le composant (qui est maintenant un bouton) -->
         <h3 class="exercise-card__title">{{.Title}}</h3>
         {{template "badge-domain" .}}
     </div>
