@@ -71,3 +71,24 @@ func (e *Exercise) IsAtRisk() bool {
 	}
 	return time.Since(*e.LastSkipped) > 7*24*time.Hour // 7 jours sans toucher
 }
+
+// Dans models/exercise.go
+// Dans models/exercise.go
+func (e *Exercise) MasteryLevel() string {
+	if e.Repetitions == 0 {
+		return "[░░░░░] 0%" // Jamais révisé
+	}
+	if e.Repetitions >= 6 && e.EaseFactor >= 2.3 {
+		return "[█████] 100%" // Maîtrise totale
+	}
+	if e.Repetitions >= 4 && e.EaseFactor >= 2.1 {
+		return "[████░] 80%"
+	}
+	if e.Repetitions >= 2 && e.EaseFactor >= 1.9 {
+		return "[███░░] 60%"
+	}
+	if e.Repetitions >= 1 {
+		return "[██░░░] 40%"
+	}
+	return "[█░░░░] 20%" // Premier essai
+}

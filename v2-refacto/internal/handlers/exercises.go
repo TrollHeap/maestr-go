@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"html/template"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"maestro/v2-refacto/internal/models"
 	"maestro/v2-refacto/internal/store"
@@ -67,6 +69,7 @@ func HandleToggleDone(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
 	if ex := store.FindExercise(id); ex != nil {
 		ex.Done = !ex.Done // Simple bascule true/false
+		store.Save()       // <= Save appelé à chaque modification
 		Tmpl.ExecuteTemplate(w, "exercise-card", ex)
 	}
 }
@@ -100,5 +103,70 @@ func HandleToggleStep(w http.ResponseWriter, r *http.Request) {
 	if !found {
 		ex.CompletedSteps = append(ex.CompletedSteps, step)
 	}
+
+	// ✅ SAUVEGARDE (Crucial)
+	if err := store.Save(); err != nil {
+		http.Error(w, "Erreur sauvegarde", http.StatusInternalServerError)
+		return
+	}
 	Tmpl.ExecuteTemplate(w, "exercise-detail", *ex)
+}
+
+// Action : Enregistrer une révision
+func HandleReview(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(r.PathValue("id"))
+	quality, _ := strconv.Atoi(r.URL.Query().Get("quality")) // 0=Oublié, 1=Dur, 3=Bien, 5=Facile
+
+	ex := store.FindExercise(id)
+	if ex == nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Calcul SM-2 adapté
+	now := time.Now()
+	ex.LastReviewed = &now
+
+	switch quality {
+	case 0: // ❌ OUBLIÉ (Again)
+		// Reset complet : retour à l'apprentissage actif
+		ex.IntervalDays = 0                              // Révision dans 10 minutes (même session)
+		ex.Repetitions = 0                               // Reset compteur
+		ex.EaseFactor = math.Max(1.3, ex.EaseFactor-0.3) // Forte pénalité
+		// Prochaine révision dans 10 minutes
+		ex.NextReviewAt = now.Add(10 * time.Minute)
+
+	case 1: // 😓 DUR
+		ex.IntervalDays = 1
+		ex.Repetitions++ // On compte quand même la répétition
+		ex.EaseFactor = math.Max(1.3, ex.EaseFactor-0.2)
+		ex.NextReviewAt = now.AddDate(0, 0, 1)
+
+	case 3: // 🙂 BIEN
+		if ex.IntervalDays == 0 {
+			ex.IntervalDays = 1 // Première révision réussie
+		} else {
+			ex.IntervalDays = ex.IntervalDays * 2
+		}
+		ex.Repetitions++
+		ex.NextReviewAt = now.AddDate(0, 0, ex.IntervalDays)
+
+	case 5: // 😎 FACILE
+		if ex.IntervalDays == 0 {
+			ex.IntervalDays = 4 // Saute directement à 4 jours
+		} else {
+			ex.IntervalDays = ex.IntervalDays * 3
+		}
+		ex.Repetitions++
+		ex.EaseFactor = math.Min(2.5, ex.EaseFactor+0.1)
+		ex.NextReviewAt = now.AddDate(0, 0, ex.IntervalDays)
+	}
+
+	// Sauvegarde
+	if err := store.Save(); err != nil {
+		http.Error(w, "Erreur sauvegarde", http.StatusInternalServerError)
+		return
+	}
+
+	Tmpl.ExecuteTemplate(w, "exercise-detail", ex)
 }

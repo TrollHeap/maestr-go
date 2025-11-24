@@ -17,6 +17,7 @@ func Routes() *http.ServeMux {
 	// --- GROUPE 2 : ACTIONS (POST) ---
 	mux.HandleFunc("POST /toggle-done", HandleToggleDone)
 	mux.HandleFunc("POST /exercise/{id}/toggle-step", HandleToggleStep)
+	mux.HandleFunc("POST /exercise/{id}/review", HandleReview)
 
 	// --- GROUPE 3 : ASSETS ---
 	mux.Handle("GET /public/", http.StripPrefix("/public/", http.FileServer(http.Dir("public"))))
