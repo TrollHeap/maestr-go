@@ -5,11 +5,22 @@ import (
 	"net/http"
 
 	"maestro/v2-refacto/internal/handlers"
+	"maestro/v2-refacto/internal/store"
 )
 
 func main() {
 	// A. Init Templates
 	handlers.InitTemplates()
+
+	// 2. Charge les données
+	if err := store.Load(); err != nil {
+		log.Fatalf("Erreur chargement données: %v", err)
+	}
+
+	// 3. Initialise avec des données par défaut si vide
+	if err := store.InitDefaultExercises(); err != nil {
+		log.Fatalf("Erreur initialisation: %v", err)
+	}
 
 	// B. Routeur V2 (Récupère le routeur)
 	mux := handlers.Routes() // <-- Capture le retour
