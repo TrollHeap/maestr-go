@@ -1,5 +1,5 @@
 {{define "exercise-detail"}}
-<div class="exercise-detail">
+<div id="exercise-detail" class="exercise-detail"> 
     <!-- Header -->
     <div class="exercise-detail__header">
         <h2 class="exercise-detail__title">{{.Title}}</h2>
@@ -26,42 +26,7 @@
     <hr class="exercise-detail__divider">
 
     <!-- Section Étapes -->
-    <div class="exercise-detail__steps">
-        <h3 class="exercise-detail__section-title">
-            [ ETAPES ] {{len .CompletedSteps}}/{{len .Steps}}
-        </h3>
-        
-        <div id="steps-container">
-            {{range $index, $step := .Steps}}
-            {{$isCompleted := false}}
-            {{range $.CompletedSteps}}
-                {{if eq . $index}}{{$isCompleted = true}}{{end}}
-            {{end}}
-            
-            <div class="exercise-detail__step {{if $isCompleted}}exercise-detail__step--completed{{end}}">
-                <label class="exercise-detail__step-label">
-                    <input 
-                        type="checkbox" 
-                        class="exercise-detail__step-checkbox"
-                        hx-post="/exercise/{{$.ID}}/toggle-step?step={{$index}}"
-                        hx-target="#exercise-detail"
-                        hx-swap="innerHTML"
-                        {{if $isCompleted}}checked{{end}}
-                    >
-                    
-                    <span class="exercise-detail__step-number {{if $isCompleted}}exercise-detail__step-number--completed{{end}}">
-                        {{add $index 1}}
-                    </span>
-                    
-                    <span class="exercise-detail__step-text {{if $isCompleted}}exercise-detail__step-text--completed{{end}}">
-                        {{$step}}
-                    </span>
-                </label>
-            </div>
-            {{end}}
-        </div>
-    </div>
-
+    {{template "steps-exo" .}}
     <hr class="exercise-detail__divider">
 
     <!-- Section Contenu -->
@@ -71,65 +36,7 @@
     </div>
 
 {{if .Done}}
-<div style="margin-top: 20px; padding: 12px; background: #fff; border: 1px solid #ddd; border-radius: 3px; font-family: monospace;">
-    <p style="font-weight: bold; margin-bottom: 12px; font-size: 13px; color: #666;">REVIEW:</p>
-    <div style="display: flex; gap: 8px;">
-        
-        <!-- Oublié (Again) -->
-        <button 
-            hx-post="/exercise/{{.ID}}/review?quality=0" 
-            hx-target="#exercise-detail" 
-            style="flex: 1; padding: 8px; background: none; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-family: monospace; transition: all 0.2s; font-size: 1.1em;"
-            onmouseover="this.style.background='#e8e8e8'; this.style.borderColor='#666';"
-            onmouseout="this.style.background='none'; this.style.borderColor='#ddd';"
-            title="Oublié - Revoir dans 10min"
-        >
-            ∅ Oublié 
-        </button>
-        
-        <!-- Dur -->
-        <button 
-            hx-post="/exercise/{{.ID}}/review?quality=1" 
-            hx-target="#exercise-detail" 
-            style="flex: 1; padding: 8px; background: none; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-family: monospace; transition: all 0.2s; font-size: 1.1em;"
-            onmouseover="this.style.background='#e8e8e8'; this.style.borderColor='#666';"
-            onmouseout="this.style.background='none'; this.style.borderColor='#ddd';"
-            title="Difficile - Revoir demain"
-        >
-             ⊡ Difficile
-            </button>
-        
-        <!-- Bien -->
-        <button 
-            hx-post="/exercise/{{.ID}}/review?quality=3" 
-            hx-target="#exercise-detail" 
-            style="flex: 1; padding: 8px; background: none; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-family: monospace; transition: all 0.2s; font-size: 1.1em;"
-            onmouseover="this.style.background='#e8e8e8'; this.style.borderColor='#666';"
-            onmouseout="this.style.background='none'; this.style.borderColor='#ddd';"
-            title="Bien - Doubler l'intervalle"
-        >
-            ⊞ Avec effort
-        </button>
-        
-        <!-- Facile -->
-        <button 
-            hx-post="/exercise/{{.ID}}/review?quality=5" 
-            hx-target="#exercise-detail" 
-            style="flex: 1; padding: 8px; background: none; border: 1px solid #ddd; border-radius: 3px; cursor: pointer; font-family: monospace; transition: all 0.2s; font-size: 1.1em;"
-            onmouseover="this.style.background='#e8e8e8'; this.style.borderColor='#666';"
-            onmouseout="this.style.background='none'; this.style.borderColor='#ddd';"
-            title="Facile - Tripler l'intervalle"
-        >
-            ⊕  Facile
-                    </button>
-    </div>
-    
-    {{if .NextReviewAt}}
-    <p style="margin-top: 12px; font-size: 12px; color: #666; font-family: monospace;">
-        ⟫ Next: {{.NextReviewAt.Format "2006-01-02 15:04"}}
-    </p>
-    {{end}}
-</div>
+    {{template "review-button" .}}
 {{end}}
 </div>
 {{end}}
