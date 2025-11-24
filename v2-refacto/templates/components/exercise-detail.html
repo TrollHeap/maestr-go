@@ -21,9 +21,6 @@
             {{len .CompletedSteps}}/{{len .Steps}} étapes
         </span>
         
-        <span class="badge badge--{{if .Done}}status-done{{else if gt (len .CompletedSteps) 0}}status-wip{{else}}status-todo{{end}}">
-            {{if .Done}}DONE{{else if gt (len .CompletedSteps) 0}}WIP{{else}}TODO{{end}}
-        </span>
     </div>
 
     <hr class="exercise-detail__divider">

@@ -1,37 +1,93 @@
 {{define "filters"}}
-<div class="filters-bar" style="margin-bottom: 20px; padding: 10px; background: #f0f0f0; border-radius: 8px;">
-    <strong>Filtrer par statut :</strong>
+<div class="filters-bar" 
+    style="margin-bottom: 20px; 
+    padding: 10px; 
+    background: #f0f0f0; 
+    border-radius: 8px; 
+    display: flex; 
+    gap: 20px; 
+    align-items: center; 
+    flex-wrap: wrap;">
     
-    <!-- Bouton "Tous" -->
-    <button 
-        hx-get="/exercises" 
-        hx-target="#exercise-list"
-        class="filter-btn"
-        name="status" 
-        value=""
-    >
-        Tout voir
-    </button>
+    <!-- 1. FILTRE STATUT -->
+    <div class="filter-group" id="status-filters" style="display: inline-flex; gap: 8px; align-items: center;">
+        <strong style="margin-right: 5px; font-size: 13px; color: #666;">Statut:</strong>
+        
+        <button 
+            hx-get="/exercises" 
+            hx-target="#exercise-list"
+            class="filter-btn active" 
+            onclick="setActive(this)"
+            style="background: #e8f5e9; border: 1px solid #2e7d32; color: #2e7d32; padding: 4px 10px; cursor: pointer; transition: all 0.2s; border-radius: 3px; font-weight: bold;"
+        >
+            ∀
+        </button>
+        
+        <button 
+            hx-get="/exercises?status=todo" 
+            hx-target="#exercise-list"
+            class="filter-btn"
+            onclick="setActive(this)"
+            style="background: none; border: 1px solid #ddd; color: #000; padding: 4px 10px; cursor: pointer; transition: all 0.2s; border-radius: 3px;"
+        >
+            [∅]
+        </button>
+        
+        <button 
+            hx-get="/exercises?status=done" 
+            hx-target="#exercise-list"
+            class="filter-btn"
+            onclick="setActive(this)"
+            style="background: none; border: 1px solid #ddd; color: #000; padding: 4px 10px; cursor: pointer; transition: all 0.2s; border-radius: 3px;"
+        >
+            [✓]
+        </button>
+    </div>
 
-    <!-- Bouton "À faire" -->
-    <button 
-        hx-get="/exercises?status=todo" 
-        hx-target="#exercise-list"
-        class="filter-btn"
-    >
-        ⏳ À faire
-    </button>
+    <!-- 2. FILTRE DOMAINE -->
+    <div class="filter-group" style="display: flex; gap: 8px; align-items: center;">
+        <label for="domain-filter" style="font-size: 13px; color: #666;">Domain:</label>
+        <select 
+            id="domain-filter" 
+            name="domain" 
+            hx-get="/exercises" 
+            hx-target="#exercise-list" 
+            hx-trigger="change"
+            style="background: none; border: 1px solid #ddd; padding: 4px 8px; cursor: pointer; border-radius: 3px; transition: all 0.2s;"
+            onfocus="this.style.borderColor='#2e7d32'; this.style.background='#e8f5e9'; this.style.color='#2e7d32';"
+            onblur="if(this.value===''){this.style.borderColor='#ddd'; this.style.background='none'; this.style.color='#000';} else {this.style.borderColor='#2e7d32'; this.style.background='#e8f5e9'; this.style.color='#2e7d32';}"
+        >
+            <option value="">all</option>
+            <option value="Algorithmes">algo</option>
+            <option value="Go">go</option>
+            <option value="Linux">linux</option>
+            <option value="Architecture">arch</option>
+        </select>
+    </div>
 
-    <!-- Bouton "Terminé" -->
-    <button 
-        hx-get="/exercises?status=done" 
-        hx-target="#exercise-list"
-        class="filter-btn"
-    >
-        ✅ Terminé
-    </button>
-    
-    <!-- Indicateur visuel (spinner) -->
-    <span class="htmx-indicator">Chargement...</span>
+    <!-- 3. INDICATEUR -->
+    <span class="htmx-indicator" style="margin-left: auto; color: #666;">⏳ Chargement...</span>
+
+    <!-- SCRIPT JS MINIMALISTE -->
+    <script>
+        function setActive(clickedBtn) {
+            // 1. Reset tous les boutons (style par défaut)
+            const container = document.getElementById('status-filters');
+            const buttons = container.querySelectorAll('.filter-btn');
+            
+            buttons.forEach(btn => {
+                btn.style.background = 'none';
+                btn.style.borderColor = '#ddd';
+                btn.style.color = '#000';
+                btn.style.fontWeight = 'normal';
+            });
+
+            // 2. Applique le style VERT au bouton cliqué
+            clickedBtn.style.background = '#e8f5e9'; // Vert très pâle
+            clickedBtn.style.borderColor = '#2e7d32'; // Vert forêt
+            clickedBtn.style.color = '#2e7d32';
+            clickedBtn.style.fontWeight = 'bold';
+        }
+    </script>
 </div>
 {{end}}
