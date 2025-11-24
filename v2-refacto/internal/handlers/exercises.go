@@ -32,16 +32,23 @@ func HandleDashboard(w http.ResponseWriter, r *http.Request) {
 }
 
 // Vue : Liste seule (Fragment)
+// Vue : Liste seule (Fragment)
 func HandleListExercice(w http.ResponseWriter, r *http.Request) {
-	// 1. Lire le filtre
+	// 1. Lire TOUS les paramètres de filtre
 	status := r.URL.Query().Get("status") // "todo", "done" ou vide
+	domain := r.URL.Query().Get("domain") // "Algorithmes", "Go", etc. ou vide
 
-	// 2. Appeler le store avec le filtre (Crée cette fonction dans store si elle manque)
-	// Astuce : Tu peux réutiliser ExerciseFilter ici
-	filter := models.ExerciseFilter{Status: status}
+	// 2. Construire le filtre composite
+	filter := models.ExerciseFilter{
+		Status: status,
+		Domain: domain,
+		// Difficulty: 0 (pas encore utilisé, mais prêt pour Phase 2)
+	}
+
+	// 3. Appeler le store avec le filtre complet
 	filteredList := store.GetFiltered(filter)
 
-	// 3. Renvoyer le fragment
+	// 4. Renvoyer le fragment
 	Tmpl.ExecuteTemplate(w, "exercise-list", filteredList)
 }
 
