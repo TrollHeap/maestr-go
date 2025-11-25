@@ -9,26 +9,29 @@ import (
 )
 
 func main() {
-	// A. Init Templates
-	handlers.InitTemplates()
+	// 1. INIT TEMPLATES (AVEC GESTION D'ERREUR !)
+	if err := handlers.InitTemplates(); err != nil {
+		log.Fatalf("❌ Erreur chargement templates: %v", err)
+	}
+	log.Println("✅ Templates chargés")
 
-	// 2. Charge les données
+	// 2. CHARGE LES DONNÉES
 	if err := store.Load(); err != nil {
-		log.Fatalf("Erreur chargement données: %v", err)
+		log.Fatalf("❌ Erreur chargement données: %v", err)
 	}
+	log.Println("✅ Données chargées")
 
-	// 3. Initialise avec des données par défaut si vide
+	// 3. INITIALISE AVEC DONNÉES PAR DÉFAUT SI VIDE
 	if err := store.InitDefaultExercises(); err != nil {
-		log.Fatalf("Erreur initialisation: %v", err)
+		log.Fatalf("❌ Erreur initialisation: %v", err)
 	}
+	log.Println("✅ Exercices initialisés")
 
-	// B. Routeur V2 (Récupère le routeur)
-	mux := handlers.Routes() // <-- Capture le retour
+	// 4. ROUTEUR
+	mux := handlers.Routes()
+	log.Println("✅ Routes configurées")
 
-	// C. Lancement (Passe le routeur)
-	log.Println("Serveur sur http://localhost:8080")
-
-	// ❌ http.ListenAndServe(":8080") // ERREUR : Il manque le mux !
-	// ✅ CORRECTION :
+	// 5. LANCEMENT SERVEUR
+	log.Println("🚀 Serveur sur http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }
