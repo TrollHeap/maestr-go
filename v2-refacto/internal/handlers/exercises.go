@@ -1,37 +1,15 @@
 package handlers
 
 import (
-	"html/template"
 	"math"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"maestro/v2-refacto/internal/models"
 	"maestro/v2-refacto/internal/store"
 	"maestro/v2-refacto/internal/validator"
 )
-
-var Tmpl *template.Template
-
-func InitTemplates() {
-	Tmpl = template.New("").Funcs(template.FuncMap{
-		"add":   func(a, b int) int { return a + b },
-		"lower": strings.ToLower,
-	})
-	Tmpl = template.Must(Tmpl.ParseGlob("templates/**/*.html"))
-}
-
-// Vue : Dashboard complet
-func HandleDashboard(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
-	data := map[string]any{"Exercises": store.GetAll()}
-	Tmpl.ExecuteTemplate(w, "base", data)
-}
 
 // Vue : Liste seule (Fragment)
 // Vue : Liste seule (Fragment)
