@@ -1,36 +1,40 @@
-{{template "base" .}}
-
-{{define "content"}}
+{{define "dashboard"}}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{block "title" .}}Mon App Go{{end}}</title>
     
-    <div class="container" style="display: flex; gap: 20px;">
-        
-        <!-- COLONNE GAUCHE : Navigation & Liste -->
-        <div class="sidebar" style="flex: 1; min-width: 300px;">
-            
-            <!-- 1. La Télécommande (Filtres) -->
-            <div class="filters-section" style="margin-bottom: 15px;">
-                {{template "filters" .}}
-            </div>
-
-            <!-- 2. La TV (Liste filtrable) -->
-            <!-- L'ID "exercise-list" est la cible des filtres -->
-            <div id="exercise-list" class="exercise-list-container">
-                {{template "exercise-list" .Exercises}}
-            </div>
+    <!-- CSS & HTMX -->
+    <link rel="stylesheet" href="/public/css/exercice.css">
+    <link rel="stylesheet" href="/public/css/badges.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <!-- Animation de chargement HTMX (Optionnel mais pro) -->
+    <style>
+        .htmx-indicator{display:none} 
+        .htmx-request .htmx-indicator{display:inline;} 
+        .htmx-request.htmx-indicator{display:inline;}
+    </style>
+</head>
+<body>
+   {{template "navbar" .}}
+    <div class="container">
+        <div class="sidebar">
+            {{template "exercise-list" .Exercises}}
         </div>
 
-        <!-- COLONNE DROITE : Zone de travail -->
-        <div class="main-content" style="flex: 2; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            
-            <!-- Zone cible pour le détail (hx-target="#exercise-detail") -->
+        <div class="main-content">
             <div id="exercise-detail">
-                <div class="empty-state" style="text-align: center; padding: 40px; color: #666;">
-                    <h2 style="font-size: 3rem; margin: 0;">👈</h2>
-                    <h3>Sélectionnez un exercice</h3>
-                    <p>Utilisez la liste à gauche pour naviguer.</p>
-                </div>
+                <h2>👈 Sélectionnez un exercice</h2>
             </div>
-
         </div>
     </div>
+
+    <footer>
+        <p>&copy; 2025 - Go v2</p>
+    </footer>
+</body>
+</html>
 {{end}}

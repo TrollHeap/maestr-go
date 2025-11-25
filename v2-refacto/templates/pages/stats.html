@@ -1,0 +1,103 @@
+{{define "stats"}}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistiques - Terminal v2</title>
+    
+    <link rel="stylesheet" href="/public/css/stats.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <style>
+        .htmx-indicator{display:none} 
+        .htmx-request .htmx-indicator{display:inline;} 
+        .htmx-request.htmx-indicator{display:inline;}
+    </style>
+</head>
+<body>
+    <!-- Scan line effect -->
+    <div class="scan-line"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <a href="/">[HOME]</a>
+        <a href="/stats">[STATS]</a>
+        <a href="/planner">[PLANNER]</a>
+        <a href="/exercises">[EXERCISES]</a>
+    </nav>
+
+    <!-- Header -->
+    <div class="terminal-header">
+        <div class="terminal-title">
+            ╔═══════════════════════════════════╗<br>
+            ║   SYSTÈME DE STATISTIQUES v2.0   ║<br>
+            ╚═══════════════════════════════════╝
+        </div>
+        <div class="terminal-subtitle">
+            &gt; INITIALISATION COMPLÈTE | UPTIME: <span id="uptime">00:00:00</span> | STATUS: <span class="blink">ONLINE</span>
+        </div>
+    </div>
+
+    <!-- Métriques principales (chargées via HTMX) -->
+    <div 
+        id="stats-metrics" 
+        hx-get="/stats/metrics" 
+        hx-trigger="load"
+        hx-swap="innerHTML"
+    >
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-label">║ CHARGEMENT...</div>
+                <div class="stat-value">⟳</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Répartition par domaine (chargée via HTMX) -->
+    <div class="ascii-section">
+        <div class="ascii-title">RÉPARTITION PAR DOMAINE</div>
+        <div 
+            id="domain-chart" 
+            hx-get="/stats/domains" 
+            hx-trigger="load"
+            hx-swap="innerHTML"
+        >
+            <div class="loading">▓▓▓ CHARGEMENT ▓▓▓</div>
+        </div>
+    </div>
+
+    <!-- Répartition par difficulté (chargée via HTMX) -->
+    <div class="ascii-section">
+        <div class="ascii-title">RÉPARTITION PAR DIFFICULTÉ</div>
+        <div 
+            id="difficulty-chart" 
+            hx-get="/stats/difficulties" 
+            hx-trigger="load"
+            hx-swap="innerHTML"
+        >
+            <div class="loading">▓▓▓ CHARGEMENT ▓▓▓</div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="terminal-footer">
+        ┌────────────────────────────────────────────┐<br>
+        │ © 2025 GO v2 TERMINAL | ALL SYSTEMS NOMINAL │<br>
+        └────────────────────────────────────────────┘
+    </div>
+
+    <script>
+        // Uptime counter (minimal JS)
+        let uptimeSeconds = 0;
+        setInterval(() => {
+            uptimeSeconds++;
+            const hours = Math.floor(uptimeSeconds / 3600).toString().padStart(2, '0');
+            const minutes = Math.floor((uptimeSeconds % 3600) / 60).toString().padStart(2, '0');
+            const seconds = (uptimeSeconds % 60).toString().padStart(2, '0');
+            document.getElementById('uptime').textContent = `${hours}:${minutes}:${seconds}`;
+        }, 1000);
+    </script>
+</body>
+</html>
+{{end}}

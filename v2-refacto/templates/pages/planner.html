@@ -1,0 +1,84 @@
+{{define "planner"}}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planner - Terminal v2</title>
+    <link rel="stylesheet" href="/public/css/exercice.css">
+    <link rel="stylesheet" href="/public/css/badges.css">
+    <link rel="stylesheet" href="/public/css/planner.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body>
+    <!-- Scan line effect -->
+    <div class="scan-line"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <a href="/">[HOME]</a>
+        <a href="/stats">[STATS]</a>
+        <a href="/planner">[PLANNER]</a>
+        <a href="/exercises">[EXERCISES]</a>
+    </nav>
+
+    <!-- Header -->
+    <div class="terminal-header">
+        <div class="terminal-title">
+            ╔═══════════════════════════════════╗<br>
+            ║    SYSTÈME PLANNER v2.0          ║<br>
+            ╚═══════════════════════════════════╝
+        </div>
+        <div class="terminal-subtitle">
+            &gt; MODE: <span id="current-mode">JOUR</span> | DATE: <span id="current-date">{{.Date.Format "2006-01-02"}}</span> | STATUS: <span class="blink">ONLINE</span>
+        </div>
+    </div>
+
+    <!-- Tab Navigation HTMX -->
+    <div class="tab-container">
+        <div class="tab-nav">
+            <button 
+                class="tab-btn active" 
+                hx-get="/planner/day?date={{.Date.Format "2006-01-02"}}"
+                hx-target="#tab-content-area"
+                hx-swap="innerHTML"
+            >[JOUR]</button>
+            
+            <button 
+                class="tab-btn" 
+                hx-get="/planner/week"
+                hx-target="#tab-content-area"
+                hx-swap="innerHTML"
+            >[SEMAINE]</button>
+            
+            <button 
+                class="tab-btn" 
+                hx-get="/planner/month"
+                hx-target="#tab-content-area"
+                hx-swap="innerHTML"
+            >[MOIS]</button>
+        </div>
+
+        <!-- Zone de remplacement dynamique -->
+        <div id="tab-content-area" class="tab-content">
+            {{template "day-schedule" .}}
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="terminal-footer">
+        ┌────────────────────────────────────────────┐<br>
+        │ © 2025 GO v2 TERMINAL | ALL SYSTEMS NOMINAL │<br>
+        └────────────────────────────────────────────┘
+    </div>
+
+    <script>
+        // Minimal JS pour affichage date uniquement
+        document.addEventListener('DOMContentLoaded', function() {
+            const now = new Date();
+            document.getElementById('current-date').textContent = now.toISOString().split('T')[0];
+        });
+    </script>
+</body>
+</html>
+{{end}}
