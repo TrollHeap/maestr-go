@@ -1,0 +1,11 @@
+{{define "stats-difficulties"}}
+<div class="difficulty-grid">
+    {{range .Difficulties}}
+    <div class="difficulty-box">
+        <div class="difficulty-symbol">{{.Symbol}}</div>
+        <div class="difficulty-level">{{.Label}}</div>
+        <div class="difficulty-count">{{.Count}}</div>
+    </div>
+    {{end}}
+</div>
+{{end}}

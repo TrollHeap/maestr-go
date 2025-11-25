@@ -1,0 +1,36 @@
+{{define "day-schedule"}}
+<div class="date-navigation">
+    <button 
+        class="date-nav-btn"
+        hx-get="/planner/day?date={{.Date.AddDate 0 0 -1 | formatDate}}"
+        hx-target="#tab-content-area"
+        hx-swap="innerHTML"
+    >◄ PRÉCÉDENT</button>
+    
+    <div class="current-date">{{.Date.Format "Monday 02 January 2006" | upper}}</div>
+    
+    <button 
+        class="date-nav-btn"
+        hx-get="/planner/day?date={{.Date.AddDate 0 0 1 | formatDate}}"
+        hx-target="#tab-content-area"
+        hx-swap="innerHTML"
+    >SUIVANT ►</button>
+</div>
+
+<div class="planner-grid">
+    {{range .TimeSlots}}
+    <div class="time-slot">
+        <div class="time-label">[{{.StartTime}} - {{.EndTime}}]</div>
+        <div class="task-list">
+            {{range .Tasks}}
+            <div class="task-item {{if .Completed}}completed{{end}}">
+                <span>{{if .Completed}}☑{{else}}▣{{end}} {{.Title}}</span>
+                <span class="task-priority {{.Priority}}">[{{.Priority | upper}}]</span>
+            </div>
+            {{end}}
+        </div>
+        <button class="add-task-btn">+ AJOUTER TÂCHE</button>
+    </div>
+    {{end}}
+</div>
+{{end}}

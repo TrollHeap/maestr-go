@@ -1,0 +1,33 @@
+{{define "week-grid"}}
+<div class="date-navigation">
+    <button 
+        class="date-nav-btn"
+        hx-get="/planner/week?week={{.WeekNumber | add -1}}"
+        hx-target="#tab-content-area"
+        hx-swap="innerHTML"
+    >◄ SEMAINE PRÉCÉDENTE</button>
+    
+    <div class="current-date">SEMAINE {{.WeekNumber}} ({{.StartDate.Format "02 JAN"}} - {{.EndDate.Format "02 JAN 2006"}})</div>
+    
+    <button 
+        class="date-nav-btn"
+        hx-get="/planner/week?week={{.WeekNumber | add 1}}"
+        hx-target="#tab-content-area"
+        hx-swap="innerHTML"
+    >SEMAINE SUIVANTE ►</button>
+</div>
+
+<div class="week-grid">
+    {{range .Days}}
+    <div class="day-box {{if .IsToday}}today{{end}}">
+        <div class="day-header">{{.DayName}}</div>
+        <div class="day-number">{{.DayNumber}}</div>
+        <div class="day-tasks">
+            {{range .Tasks}}
+            <div class="day-task">{{.Title}}</div>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+</div>
+{{end}}

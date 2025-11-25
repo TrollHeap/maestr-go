@@ -1,0 +1,31 @@
+{{define "stats-metrics"}}
+<div class="stats-grid">
+    <div class="stat-box">
+        <div class="stat-label">║ TOTAL EXERCICES</div>
+        <div class="stat-value">{{.Total}}</div>
+        <div class="stat-bar">
+            <div class="stat-bar-text">100%</div>
+            <div class="stat-bar-fill" style="width: 100%"></div>
+        </div>
+    </div>
+
+    <div class="stat-box">
+        <div class="stat-label">║ TERMINÉS</div>
+        <div class="stat-value">{{.Completed}}</div>
+        <div class="stat-bar">
+            <div class="stat-bar-text">{{.CompletionRate}}%</div>
+            <div class="stat-bar-fill" style="width: {{.CompletionRate}}%"></div>
+        </div>
+    </div>
+
+    <div class="stat-box">
+        <div class="stat-label">║ EN COURS</div>
+        <div class="stat-value">{{.WIP}}</div>
+    </div>
+
+    <div class="stat-box">
+        <div class="stat-label">║ À FAIRE</div>
+        <div class="stat-value">{{.Todo}}</div>
+    </div>
+</div>
+{{end}}
