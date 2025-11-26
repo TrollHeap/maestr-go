@@ -1,0 +1,13 @@
+{{define "exercise-list"}}
+    {{if .}}
+        {{range .}}
+            {{template "exo-card" .}}
+        {{end}}
+    {{else}}
+        <!-- ÉTAT VIDE : Slice vide ou nil -->
+        <div class="empty-state">
+            AUCUN EXERCICE TROUVÉ<br>
+            [ ! ] MODIFIEZ LES FILTRES
+        </div>
+    {{end}}
+{{end}}

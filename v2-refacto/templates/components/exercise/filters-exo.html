@@ -1,0 +1,65 @@
+{{define "filters-exo"}}
+<div class="filters-panel">
+    <div class="filters-title">FILTRES DE RECHERCHE</div>
+    <div class="filter-row">
+        <!-- ✅ NOUVEAU : Vue par priorité SRS -->
+        <div class="filter-group">
+            <label class="filter-label">[ VUE ]</label>
+            <select id="filter-view" name="view">
+                <option value="all">TOUS</option>
+                <option value="urgent">🔴 URGENT (Retard)</option>
+                <option value="today">🟠 AUJOURD'HUI</option>
+                <option value="upcoming">🟡 PROCHAINS JOURS</option>
+                <option value="active">🟢 EN COURS</option>
+                <option value="new">⚪ NOUVEAUX</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-label">[ DOMAINE ]</label>
+            <select id="filter-domain" name="domain">
+                <option value="">TOUS</option>
+                <option value="Go">GO</option>
+                <option value="Algorithmes">ALGORITHMES</option>
+                <option value="HTMX">HTMX</option>
+                <option value="Linux">LINUX</option>
+                <option value="Architecture">ARCHITECTURE</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-label">[ DIFFICULTÉ ]</label>
+            <select id="filter-difficulty" name="difficulty">
+                <option value="">TOUTES</option>
+                <option value="1">D1 - FACILE</option>
+                <option value="2">D2 - MOYEN</option>
+                <option value="3">D3 - DIFFICILE</option>
+                <option value="4">D4 - EXPERT</option>
+                <option value="5">D5 - EXTRÊME</option>
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label class="filter-label">[ ACTION ]</label>
+            <button 
+                hx-get="/exercises/list" 
+                hx-target="#exercise-container"
+                hx-swap="innerHTML"
+                hx-include="[name='view'], [name='domain'], [name='difficulty']"
+                hx-indicator="#loading-indicator">
+                [APPLIQUER]
+            </button>
+            <button 
+                hx-get="/exercises/reset"
+                hx-target="#exercise-container"
+                hx-swap="innerHTML"
+                onclick="document.getElementById('filter-view').value='all'; document.getElementById('filter-domain').value=''; document.getElementById('filter-difficulty').value='';">
+                [RESET]
+            </button>
+        </div>
+    </div>
+    <div id="loading-indicator" class="htmx-indicator">
+        &gt; CHARGEMENT... <span class="blink">█</span>
+    </div>
+</div>
+{{end}}

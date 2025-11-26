@@ -1,0 +1,24 @@
+{{define "stats-bar-exo"}}
+<div class="stats-bar">
+    <div class="stats-item">
+        <div class="stats-value" id="stat-urgent" style="color: #ff3333;">{{.UrgentCount}}</div>
+        <div class="stats-label">🔴 RETARD</div>
+    </div>
+    <div class="stats-item">
+        <div class="stats-value" id="stat-today" style="color: #ff9933;">{{.TodayCount}}</div>
+        <div class="stats-label">🟠 AUJOURD'HUI</div>
+    </div>
+    <div class="stats-item">
+        <div class="stats-value" id="stat-upcoming" style="color: #ffff66;">{{.UpcomingCount}}</div>
+        <div class="stats-label">🟡 3 JOURS</div>
+    </div>
+    <div class="stats-item">
+        <div class="stats-value" id="stat-active" style="color: #66ff66;">{{.ActiveCount}}</div>
+        <div class="stats-label">🟢 EN COURS</div>
+    </div>
+    <div class="stats-item">
+        <div class="stats-value" id="stat-new" style="color: #aaaaaa;">{{.NewCount}}</div>
+        <div class="stats-label">⚪ NOUVEAUX</div>
+    </div>
+</div>
+{{end}}
