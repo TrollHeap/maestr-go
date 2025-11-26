@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Terminal v2</title>
     <link rel="stylesheet" href="/public/css/dashboard.css">
+    <link rel="stylesheet" href="/public/css/visual-signature.css">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     
     <style>
@@ -17,7 +18,7 @@
 </head>
 <body>
     <!-- Scan line effect -->
-    <div class="scan-line"></div>
+    <!-- <div class="scan-line"></div> -->
 
     <!-- Navigation -->
     {{template "navbar" .}}
@@ -34,64 +35,15 @@
         </div>
     </div>
 
-    <!-- Recent Activity -->
-    <div class="activity-feed">
-        <div class="activity-feed__title">ACTIVITÉ RÉCENTE</div>
-        <div class="activity-item activity-item--urgent">
-            <div>⚠️ Révision en retard : "Gestion des Erreurs" (Go)</div>
-            <div class="activity-item__time">Il y a 2 heures</div>
-        </div>
-        <div class="activity-item activity-item--done">
-            <div>✓ Exercice terminé : "HTMX Filtres" (HTMX)</div>
-            <div class="activity-item__time">Il y a 5 heures</div>
-        </div>
-        <div class="activity-item">
-            <div>◐ Progression : "Types Personnalisés" (2/4 étapes)</div>
-            <div class="activity-item__time">Il y a 1 jour</div>
-        </div>
-        <div class="activity-item activity-item--done">
-            <div>✓ Révision réussie : "Tri Rapide" - Facile (→ 12 jours)</div>
-            <div class="activity-item__time">Il y a 2 jours</div>
+    <!-- ✨ NOUVEAU : Section exercices avec visual signatures -->
+    <div class="exercises-showcase">
+        <h2 class="section-title">📚 TES EXERCICES</h2>
+        <div class="exercises-grid">
+            {{range .Exercises}}
+                {{template "exercise-card" .}}
+            {{end}}
         </div>
     </div>
-
-    <div class="dashboard-grid">
-            <div class="stat-card stat-card--urgent">
-                <div class="stat-card__label">🔴 URGENT (RETARD)</div>
-                <div class="stat-card__value" id="stat-urgent">3</div>
-                <div class="stat-card__bar">
-                    <div class="stat-card__bar-text">Révision immédiate</div>
-                    <div class="stat-card__bar-fill" style="width: 30%; color: var(--color-urgent);"></div>
-                </div>
-            </div>
-
-            <div class="stat-card stat-card--today">
-                <div class="stat-card__label">🟠 AUJOURD'HUI</div>
-                <div class="stat-card__value" id="stat-today">5</div>
-                <div class="stat-card__bar">
-                    <div class="stat-card__bar-text">À réviser aujourd'hui</div>
-                    <div class="stat-card__bar-fill" style="width: 50%; color: #ffaa33;"></div>
-                </div>
-            </div>
-
-            <div class="stat-card stat-card--upcoming">
-                <div class="stat-card__label">🟡 PROCHAINS JOURS</div>
-                <div class="stat-card__value" id="stat-upcoming">8</div>
-                <div class="stat-card__bar">
-                    <div class="stat-card__bar-text">Dans les 3 jours</div>
-                    <div class="stat-card__bar-fill" style="width: 80%; color: var(--color-wip);"></div>
-                </div>
-            </div>
-
-            <div class="stat-card stat-card--active">
-                <div class="stat-card__label">🟢 EN COURS</div>
-                <div class="stat-card__value" id="stat-active">12</div>
-                <div class="stat-card__bar">
-                    <div class="stat-card__bar-text">Exercices WIP</div>
-                    <div class="stat-card__bar-fill" style="width: 60%; color: var(--color-done);"></div>
-                </div>
-            </div>
-        </div>
 
     <!-- Footer -->
     <div class="terminal-footer">
@@ -99,18 +51,6 @@
         │ © 2025 GO v2 TERMINAL | ALL SYSTEMS NOMINAL │<br>
         └────────────────────────────────────────────┘
     </div>
-
-    <script>
-        // Uptime counter
-        let uptimeSeconds = 0;
-        setInterval(() => {
-            uptimeSeconds++;
-            const hours = Math.floor(uptimeSeconds / 3600).toString().padStart(2, '0');
-            const minutes = Math.floor((uptimeSeconds % 3600) / 60).toString().padStart(2, '0');
-            const seconds = (uptimeSeconds % 60).toString().padStart(2, '0');
-            document.getElementById('uptime').textContent = `${hours}:${minutes}:${seconds}`;
-        }, 1000);
-    </script>
 </body>
 </html>
 {{end}}

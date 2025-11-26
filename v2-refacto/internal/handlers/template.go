@@ -12,10 +12,9 @@ var Tmpl *template.Template
 func InitTemplates() error {
 	var err error
 
-	// Création du template avec fonctions custom (optionnel)
 	Tmpl = template.New("").Funcs(template.FuncMap{
 		"formatDate": func(t time.Time) string {
-			return t.Format("2006-01-02")
+			return t.Format("02 Jan 2006")
 		},
 		"upper": strings.ToUpper,
 		"add": func(a, b int) int {
@@ -23,6 +22,14 @@ func InitTemplates() error {
 		},
 		"repeat": strings.Repeat,
 		"lower":  strings.ToLower,
+		// ✨ NOUVEAU : Génère range [0, n-1]
+		"until": func(n int) []int {
+			result := make([]int, n)
+			for i := range n {
+				result[i] = i
+			}
+			return result
+		},
 	})
 
 	Tmpl, err = Tmpl.ParseGlob("templates/pages/*.html")
