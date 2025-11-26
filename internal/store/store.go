@@ -7,7 +7,7 @@ import (
 	"sort"
 	"time"
 
-	"maestro/v2-refacto/internal/models"
+	"maestro/internal/models"
 )
 
 var exercises = []models.Exercise{}

@@ -3,7 +3,7 @@ package config
 import (
 	"net/http"
 
-	"maestro/v2-refacto/internal/handlers"
+	"maestro/internal/handlers"
 )
 
 // Routes définit et RETOURNE le routeur configuré

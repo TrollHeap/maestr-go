@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	"maestro/v2-refacto/internal/config"
-	"maestro/v2-refacto/internal/handlers"
-	"maestro/v2-refacto/internal/store"
+	"maestro/internal/config"
+	"maestro/internal/handlers"
+	"maestro/internal/store"
 )
 
 func main() {

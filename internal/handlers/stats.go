@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"maestro/v2-refacto/internal/models"
+	"maestro/internal/models"
 )
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

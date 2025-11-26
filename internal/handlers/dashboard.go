@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"maestro/v2-refacto/internal/store"
+	"maestro/internal/store"
 )
 
 // internal/handlers/exercises.go

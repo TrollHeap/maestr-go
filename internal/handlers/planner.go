@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"maestro/v2-refacto/internal/models"
+	"maestro/internal/models"
 )
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

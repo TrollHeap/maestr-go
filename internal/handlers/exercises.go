@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"maestro/v2-refacto/internal/models"
-	"maestro/v2-refacto/internal/store"
-	"maestro/v2-refacto/internal/validator"
+	"maestro/internal/models"
+	"maestro/internal/store"
+	"maestro/internal/validator"
 )
 
 // Vue : Page complète (affiche toute la structure HTML)
