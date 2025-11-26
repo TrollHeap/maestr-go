@@ -2,9 +2,10 @@ package models
 
 import "time"
 
-// Exercise représente un exercice d'apprentissage
+// Exercise représente un exercice d'apprentissage avec Spaced Repetition
 type Exercise struct {
-	ID          string   `json:"id"`
+	// Identité
+	ID          int      `json:"id"` // On garde int pour la simplicité routing
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
 	Domain      string   `json:"domain"`
@@ -12,88 +13,82 @@ type Exercise struct {
 	Steps       []string `json:"steps"`
 	Content     string   `json:"content"`
 
-	// Spaced Repetition (SM-2)
-	Completed      bool       `json:"completed"`
-	CompletedSteps []int      `json:"completed_steps"`
-	LastReviewed   *time.Time `json:"last_reviewed"`
-	EaseFactor     float64    `json:"ease_factor"` // 1.3 - 2.5
-	IntervalDays   int        `json:"interval_days"`
-	Repetitions    int        `json:"repetitions"`
+	// Progression Utilisateur
+	Done           bool  `json:"done"`            // Marqué manuellement (ton système actuel)
+	CompletedSteps []int `json:"completed_steps"` // Indices des étapes validées
 
-	// ✅ ADHD features - AJOUT DES CHAMPS MANQUANTS
-	SkippedCount int        `json:"skipped_count"`
-	LastSkipped  *time.Time `json:"last_skipped"` // ✅ AJOUTÉ
-	Deleted      bool       `json:"deleted"`
-	DeletedAt    *time.Time `json:"deleted_at"`
+	// 🔥 Spaced Repetition (SM-2 Algorithm)
+	LastReviewed *time.Time `json:"last_reviewed"` // Dernière révision
+	NextReviewAt time.Time  `json:"next_review_at"`
+	EaseFactor   float64    `json:"ease_factor"`   // 1.3 - 2.5 (facilité mémorisation)
+	IntervalDays int        `json:"interval_days"` // Prochaine révision dans X jours
+	Repetitions  int        `json:"repetitions"`   // Nombre de révisions réussies
 
-	// Timestamps
+	// 🔥 ADHD Features (Anti-Blocage)
+	SkippedCount int        `json:"skipped_count"` // Combien de fois ignoré
+	LastSkipped  *time.Time `json:"last_skipped"`  // Dernière fois ignoré (flag rouge si > 7 jours)
+
+	// Soft Delete (Archivage)
+	Deleted   bool       `json:"deleted"`
+	DeletedAt *time.Time `json:"deleted_at"`
+
+	// Timestamps (Audit)
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// ReviewInput représente une révision d'exercice
-type ReviewInput struct {
-	Rating int `json:"rating"` // 1-4
+type ExerciseFilter struct {
+	View       string // "all", "urgent", "today", "upcoming", "active", "new"
+	Domain     string // "Go", "Algorithmes", etc.
+	Difficulty int    // 1-5
 }
 
-// ReviewResponse représente la réponse après révision
-type ReviewResponse struct {
-	Exercise   Exercise   `json:"exercise"`
-	NextReview *time.Time `json:"next_review"`
+// ========================================
+// 2. MÉTHODES DE LA STRUCT (Juste en dessous)
+// ========================================
+
+// AllStepsCompleted vérifie si toutes les étapes sont validées
+func (e *Exercise) AllStepsCompleted() bool {
+	if len(e.Steps) == 0 {
+		return false
+	}
+	return len(e.CompletedSteps) == len(e.Steps)
 }
 
-// ✅ Stats avec ByDomain
-type Stats struct {
-	Total      int                   `json:"total"`
-	Completed  int                   `json:"completed"`
-	InProgress int                   `json:"in_progress"`
-	DueReview  int                   `json:"due_review"`
-	ByDomain   map[string]DomainStat `json:"by_domain"` // ✅ AJOUTÉ
+// IsDueForReview vérifie si l'exercice doit être révisé aujourd'hui (Spaced Repetition)
+func (e *Exercise) IsDueForReview() bool {
+	if e.LastReviewed == nil {
+		return true // Jamais révisé = due
+	}
+	nextReview := e.LastReviewed.AddDate(0, 0, e.IntervalDays)
+	return time.Now().After(nextReview)
 }
 
-// ✅ DomainStat pour les stats par domaine
-type DomainStat struct {
-	Completed int     `json:"completed"`
-	Total     int     `json:"total"`
-	Mastery   float64 `json:"mastery"` // Pourcentage 0-100
+// IsAtRisk détecte si l'exercice est ignoré depuis trop longtemps (ADHD flag)
+func (e *Exercise) IsAtRisk() bool {
+	if e.LastSkipped == nil {
+		return false
+	}
+	return time.Since(*e.LastSkipped) > 7*24*time.Hour // 7 jours sans toucher
 }
 
-// PlannedSession représente une session planifiée
-type PlannedSession struct {
-	ID          string    `json:"id"`
-	Date        time.Time `json:"date"`
-	TimeSlot    string    `json:"time_slot"` // morning, afternoon, evening
-	ExerciseIDs []string  `json:"exercise_ids"`
-	Duration    int       `json:"duration"` // minutes
-	Status      string    `json:"status"`   // planned, completed, missed
-	Notes       string    `json:"notes"`
-}
-
-// DailyPlan représente le plan d'une journée
-type DailyPlan struct {
-	Date         string           `json:"date"`
-	Sessions     []PlannedSession `json:"sessions"`
-	TotalMinutes int              `json:"total_minutes"`
-	Completed    int              `json:"completed"`
-	Total        int              `json:"total"`
-}
-
-// WeeklyPlan représente le plan d'une semaine
-type WeeklyPlan struct {
-	StartDate    string      `json:"start_date"`
-	EndDate      string      `json:"end_date"`
-	Days         []DailyPlan `json:"days"`
-	TotalMinutes int         `json:"total_minutes"`
-	Completed    int         `json:"completed"`
-	Total        int         `json:"total"`
-}
-
-// PlannerStats représente les statistiques du planner
-type PlannerStats struct {
-	TodayPlanned    int     `json:"today_planned"`
-	TodayCompleted  int     `json:"today_completed"`
-	WeekPlanned     int     `json:"week_planned"`
-	WeekCompleted   int     `json:"week_completed"`
-	CompletionRate  float64 `json:"completion_rate"`
-	AverageDuration int     `json:"average_duration"`
+// Dans models/exercise.go
+// Dans models/exercise.go
+func (e *Exercise) MasteryLevel() string {
+	if e.Repetitions == 0 {
+		return "[░░░░░] 0%" // Jamais révisé
+	}
+	if e.Repetitions >= 6 && e.EaseFactor >= 2.3 {
+		return "[█████] 100%" // Maîtrise totale
+	}
+	if e.Repetitions >= 4 && e.EaseFactor >= 2.1 {
+		return "[████░] 80%"
+	}
+	if e.Repetitions >= 2 && e.EaseFactor >= 1.9 {
+		return "[███░░] 60%"
+	}
+	if e.Repetitions >= 1 {
+		return "[██░░░] 40%"
+	}
+	return "[█░░░░] 20%" // Premier essai
 }
