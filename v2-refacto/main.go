@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"maestro/v2-refacto/internal/config"
 	"maestro/v2-refacto/internal/handlers"
 	"maestro/v2-refacto/internal/store"
 )
@@ -28,7 +29,7 @@ func main() {
 	log.Println("✅ Exercices initialisés")
 
 	// 4. ROUTEUR
-	mux := handlers.Routes()
+	mux := config.Routes()
 	log.Println("✅ Routes configurées")
 
 	// 5. LANCEMENT SERVEUR

@@ -1,0 +1,43 @@
+{{define "exercise-detail-page"}}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}} - Terminal v2</title>
+    <link rel="stylesheet" href="/public/css/exercice-detail.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body>
+    <!-- Scan line effect -->
+    <div class="scan-line"></div>
+
+    <!-- Navigation -->
+    {{template "navbar" .}}
+
+    <!-- Header -->
+    <div class="terminal-header">
+        <div class="terminal-title">
+            ╔═══════════════════════════════════╗<br>
+            ║   DÉTAIL EXERCICE #{{printf "%03d" .ID}}     ║<br>
+            ╚═══════════════════════════════════╝
+        </div>
+        <div class="terminal-subtitle">
+            &gt; {{.Title}} | STATUS: <span class="blink">ONLINE</span>
+        </div>
+    </div>
+
+    <!-- Contenu principal -->
+    <div style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+        {{template "exercise-detail" .}}
+    </div>
+
+    <!-- Footer -->
+    <div class="terminal-footer">
+        ┌────────────────────────────────────────────┐<br>
+        │ © 2025 GO v2 TERMINAL | ALL SYSTEMS NOMINAL │<br>
+        └────────────────────────────────────────────┘
+    </div>
+</body>
+</html>
+{{end}}

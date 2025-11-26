@@ -1,0 +1,88 @@
+{{define "exercise-list-page"}}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste Exercices - Terminal v2</title>
+    <link rel="stylesheet" href="/public/css/list-exercice.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <style>
+        .htmx-indicator{display:none} 
+        .htmx-request .htmx-indicator{display:inline;} 
+        .htmx-request.htmx-indicator{display:inline;}
+    </style>
+</head>
+<body>
+    <!-- Scan line effect -->
+    <div class="scan-line"></div>
+
+    <!-- Navigation -->
+    {{template "navbar" .}}
+
+    <!-- Header -->
+    <div class="terminal-header">
+        <div class="terminal-title">
+            ╔═══════════════════════════════════╗<br>
+            ║   LISTE DES EXERCICES v2.0       ║<br>
+            ╚═══════════════════════════════════╝
+        </div>
+        <div class="terminal-subtitle">
+            &gt; SYSTÈME D'APPRENTISSAGE ACTIF | STATUS: <span class="blink">ONLINE</span>
+        </div>
+    </div>
+
+    <!-- Stats bar -->
+        {{template "stats-bar-exo" .}}
+    <!-- Filters -->
+        {{template "filters-exo" .}}
+
+    <!-- Exercise list -->
+    <div id="exercise-container">
+        {{template "exercise-list" .Exercises}}
+    </div>
+
+    <!-- Detail panel (target for HTMX detail view) -->
+    <div id="detail-panel" style="margin-top: 20px;"></div>
+
+    <!-- Footer -->
+    <div class="terminal-footer">
+        ┌────────────────────────────────────────────┐<br>
+        │ © 2025 GO v2 TERMINAL | ALL SYSTEMS NOMINAL │<br>
+        └────────────────────────────────────────────┘
+    </div>
+
+    <script>
+        // Calculate and update stats
+        function updateStats() {
+            const items = document.querySelectorAll('.exercise-item');
+            let total = items.length;
+            let done = document.querySelectorAll('.exercise-status.done').length;
+            let wip = document.querySelectorAll('.exercise-status.wip').length;
+            let todo = document.querySelectorAll('.exercise-status.todo').length;
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-done').textContent = done;
+            document.getElementById('stat-wip').textContent = wip;
+            document.getElementById('stat-todo').textContent = todo;
+        }
+
+        // Reset filters
+        function resetFilters() {
+            document.getElementById('filter-status').value = '';
+            document.getElementById('filter-domain').value = '';
+            htmx.trigger('#exercise-container', 'htmx:load');
+        }
+
+        // Initialize
+        updateStats();
+
+        // Update stats after HTMX swaps
+        document.body.addEventListener('htmx:afterSwap', function() {
+            updateStats();
+        });
+    </script>
+</body>
+</html>
+{{end}}
