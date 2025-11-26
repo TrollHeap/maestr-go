@@ -38,9 +38,9 @@ type Exercise struct {
 }
 
 type ExerciseFilter struct {
-	Domain     string // "Algorithmes", "Go", "" (tous)
-	Status     string // "done", "todo", "" (tous)
-	Difficulty int    // 0 (tous), 1-5
+	View       string // "all", "urgent", "today", "upcoming", "active", "new"
+	Domain     string // "Go", "Algorithmes", etc.
+	Difficulty int    // 1-5
 }
 
 // ========================================

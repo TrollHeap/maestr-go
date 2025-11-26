@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"time"
 
 	"maestro/v2-refacto/internal/models"
@@ -32,34 +33,91 @@ func Save() error {
 }
 
 func GetFiltered(filter models.ExerciseFilter) []models.Exercise {
-	var results []models.Exercise
-
-	// Optimisation : make avec capacité 0 mais on append
-	// Ou mieux : estimer la taille si possible, mais ici restons simples
+	var result []models.Exercise
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 0, now.Location())
+	upcoming := today.AddDate(0, 0, 3) // +3 jours
 
 	for _, ex := range exercises {
-		// Filtre Domaine
+		included := true
+
+		// ✅ FILTRE PAR VUE SRS
+		if filter.View != "" && filter.View != "all" {
+			switch filter.View {
+			case "urgent":
+				// Révisions en retard (overdue)
+				if !ex.Done || ex.NextReviewAt.After(now) {
+					included = false
+				}
+
+			case "today":
+				// Révisions dues aujourd'hui
+				if !ex.Done || ex.NextReviewAt.After(today) ||
+					ex.NextReviewAt.Before(now.AddDate(0, 0, -1)) {
+					included = false
+				}
+
+			case "upcoming":
+				// Révisions dans les 3 prochains jours
+				if !ex.Done || ex.NextReviewAt.Before(today) || ex.NextReviewAt.After(upcoming) {
+					included = false
+				}
+
+			case "active":
+				// En cours (WIP) - pas done, au moins 1 étape complétée
+				if ex.Done || len(ex.CompletedSteps) == 0 {
+					included = false
+				}
+
+			case "new":
+				// Nouveaux (TODO) - pas done, aucune étape complétée
+				if ex.Done || len(ex.CompletedSteps) > 0 {
+					included = false
+				}
+			}
+		}
+
+		// Filtre par domaine
 		if filter.Domain != "" && ex.Domain != filter.Domain {
-			continue
+			included = false
 		}
 
-		// Filtre Statut
-		if filter.Status == "done" && !ex.Done {
-			continue
-		}
-		if filter.Status == "todo" && ex.Done {
-			continue
-		}
-
-		// Filtre Difficulté (si spécifié > 0)
+		// ✅ NOUVEAU : Filtre par difficulté
 		if filter.Difficulty > 0 && ex.Difficulty != filter.Difficulty {
-			continue
+			included = false
 		}
 
-		results = append(results, ex)
+		if included {
+			result = append(result, ex)
+		}
 	}
 
-	return results
+	// ✅ TRI INTELLIGENT PAR PRIORITÉ
+	result = sortByPriority(result, filter.View)
+
+	return result
+}
+
+// Tri par priorité SRS
+func sortByPriority(exercises []models.Exercise, view string) []models.Exercise {
+	sort.Slice(exercises, func(i, j int) bool {
+		a, b := exercises[i], exercises[j]
+
+		if view == "urgent" || view == "today" || view == "upcoming" {
+			// Tri par date de révision (plus ancien en premier)
+			return a.NextReviewAt.Before(b.NextReviewAt)
+		}
+
+		if view == "active" {
+			// Tri par progression (plus avancé en premier)
+			return len(a.CompletedSteps) > len(b.CompletedSteps)
+		}
+
+		// Par défaut : tri par ID
+		return a.ID < b.ID
+	})
+
+	return exercises
 }
 
 // findExercise retourne un pointeur pour pouvoir modifier l'original
@@ -121,4 +179,9 @@ func InitDefaultExercises() error {
 	}
 
 	return Save() // Persiste immédiatement
+}
+
+func CountByView(view string) int {
+	filter := models.ExerciseFilter{View: view}
+	return len(GetFiltered(filter))
 }
