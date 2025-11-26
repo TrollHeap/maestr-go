@@ -2,10 +2,18 @@ package models
 
 import "time"
 
+// ✨ NOUVEAU : Signature visuelle pour encodage hippocampique
+type VisualSignature struct {
+	IconEmoji    string `json:"icon"`     // "🌳" pour algo arbre
+	ColorHex     string `json:"color"`    // "#FF5733" unique
+	Mnemonic     string `json:"mnemonic"` // "QuickSort = Chef orchestre"
+	ASCIIDiagram string `json:"ascii"`    // Diagramme minimaliste
+}
+
 // Exercise représente un exercice d'apprentissage avec Spaced Repetition
 type Exercise struct {
 	// Identité
-	ID          int      `json:"id"` // On garde int pour la simplicité routing
+	ID          int      `json:"id"`
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
 	Domain      string   `json:"domain"`
@@ -13,26 +21,29 @@ type Exercise struct {
 	Steps       []string `json:"steps"`
 	Content     string   `json:"content"`
 
+	// ✨ NOUVEAU : Signature visuelle
+	Visual VisualSignature `json:"visual"`
+
 	// Progression Utilisateur
-	Done           bool  `json:"done"`            // Marqué manuellement (ton système actuel)
-	CompletedSteps []int `json:"completed_steps"` // Indices des étapes validées
+	Done           bool  `json:"done"`
+	CompletedSteps []int `json:"completed_steps"`
 
-	// 🔥 Spaced Repetition (SM-2 Algorithm)
-	LastReviewed *time.Time `json:"last_reviewed"` // Dernière révision
+	// Spaced Repetition (SM-2 Algorithm)
+	LastReviewed *time.Time `json:"last_reviewed"`
 	NextReviewAt time.Time  `json:"next_review_at"`
-	EaseFactor   float64    `json:"ease_factor"`   // 1.3 - 2.5 (facilité mémorisation)
-	IntervalDays int        `json:"interval_days"` // Prochaine révision dans X jours
-	Repetitions  int        `json:"repetitions"`   // Nombre de révisions réussies
+	EaseFactor   float64    `json:"ease_factor"`
+	IntervalDays int        `json:"interval_days"`
+	Repetitions  int        `json:"repetitions"`
 
-	// 🔥 ADHD Features (Anti-Blocage)
-	SkippedCount int        `json:"skipped_count"` // Combien de fois ignoré
-	LastSkipped  *time.Time `json:"last_skipped"`  // Dernière fois ignoré (flag rouge si > 7 jours)
+	// ADHD Features
+	SkippedCount int        `json:"skipped_count"`
+	LastSkipped  *time.Time `json:"last_skipped"`
 
-	// Soft Delete (Archivage)
+	// Soft Delete
 	Deleted   bool       `json:"deleted"`
 	DeletedAt *time.Time `json:"deleted_at"`
 
-	// Timestamps (Audit)
+	// Timestamps
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }

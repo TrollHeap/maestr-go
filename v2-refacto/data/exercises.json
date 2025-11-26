@@ -12,17 +12,18 @@
       "Tester avec des cas limites"
     ],
     "content": "# Quicksort...",
-    "done": false,
-    "completed_steps": [
-      0,
-      1,
-      2,
-      3
-    ],
-    "last_reviewed": "2025-11-24T19:25:21.378389762+01:00",
-    "next_review_at": "2025-11-25T19:25:21.378389762+01:00",
+    "visual": {
+      "icon": "🎼",
+      "color": "#FF6B35",
+      "mnemonic": "Chef d'orchestre : petits musiciens ← pivot → grands",
+      "ascii": "[3,1,7,2,9]\n     ↓\n  [1,2,3] 7 [9]\n     ↓recursion"
+    },
+    "done": true,
+    "completed_steps": [0, 1, 2, 3],
+    "last_reviewed": "2025-11-26T02:06:39.862460156+01:00",
+    "next_review_at": "2025-11-28T02:06:39.862460156+01:00",
     "ease_factor": 1.3,
-    "interval_days": 1,
+    "interval_days": 2,
     "repetitions": 4,
     "skipped_count": 0,
     "last_skipped": null,
@@ -43,12 +44,14 @@
       "Écrire les tests unitaires"
     ],
     "content": "# Filtrage avec Go Generics\n\nDepuis Go 1.18...",
-    "done": true,
-    "completed_steps": [
-      0,
-      1,
-      2
-    ],
+    "visual": {
+      "icon": "🔍",
+      "color": "#10B981",
+      "mnemonic": "Filtre café : garde ce qui passe le test",
+      "ascii": "[1,2,3,4,5]\n     ↓ filter(>2)\n    [3,4,5]"
+    },
+    "done": false,
+    "completed_steps": [],
     "last_reviewed": "2025-11-24T18:50:13.318970464+01:00",
     "next_review_at": "2025-11-27T18:50:13.318970464+01:00",
     "ease_factor": 1.3,
@@ -73,19 +76,20 @@
       "Tester avec errors.Is() et errors.As()",
       "Appliquer dans un projet réel (http handler)"
     ],
-    "content": "# Error Wrapping\n\n## Principe\nDepuis Go 1.13, tu peux créer des chaînes d'erreurs pour garder le contexte.\n\n## Code\n``````\n\n## Pourquoi %w ?\n- Garde l'erreur originale\n- Permet errors.Is() pour matcher\n- Traçabilité du flux d'erreur\n\n## Ressources\n- [Blog officiel Go](https://go.dev/blog/go1.13-errors)\n- [Effective Go - Errors](https://go.dev/doc/effective_go#errors)",
+    "content": "# Error Wrapping...",
+    "visual": {
+      "icon": "🎁",
+      "color": "#8B5CF6",
+      "mnemonic": "Emballage cadeau : erreur → contexte → trace complète",
+      "ascii": "err\n ↓\nfmt.Errorf(\"ctx: %w\", err)\n ↓\ntrace complète"
+    },
     "done": true,
-    "completed_steps": [
-      0,
-      1,
-      2,
-      3
-    ],
-    "last_reviewed": null,
-    "next_review_at": "2025-11-25T19:00:00Z",
-    "ease_factor": 2.5,
+    "completed_steps": [0, 1, 2, 3],
+    "last_reviewed": "2025-11-26T15:34:27.769057488+01:00",
+    "next_review_at": "2025-11-27T15:34:27.769057488+01:00",
+    "ease_factor": 1.9,
     "interval_days": 1,
-    "repetitions": 0,
+    "repetitions": 5,
     "skipped_count": 0,
     "last_skipped": null,
     "deleted": false,
