@@ -35,7 +35,7 @@ func InitTemplates() error {
 		return fmt.Errorf("partials: %w", err)
 	}
 
-	Tmpl, err = Tmpl.ParseGlob("templates/components/*.html")
+	Tmpl, err = Tmpl.ParseGlob("templates/components/*/*.html")
 	if err != nil {
 		return fmt.Errorf("components: %w", err)
 	}

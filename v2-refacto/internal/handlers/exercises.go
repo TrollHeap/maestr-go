@@ -11,45 +11,87 @@ import (
 	"maestro/v2-refacto/internal/validator"
 )
 
-// Vue : Liste seule (Fragment)
-// Vue : Liste seule (Fragment)
-func HandleListExercice(w http.ResponseWriter, r *http.Request) {
-	// 1. Lire TOUS les paramètres de filtre
-	status := r.URL.Query().Get("status") // "todo", "done" ou vide
-	domain := r.URL.Query().Get("domain") // "Algorithmes", "Go", etc. ou vide
+// Vue : Page complète (affiche toute la structure HTML)
+// Vue : Page complète exercices
+func HandleExercisesPage(w http.ResponseWriter, r *http.Request) {
+	allExercises := store.GetAll()
 
-	// 2. Construire le filtre composite
-	filter := models.ExerciseFilter{
-		Status: status,
-		Domain: domain,
-		// Difficulty: 0 (pas encore utilisé, mais prêt pour Phase 2)
+	data := map[string]any{
+		"Exercises":     allExercises,
+		"UrgentCount":   store.CountByView("urgent"),
+		"TodayCount":    store.CountByView("today"),
+		"UpcomingCount": store.CountByView("upcoming"),
+		"ActiveCount":   store.CountByView("active"),
+		"NewCount":      store.CountByView("new"),
 	}
 
-	// 3. Appeler le store avec le filtre complet
-	filteredList := store.GetFiltered(filter)
+	if err := Tmpl.ExecuteTemplate(w, "exercise-list-page", data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
 
-	// 4. Renvoyer le fragment
+// HandleListExercice reste inchangé (fragment pour filtres)
+
+// Vue : Liste seule (Fragment)
+func HandleListExercice(w http.ResponseWriter, r *http.Request) {
+	view := r.URL.Query().Get("view")
+	domain := r.URL.Query().Get("domain")
+	difficulty, _ := strconv.Atoi(r.URL.Query().Get("difficulty"))
+
+	filter := models.ExerciseFilter{
+		View:       view,
+		Domain:     domain,
+		Difficulty: difficulty,
+	}
+
+	filteredList := store.GetFiltered(filter)
 	Tmpl.ExecuteTemplate(w, "exercise-list", filteredList)
 }
 
 // Vue : Détail (Fragment)
 func HandleDetailExercice(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(r.PathValue("id"))
-	if ex := store.FindExercise(id); ex != nil {
-		Tmpl.ExecuteTemplate(w, "exercise-detail", ex)
-	} else {
+	ex := store.FindExercise(id)
+
+	if ex == nil {
 		http.NotFound(w, r)
+		return
+	}
+
+	// ✅ Renvoie la PAGE COMPLÈTE au lieu du fragment
+	if err := Tmpl.ExecuteTemplate(w, "exercise-detail-page", ex); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
 // Action : Toggle Done
+// Action : Toggle Done
 func HandleToggleDone(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
-	if ex := store.FindExercise(id); ex != nil {
-		ex.Done = !ex.Done // Simple bascule true/false
-		store.Save()       // <= Save appelé à chaque modification
-		Tmpl.ExecuteTemplate(w, "exercise-card", ex)
+	ex := store.FindExercise(id)
+	if ex == nil {
+		http.NotFound(w, r)
+		return
 	}
+
+	// Logique de transition
+	if ex.Done {
+		// Done → WIP (garde les CompletedSteps)
+		ex.Done = false
+	} else if len(ex.CompletedSteps) > 0 {
+		// WIP → TODO (reset les étapes)
+		ex.CompletedSteps = []int{}
+	} else {
+		// TODO → Done
+		ex.Done = true
+		// Optionnel : marque toutes les étapes comme complétées
+		for i := range ex.Steps {
+			ex.CompletedSteps = append(ex.CompletedSteps, i)
+		}
+	}
+
+	store.Save()
+	Tmpl.ExecuteTemplate(w, "exo-card", ex)
 }
 
 // Action : Toggle Step
@@ -88,6 +130,36 @@ func HandleToggleStep(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	Tmpl.ExecuteTemplate(w, "exercise-detail", *ex)
+}
+
+// Cycle: TODO → WIP → DONE → TODO
+func HandleToggleStatus(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	ex := store.FindExercise(id)
+	if ex == nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	if ex.Done {
+		// DONE → TODO (reset)
+		ex.Done = false
+		ex.CompletedSteps = []int{}
+	} else if len(ex.CompletedSteps) > 0 {
+		// WIP → DONE
+		ex.Done = true
+		// Optionnel : marquer toutes les étapes
+		ex.CompletedSteps = []int{}
+		for i := range ex.Steps {
+			ex.CompletedSteps = append(ex.CompletedSteps, i)
+		}
+	} else {
+		// TODO → WIP (marque première étape)
+		ex.CompletedSteps = append(ex.CompletedSteps, 0)
+	}
+
+	store.Save()
+	Tmpl.ExecuteTemplate(w, "exo-card", ex)
 }
 
 // Action : Enregistrer une révision
