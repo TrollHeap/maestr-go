@@ -185,3 +185,45 @@ func CountByView(view string) int {
 	filter := models.ExerciseFilter{View: view}
 	return len(GetFiltered(filter))
 }
+
+func BuildAdaptiveSession(energy models.EnergyLevel) models.AdaptiveSession {
+	config := models.SessionConfigs[energy]
+
+	// Sélectionne exercices selon priorité SRS
+	var selectedExercises []models.Exercise
+
+	// Priorité 1 : Révisions dues (urgent + today)
+	urgentExercises := GetFiltered(models.ExerciseFilter{View: "urgent"})
+	todayExercises := GetFiltered(models.ExerciseFilter{View: "today"})
+	dueExercises := append(urgentExercises, todayExercises...)
+
+	// Priorité 2 : Exercices en cours (WIP)
+	wipExercises := GetFiltered(models.ExerciseFilter{View: "active"})
+
+	// Priorité 3 : Nouveaux exercices
+	newExercises := GetFiltered(models.ExerciseFilter{View: "new"})
+
+	// Sélection intelligente
+	for i := 0; i < config.ExerciseCount; i++ {
+		if len(dueExercises) > 0 {
+			selectedExercises = append(selectedExercises, dueExercises[0])
+			dueExercises = dueExercises[1:]
+		} else if len(wipExercises) > 0 {
+			selectedExercises = append(selectedExercises, wipExercises[0])
+			wipExercises = wipExercises[1:]
+		} else if len(newExercises) > 0 {
+			selectedExercises = append(selectedExercises, newExercises[0])
+			newExercises = newExercises[1:]
+		}
+	}
+
+	return models.AdaptiveSession{
+		Mode:          config.Mode,
+		EnergyLevel:   energy,
+		EstimatedTime: config.Duration,
+		Exercises:     selectedExercises,
+		BreakSchedule: config.Breaks,
+		StartedAt:     time.Now(),
+		CurrentIndex:  0,
+	}
+}
