@@ -33,6 +33,10 @@ func InitTemplates() error {
 		"string": func(v any) string {
 			return fmt.Sprintf("%v", v)
 		},
+		"mul": func(a, b int) int { return a * b },
+		"noescape": func(s string) template.HTML {
+			return template.HTML(s)
+		},
 	})
 
 	Tmpl, err = Tmpl.ParseGlob("templates/pages/*.html")
