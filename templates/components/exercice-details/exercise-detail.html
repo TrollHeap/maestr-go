@@ -1,52 +1,62 @@
 {{define "exercise-detail"}}
-<div id="exercise-detail" class="exercise-detail"> 
-    <!-- Header -->
+<div id="exercise-detail" class="exercise-detail">
     <div class="exercise-detail__header">
-
-        <h2 class="exercise-detail__title">{{.Title}}</h2>
-      <!-- CHECKBOX DONE (Petit et discret) -->
+        <h2 class="exercise-detail__title">{{.Exercise.Title}}</h2>
     </div>
-
-    <!-- Description -->
-    <p class="exercise-detail__description">{{.Description}}</p>
-
-    <!-- Badges métadonnées -->
+    <p class="exercise-detail__description">{{.Exercise.Description}}</p>
     <div class="exercise-detail__badges">
-
-        <span class="badge badge--domain-{{.Domain | lower}} badge--md">
-            {{.Domain}}
+        <span class="badge badge--domain-{{.Exercise.Domain | lower}} badge--md">
+            {{.Exercise.Domain}}
         </span>
-        <span class="badge badge--difficulty-{{.Difficulty}} badge--md">
-            D{{.Difficulty}}
+        <span class="badge badge--difficulty-{{.Exercise.Difficulty}} badge--md">
+            D{{.Exercise.Difficulty}}
         </span>
-        
         <span class="badge badge--progress badge--md">
-            {{len .CompletedSteps}}/{{len .Steps}} étapes
+            {{len .Exercise.CompletedSteps}}/{{len .Exercise.Steps}} étapes
         </span>
-        
     </div>
-
     <hr class="exercise-detail__divider">
-
-    <!-- Section Étapes -->
-    {{template "steps-exo" .}}
-
+    <!-- Visuels -->
+    {{if .Exercise.ConceptualVisuals}}
+    <div class="conceptual-visuals">
+        <h3 class="exercise-detail__section-title">VISUALISATION</h3>
+        {{range $index, $visual := .Exercise.ConceptualVisuals}}
+        <div class="visual-aid">
+            {{if eq $visual.Type "ascii"}}
+            <pre class="ascii-diagram">{{$visual.Content}}</pre>
+            {{end}}
+            {{if $visual.Caption}}
+            <div class="visual-caption">💡 {{$visual.Caption}}</div>
+            {{end}}
+        </div>
+        {{end}}
+        {{if .Exercise.Mnemonic}}
+        <div class="mnemonic-box">
+            🧠 <strong>Mnémotechnique :</strong> {{.Exercise.Mnemonic}}
+        </div>
+        {{end}}
+    </div>
     <hr class="exercise-detail__divider">
-
-    <!-- Section Contenu -->
+    {{end}}
+    {{template "steps-exo" .Exercise}}
+    <hr class="exercise-detail__divider">
     <div>
-        <h3 class="exercise-detail__section-title">[ CONTENU ]</h3>
-        <div class="exercise-detail__content">{{.Content}}</div>
+        <h3 class="exercise-detail__section-title">CONTENU</h3>
+        <div class="exercise-detail__content">{{.Exercise.Content | noescape}}</div>
     </div>
-
     <hr class="exercise-detail__divider">
-
     <div class="exercise-detail__badges">
-    [ DONE  {{template "status-indicator" .}} ]
+        <button 
+            class="status-indicator status-indicator--{{if .Exercise.Done}}done{{else if gt (len .Exercise.CompletedSteps) 0}}wip{{else}}todo{{end}}"
+            hx-post="/toggle-status?id={{.Exercise.ID}}"
+            hx-target="#exercise-detail"
+            hx-swap="outerHTML">
+            <span class="status-indicator__icon">{{if .Exercise.Done}}✓{{else if gt (len .Exercise.CompletedSteps) 0}}◐{{else}}○{{end}}</span>
+            <span>{{if .Exercise.Done}}DONE{{else if gt (len .Exercise.CompletedSteps) 0}}EN COURS{{else}}À FAIRE{{end}}</span>
+        </button>
     </div>
-
-{{if .Done}}
-    {{template "review-button" .}}
-{{end}}
+    {{if .Exercise.Done}}
+    {{template "review-panel" .Exercise}}
+    {{end}}
 </div>
 {{end}}

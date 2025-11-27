@@ -325,3 +325,159 @@
             opacity: 0.7;
             margin-top: 5px;
         }
+
+/* ═══════════════════════════════════════════════
+   VISUELS CONCEPTUELS (Phase 2)
+   ═══════════════════════════════════════════════ */
+
+.conceptual-visuals {
+    margin-bottom: 25px;
+}
+
+.visual-aid {
+    margin-bottom: 20px;
+    border: 1px solid var(--border-terminal);
+    background: #0d0d0d;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.1);
+}
+
+.ascii-diagram {
+    font-family: var(--mono-font);
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--fg-terminal);
+    background: #0a0a0a;
+    padding: 20px;
+    border: 1px solid var(--border-terminal);
+    overflow-x: auto;
+    white-space: pre;
+    margin: 0;
+    text-shadow: 0 0 2px rgba(0, 255, 0, 0.3);
+}
+
+.visual-caption {
+    margin-top: 12px;
+    font-size: 11px;
+    color: rgba(0, 255, 0, 0.8);
+    font-style: italic;
+    padding: 10px 15px;
+    background: rgba(0, 255, 0, 0.05);
+    border-left: 3px solid var(--fg-terminal);
+    line-height: 1.6;
+}
+
+.mnemonic-box {
+    margin-top: 20px;
+    padding: 15px 20px;
+    background: rgba(255, 170, 0, 0.1);
+    border: 1px solid #ffaa00;
+    border-left: 4px solid #ffaa00;
+    color: #ffaa00;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.mnemonic-box strong {
+    color: #ffcc00;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Animation subtile pour les visuels */
+.visual-aid:hover {
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+    transition: box-shadow 0.3s ease;
+}
+
+/* Scrollbar custom pour diagrammes larges */
+.ascii-diagram::-webkit-scrollbar {
+    height: 8px;
+}
+
+.ascii-diagram::-webkit-scrollbar-track {
+    background: #0a0a0a;
+    border: 1px solid var(--border-terminal);
+}
+
+.ascii-diagram::-webkit-scrollbar-thumb {
+    background: var(--fg-terminal);
+    border-radius: 0;
+}
+
+.ascii-diagram::-webkit-scrollbar-thumb:hover {
+    background: #00ff00;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+
+/* ═══════════════════════════════════════════════
+   CODE MARKDOWN RENDERED
+   ═══════════════════════════════════════════════ */
+
+.exercise-detail__content h1,
+.exercise-detail__content h2,
+.exercise-detail__content h3 {
+    color: var(--fg-terminal);
+    text-transform: uppercase;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+.exercise-detail__content h2 {
+    font-size: 16px;
+    border-bottom: 1px solid var(--border-terminal);
+    padding-bottom: 5px;
+}
+
+.exercise-detail__content h3 {
+    font-size: 14px;
+}
+
+.exercise-detail__content p {
+    margin-bottom: 15px;
+    line-height: 1.8;
+}
+
+.exercise-detail__content ul,
+.exercise-detail__content ol {
+    margin-left: 20px;
+    margin-bottom: 15px;
+}
+
+.exercise-detail__content li {
+    margin-bottom: 8px;
+    line-height: 1.6;
+}
+
+/* Code blocks */
+.exercise-detail__content pre {
+    background: #0a0a0a;
+    border: 1px solid var(--border-terminal);
+    padding: 15px;
+    overflow-x: auto;
+    margin: 15px 0;
+    border-left: 3px solid var(--fg-terminal);
+}
+
+.exercise-detail__content code {
+    font-family: var(--mono-font);
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--fg-terminal);
+}
+
+/* Inline code */
+.exercise-detail__content p code {
+    background: rgba(0, 255, 0, 0.1);
+    padding: 2px 6px;
+    border: 1px solid var(--border-terminal);
+    font-size: 11px;
+}
+
+/* Code syntax highlighting (basic) */
+.exercise-detail__content pre code {
+    display: block;
+    text-shadow: 0 0 2px rgba(0, 255, 0, 0.3);
+}
