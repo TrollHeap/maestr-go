@@ -1,0 +1,333 @@
+{{define "session-current"}}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session {{.Session.Mode}} - Terminal v2</title>
+    <link rel="stylesheet" href="/public/css/list-exercice.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <style>
+        .session-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .session-progress {
+            border: 2px solid var(--border-terminal);
+            padding: 20px;
+            background: #0d0d0d;
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px var(--shadow-glow);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .session-mode {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--fg-terminal);
+        }
+
+        .session-timer {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--color-wip);
+            font-family: monospace;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            border: 1px solid var(--border-terminal);
+            background: #0a0a0a;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: repeating-linear-gradient(
+                90deg,
+                var(--fg-terminal) 0px,
+                var(--fg-terminal) 2px,
+                transparent 2px,
+                transparent 4px
+            );
+            transition: width 1s linear;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 11px;
+            color: var(--fg-terminal);
+            text-shadow: 0 0 5px #000;
+            z-index: 1;
+        }
+
+        .exercise-tracker {
+            display: flex;
+            gap: 10px;
+            font-size: 11px;
+        }
+
+        .exercise-step {
+            padding: 5px 10px;
+            border: 1px solid var(--border-terminal);
+            background: #111;
+        }
+
+        .exercise-step--completed {
+            background: rgba(0, 255, 0, 0.2);
+            border-color: var(--color-done);
+        }
+
+        .exercise-step--current {
+            background: rgba(255, 255, 0, 0.2);
+            border-color: var(--color-wip);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .current-exercise {
+            border: 2px solid var(--border-terminal);
+            padding: 30px;
+            background: #0d0d0d;
+            margin-bottom: 20px;
+        }
+
+        .exercise-number {
+            font-size: 12px;
+            opacity: 0.6;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .exercise-title-big {
+            font-size: 24px;
+            color: var(--fg-terminal);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px var(--shadow-glow);
+        }
+
+        .exercise-description {
+            font-size: 13px;
+            line-height: 1.8;
+            opacity: 0.9;
+            padding: 15px;
+            background: #111;
+            border-left: 3px solid var(--fg-terminal);
+            margin-bottom: 20px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn-action-session {
+            padding: 12px 25px;
+            font-family: var(--mono-font);
+            font-size: 12px;
+            text-transform: uppercase;
+            border: 1px solid var(--border-terminal);
+            background: #0a0a0a;
+            color: var(--fg-terminal);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-action-session:hover {
+            background: #1a1a1a;
+            box-shadow: 0 0 10px var(--shadow-glow);
+        }
+
+        .btn-primary {
+            border-color: var(--fg-terminal);
+            color: var(--fg-terminal);
+        }
+
+        .btn-secondary {
+            border-color: var(--color-wip);
+            color: var(--color-wip);
+        }
+
+        .btn-danger {
+            border-color: var(--color-todo);
+            color: var(--color-todo);
+        }
+
+        .break-screen {
+            border: 2px solid var(--color-wip);
+            padding: 40px;
+            background: #0d0d0d;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255, 255, 0, 0.3);
+        }
+
+        .break-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .break-title {
+            font-size: 20px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            color: var(--color-wip);
+        }
+
+        .break-countdown {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--color-wip);
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Scan line effect -->
+    <div class="scan-line"></div>
+
+    <!-- Navigation (minimal pendant session) -->
+    <nav style="opacity: 0.5;">
+        <a href="/">[HOME]</a>
+        <a href="/exercises">[EXERCISES]</a>
+    </nav>
+
+    <div class="session-container">
+        <!-- Session Progress -->
+        <div class="session-progress">
+            <div class="progress-header">
+<div class="session-mode">
+    📦 Session {{.Session.Mode | string | upper}}
+</div>
+                <div class="session-timer" id="timer">
+                    --:--
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-text" id="progress-text">0%</div>
+                <div class="progress-bar-fill" id="progress-fill" style="width: 0%;"></div>
+            </div>
+
+            <div class="exercise-tracker">
+                {{range $index, $exercise := .Session.Exercises}}
+                <div class="exercise-step {{if eq $index $.Session.CurrentIndex}}exercise-step--current{{else if lt $index $.Session.CurrentIndex}}exercise-step--completed{{end}}">
+                    {{if eq $index $.Session.CurrentIndex}}→{{else if lt $index $.Session.CurrentIndex}}✓{{else}}○{{end}} 
+                    {{add $index 1}}/{{len $.Session.Exercises}}
+                </div>
+                {{end}}
+            </div>
+        </div>
+
+        <!-- Current Exercise -->
+        {{$currentEx := index .Session.Exercises .Session.CurrentIndex}}
+        <div class="current-exercise">
+            <div class="exercise-number">
+                Exercice {{add .Session.CurrentIndex 1}}/{{len .Session.Exercises}}
+            </div>
+
+            <h2 class="exercise-title-big">
+                {{$currentEx.Title}}
+            </h2>
+
+            <div class="exercise-description">
+                {{$currentEx.Description}}
+            </div>
+
+            <div class="action-buttons">
+                <a href="/exercise/{{$currentEx.ID}}" class="btn-action-session btn-primary">
+                    [▶ OUVRIR EXERCICE]
+                </a>
+                
+                <button class="btn-action-session btn-secondary" onclick="pauseSession()">
+                    [⏸ PAUSE]
+                </button>
+                
+                <button class="btn-action-session btn-danger" onclick="confirmStop()">
+                    [⏹ STOP]
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="terminal-footer">
+        ┌────────────────────────────────────────────┐<br>
+        │ © 2025 GO v2 TERMINAL | ALL SYSTEMS NOMINAL │<br>
+        └────────────────────────────────────────────┘
+    </div>
+
+    <script>
+        // Timer configuration
+        const startTime = new Date('{{.Session.StartedAt}}');
+        const duration = {{.Session.EstimatedTime.Seconds}}; // en secondes
+        
+        function updateTimer() {
+            const now = new Date();
+            const elapsed = Math.floor((now - startTime) / 1000); // secondes écoulées
+            const remaining = Math.max(0, duration - elapsed);
+            
+            const minutes = Math.floor(remaining / 60);
+            const seconds = remaining % 60;
+            
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Progress bar
+            const progress = Math.min(100, (elapsed / duration) * 100);
+            document.getElementById('progress-fill').style.width = progress + '%';
+            document.getElementById('progress-text').textContent = Math.floor(progress) + '%';
+            
+            if (remaining > 0) {
+                setTimeout(updateTimer, 1000);
+            } else {
+                // Session terminée
+                sessionComplete();
+            }
+        }
+        
+        function pauseSession() {
+            if (confirm('Mettre la session en pause ?')) {
+                alert('Pause activée. Timer gelé.');
+                // TODO: Backend pause logic
+            }
+        }
+        
+        function confirmStop() {
+            if (confirm('Arrêter la session maintenant ? Ta progression sera sauvegardée.')) {
+                window.location.href = '/';
+            }
+        }
+        
+        function sessionComplete() {
+            alert('🎉 Session terminée ! Bien joué !');
+            window.location.href = '/';
+        }
+        
+        // Start timer
+        updateTimer();
+    </script>
+</body>
+</html>
+{{end}}

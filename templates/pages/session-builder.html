@@ -1,0 +1,346 @@
+{{define "session-builder"}}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nouvelle Session - Terminal v2</title>
+    <link rel="stylesheet" href="/public/css/list-exercice.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <style>
+        .energy-selector {
+            max-width: 700px;
+            margin: 0 auto;
+            border: 2px solid var(--border-terminal);
+            padding: 30px;
+            background: #0d0d0d;
+            box-shadow: 0 0 30px var(--shadow-glow);
+        }
+
+        .energy-title {
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 25px;
+            text-align: center;
+            color: var(--fg-terminal);
+        }
+
+        .energy-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .energy-option {
+            border: 2px solid var(--border-terminal);
+            padding: 20px;
+            background: #111;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .energy-option:hover {
+            border-color: var(--fg-terminal);
+            box-shadow: 0 0 15px var(--shadow-glow);
+        }
+
+        .energy-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .energy-option input[type="radio"]:checked + .energy-content {
+            border-left: 4px solid var(--fg-terminal);
+            padding-left: 16px;
+        }
+
+        .energy-option input[type="radio"]:checked ~ .energy-icon {
+            text-shadow: 0 0 10px var(--shadow-glow);
+        }
+
+        .energy-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .energy-icon {
+            font-size: 32px;
+            min-width: 50px;
+        }
+
+        .energy-option--low .energy-icon {
+            color: #ff6600;
+        }
+
+        .energy-option--medium .energy-icon {
+            color: #ffff00;
+        }
+
+        .energy-option--high .energy-icon {
+            color: #00ff00;
+        }
+
+        .energy-details {
+            flex: 1;
+        }
+
+        .energy-label {
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .energy-description {
+            font-size: 11px;
+            opacity: 0.7;
+            line-height: 1.5;
+        }
+
+        .session-preview {
+            border: 1px solid var(--border-terminal);
+            padding: 20px;
+            background: #111;
+            margin-bottom: 25px;
+            min-height: 150px;
+        }
+
+        .preview-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            color: var(--fg-terminal);
+        }
+
+        .preview-title::before {
+            content: '▶ ';
+        }
+
+        .preview-content {
+            font-size: 11px;
+            line-height: 1.8;
+            opacity: 0.8;
+        }
+
+        .preview-item {
+            display: flex;
+            margin-bottom: 8px;
+        }
+
+        .preview-label {
+            min-width: 120px;
+            opacity: 0.6;
+        }
+
+        .preview-value {
+            color: var(--fg-terminal);
+        }
+
+        .btn-start-session {
+            width: 100%;
+            padding: 15px;
+            font-family: var(--mono-font);
+            font-size: 13px;
+            text-transform: uppercase;
+            border: 2px solid var(--fg-terminal);
+            background: #0a0a0a;
+            color: var(--fg-terminal);
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 2px;
+        }
+
+        .btn-start-session:hover {
+            background: rgba(0, 255, 0, 0.1);
+            box-shadow: 0 0 20px var(--shadow-glow);
+            transform: translateY(-2px);
+        }
+
+        .btn-start-session:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            font-size: 11px;
+            color: var(--fg-terminal);
+            text-decoration: none;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .back-link:hover {
+            opacity: 1;
+            text-shadow: 0 0 5px var(--shadow-glow);
+        }
+    </style>
+</head>
+<body>
+    <!-- Scan line effect -->
+    <div class="scan-line"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <a href="/">[HOME]</a>
+        <a href="/exercises">[EXERCISES]</a>
+        <a href="/stats">[STATS]</a>
+    </nav>
+
+    <!-- Header -->
+    <div class="terminal-header">
+        <div class="terminal-title">
+            ╔═══════════════════════════════════╗<br>
+            ║   NOUVELLE SESSION v2.0          ║<br>
+            ╚═══════════════════════════════════╝
+        </div>
+        <div class="terminal-subtitle">
+            &gt; SESSION ADAPTATIVE | STATUS: <span class="blink">ONLINE</span>
+        </div>
+    </div>
+
+    <!-- Energy Selector -->
+    <div class="energy-selector">
+        <div class="energy-title">
+            ⚡ Comment te sens-tu maintenant ?
+        </div>
+
+        <form id="energy-form">
+            <div class="energy-options">
+                <!-- Option 1 : Low Energy -->
+                <label class="energy-option energy-option--low" for="energy-low">
+                    <input type="radio" name="energy" id="energy-low" value="1" onchange="updatePreview(1)">
+                    <div class="energy-content">
+                        <div class="energy-icon">🔋</div>
+                        <div class="energy-details">
+                            <div class="energy-label">Faible (5-15min)</div>
+                            <div class="energy-description">
+                                "Juste me réveiller / Micro-pratique"
+                            </div>
+                        </div>
+                    </div>
+                </label>
+
+                <!-- Option 2 : Medium Energy -->
+                <label class="energy-option energy-option--medium" for="energy-medium">
+                    <input type="radio" name="energy" id="energy-medium" value="2" onchange="updatePreview(2)">
+                    <div class="energy-content">
+                        <div class="energy-icon">🔋🔋</div>
+                        <div class="energy-details">
+                            <div class="energy-label">Moyenne (20-30min)</div>
+                            <div class="energy-description">
+                                "Concentré mais pas marathon"
+                            </div>
+                        </div>
+                    </div>
+                </label>
+
+                <!-- Option 3 : High Energy -->
+                <label class="energy-option energy-option--high" for="energy-high">
+                    <input type="radio" name="energy" id="energy-high" value="3" onchange="updatePreview(3)">
+                    <div class="energy-content">
+                        <div class="energy-icon">🔋🔋🔋</div>
+                        <div class="energy-details">
+                            <div class="energy-label">Haute (45-60min)</div>
+                            <div class="energy-description">
+                                "Je suis en feu, allons-y !"
+                            </div>
+                        </div>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Session Preview -->
+            <div class="session-preview" id="session-preview">
+                <div class="preview-title">Session proposée</div>
+                <div class="preview-content" id="preview-content">
+                    <div style="text-align: center; opacity: 0.5; padding: 40px 0;">
+                        Sélectionne ton niveau d'énergie ci-dessus
+                    </div>
+                </div>
+            </div>
+
+            <!-- Start Button -->
+            <button type="submit" class="btn-start-session" id="btn-start" disabled>
+                [▶ DÉMARRER SESSION]
+            </button>
+        </form>
+
+        <a href="/" class="back-link">[← Retour dashboard]</a>
+    </div>
+
+    <!-- Footer -->
+    <div class="terminal-footer">
+        ┌────────────────────────────────────────────┐<br>
+        │ © 2025 GO v2 TERMINAL | ALL SYSTEMS NOMINAL │<br>
+        └────────────────────────────────────────────┘
+    </div>
+
+    <script>
+        // Config des sessions (correspondant au Go)
+        const sessionConfigs = {
+            1: {
+                mode: "Micro",
+                duration: "10 minutes",
+                exercises: 1,
+                breaks: "Aucune"
+            },
+            2: {
+                mode: "Standard",
+                duration: "25 minutes",
+                exercises: 2,
+                breaks: "1 pause (12min)"
+            },
+            3: {
+                mode: "Deep",
+                duration: "50 minutes",
+                exercises: 3,
+                breaks: "2 pauses (17min, 34min)"
+            }
+        };
+
+        // Update preview dynamiquement
+        function updatePreview(energy) {
+            const config = sessionConfigs[energy];
+            const previewContent = document.getElementById('preview-content');
+            const btnStart = document.getElementById('btn-start');
+
+            previewContent.innerHTML = `
+                <div class="preview-item">
+                    <span class="preview-label">Mode :</span>
+                    <span class="preview-value">${config.mode}</span>
+                </div>
+                <div class="preview-item">
+                    <span class="preview-label">Durée estimée :</span>
+                    <span class="preview-value">${config.duration}</span>
+                </div>
+                <div class="preview-item">
+                    <span class="preview-label">Exercices :</span>
+                    <span class="preview-value">${config.exercises}</span>
+                </div>
+                <div class="preview-item">
+                    <span class="preview-label">Pauses :</span>
+                    <span class="preview-value">${config.breaks}</span>
+                </div>
+            `;
+
+            btnStart.disabled = false;
+        }
+
+        // Submit form
+        document.getElementById('energy-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const energy = document.querySelector('input[name="energy"]:checked').value;
+            window.location.href = `/session/start?energy=${energy}`;
+        });
+    </script>
+</body>
+</html>
+{{end}}
