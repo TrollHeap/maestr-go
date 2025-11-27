@@ -1,5 +1,5 @@
 {{define "steps-exo"}}
-    <div class="exercise-detail__steps">
+    <div class="exercise-detail__steps" id="steps-container-wrapper">
         <h3 class="exercise-detail__section-title">
             [ ETAPES ] {{len .CompletedSteps}}/{{len .Steps}}
         </h3>
@@ -17,7 +17,7 @@
                         type="checkbox" 
                         class="exercise-detail__step-checkbox"
                         hx-post="/exercise/{{$.ID}}/toggle-step?step={{$index}}"
-                        hx-target="#exercise-detail"
+                        hx-target="#steps-container-wrapper"
                         hx-swap="outerHTML"
                         {{if $isCompleted}}checked{{end}}
                     >
