@@ -2,45 +2,57 @@ package models
 
 import "time"
 
-// Exercise représente un exercice d'apprentissage avec Spaced Repetition
+// VisualAid représente un diagramme ou visuel pédagogique
+type VisualAid struct {
+	Type    string `json:"type"`    // "ascii", "svg", "mermaid"
+	Content string `json:"content"` // Le diagramme lui-même
+	Caption string `json:"caption"` // Description courte
+}
+type ExerciseView struct {
+	Exercise    *Exercise
+	FromSession bool
+}
+
 type Exercise struct {
-	// Identité
-	ID          int      `json:"id"` // On garde int pour la simplicité routing
+	ID          int      `json:"id"`
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
 	Domain      string   `json:"domain"`
-	Difficulty  int      `json:"difficulty"` // 1-5
+	Difficulty  int      `json:"difficulty"`
 	Steps       []string `json:"steps"`
 	Content     string   `json:"content"`
 
-	// Progression Utilisateur
-	Done           bool  `json:"done"`            // Marqué manuellement (ton système actuel)
-	CompletedSteps []int `json:"completed_steps"` // Indices des étapes validées
+	// Visuels pédagogiques (nouveau format structuré)
+	ConceptualVisuals []VisualAid `json:"conceptual_visuals"`
+	Mnemonic          string      `json:"mnemonic"`
 
-	// 🔥 Spaced Repetition (SM-2 Algorithm)
-	LastReviewed *time.Time `json:"last_reviewed"` // Dernière révision
-	NextReviewAt time.Time  `json:"next_review_at"`
-	EaseFactor   float64    `json:"ease_factor"`   // 1.3 - 2.5 (facilité mémorisation)
-	IntervalDays int        `json:"interval_days"` // Prochaine révision dans X jours
-	Repetitions  int        `json:"repetitions"`   // Nombre de révisions réussies
+	// Ancien format visual (compatibilité)
+	Visual map[string]string `json:"visual,omitempty"`
 
-	// 🔥 ADHD Features (Anti-Blocage)
-	SkippedCount int        `json:"skipped_count"` // Combien de fois ignoré
-	LastSkipped  *time.Time `json:"last_skipped"`  // Dernière fois ignoré (flag rouge si > 7 jours)
+	// SRS tracking
+	Done           bool       `json:"done"`
+	CompletedSteps []int      `json:"completed_steps"`
+	LastReviewed   *time.Time `json:"last_reviewed,omitempty"`
+	NextReviewAt   time.Time  `json:"next_review_at"`
+	EaseFactor     float64    `json:"ease_factor"`
+	IntervalDays   int        `json:"interval_days"`
+	Repetitions    int        `json:"repetitions"`
+	SkippedCount   int        `json:"skipped_count"`
+	LastSkipped    *time.Time `json:"last_skipped,omitempty"`
 
-	// Soft Delete (Archivage)
+	// Soft delete
 	Deleted   bool       `json:"deleted"`
-	DeletedAt *time.Time `json:"deleted_at"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 
-	// Timestamps (Audit)
+	// Timestamps
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type ExerciseFilter struct {
 	View       string // "all", "urgent", "today", "upcoming", "active", "new"
-	Domain     string // "Go", "Algorithmes", etc.
-	Difficulty int    // 1-5
+	Domain     string
+	Difficulty int
 }
 
 // ========================================

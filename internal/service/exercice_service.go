@@ -43,7 +43,6 @@ func (s *ExerciseService) ReviewExercise(
 	ex.Repetitions = result.Repetitions
 	ex.NextReviewAt = result.NextReview
 
-	// Sauvegarde
 	if err := store.Save(); err != nil {
 		return nil, fmt.Errorf("erreur sauvegarde: %w", err)
 	}
@@ -51,52 +50,24 @@ func (s *ExerciseService) ReviewExercise(
 	return ex, nil
 }
 
-// ToggleExerciseDone gère la transition TODO → WIP → DONE
+// ToggleExerciseDone bascule entre TODO et DONE (logique simplifiée)
 func (s *ExerciseService) ToggleExerciseDone(exerciseID int) (*models.Exercise, error) {
 	ex := store.FindExercise(exerciseID)
 	if ex == nil {
 		return nil, fmt.Errorf("exercice %d introuvable", exerciseID)
 	}
 
-	// Logique de transition
+	// Toggle simple : inverse le statut
+	ex.Done = !ex.Done
+
+	// Si on marque DONE : complète toutes les étapes
 	if ex.Done {
-		// Done → WIP (garde les CompletedSteps)
-		ex.Done = false
-	} else if len(ex.CompletedSteps) > 0 {
-		// WIP → TODO (reset les étapes)
 		ex.CompletedSteps = []int{}
-	} else {
-		// TODO → Done
-		ex.Done = true
-		// Marque toutes les étapes comme complétées
 		for i := range ex.Steps {
 			ex.CompletedSteps = append(ex.CompletedSteps, i)
 		}
 	}
-
-	if err := store.Save(); err != nil {
-		return nil, fmt.Errorf("erreur sauvegarde: %w", err)
-	}
-
-	return ex, nil
-}
-
-// ToggleExerciseStatus cycle entre les états (pour sessions)
-func (s *ExerciseService) ToggleExerciseStatus(exerciseID int) (*models.Exercise, error) {
-	ex := store.FindExercise(exerciseID)
-	if ex == nil {
-		return nil, fmt.Errorf("exercice %d introuvable", exerciseID)
-	}
-
-	// Toggle logic
-	if ex.Done {
-		ex.Done = false
-		ex.CompletedSteps = []int{}
-	} else if len(ex.CompletedSteps) > 0 {
-		ex.Done = true
-	} else {
-		ex.CompletedSteps = append(ex.CompletedSteps, 0)
-	}
+	// Si on marque TODO : garde les étapes complétées (permet de reprendre)
 
 	if err := store.Save(); err != nil {
 		return nil, fmt.Errorf("erreur sauvegarde: %w", err)
@@ -132,7 +103,7 @@ func (s *ExerciseService) ToggleExerciseStep(exerciseID, step int) (*models.Exer
 	return ex, nil
 }
 
-// GetExerciseWithMarkdown récupère un exercice et convertit son contenu markdown
+// GetExerciseWithMarkdown récupère un exercice
 func (s *ExerciseService) GetExerciseWithMarkdown(exerciseID int) (*models.Exercise, error) {
 	ex := store.FindExercise(exerciseID)
 	if ex == nil {
@@ -161,4 +132,3 @@ func (s *ExerciseService) GetExerciseStats() map[string]int {
 		"new":      store.CountByView("new"),
 	}
 }
-
