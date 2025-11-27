@@ -46,14 +46,7 @@
     </div>
     <hr class="exercise-detail__divider">
     <div class="exercise-detail__badges">
-        <button 
-            class="status-indicator status-indicator--{{if .Exercise.Done}}done{{else if gt (len .Exercise.CompletedSteps) 0}}wip{{else}}todo{{end}}"
-            hx-post="/toggle-status?id={{.Exercise.ID}}"
-            hx-target="#exercise-detail"
-            hx-swap="outerHTML">
-            <span class="status-indicator__icon">{{if .Exercise.Done}}✓{{else if gt (len .Exercise.CompletedSteps) 0}}◐{{else}}○{{end}}</span>
-            <span>{{if .Exercise.Done}}DONE{{else if gt (len .Exercise.CompletedSteps) 0}}EN COURS{{else}}À FAIRE{{end}}</span>
-        </button>
+    {{template "status-indicator" .Exercise}}
     </div>
     {{if .Exercise.Done}}
     {{template "review-panel" .Exercise}}
