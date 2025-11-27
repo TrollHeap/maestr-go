@@ -20,6 +20,11 @@ func Routes() *http.ServeMux {
 	mux.HandleFunc("GET /exercises/list", handlers.HandleListExercice)  // ← FRAGMENT filtres
 	mux.HandleFunc("GET /exercise/{id}", handlers.HandleDetailExercice) // ← FRAGMENT détail
 
+	// internal/handlers/routes.go (AJOUTER)
+
+	mux.HandleFunc("GET /session/builder", handlers.HandleSessionBuilder)
+	mux.HandleFunc("GET /session/start", handlers.HandleStartSession)
+
 	mux.HandleFunc("GET /stats/metrics", handlers.HandleStatsMetrics)
 	mux.HandleFunc("GET /stats/domains", handlers.HandleStatsDomains)
 	mux.HandleFunc("GET /stats/difficulties", handlers.HandleStatsDifficulties)

@@ -30,6 +30,9 @@ func InitTemplates() error {
 			}
 			return result
 		},
+		"string": func(v any) string {
+			return fmt.Sprintf("%v", v)
+		},
 	})
 
 	Tmpl, err = Tmpl.ParseGlob("templates/pages/*.html")
