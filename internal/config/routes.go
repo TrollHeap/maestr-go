@@ -22,8 +22,12 @@ func Routes() *http.ServeMux {
 
 	// internal/handlers/routes.go (AJOUTER)
 
+	// Routes sessions - Version corrigée
 	mux.HandleFunc("GET /session/builder", handlers.HandleSessionBuilder)
-	mux.HandleFunc("GET /session/start", handlers.HandleStartSession)
+	mux.HandleFunc("GET /session/start", handlers.HandleStartSession) // ← Corrigé
+	mux.HandleFunc("GET /session/{id}", handlers.HandleCurrentSession)
+	mux.HandleFunc("POST /session/{id}/complete", handlers.HandleCompleteSession)
+	mux.HandleFunc("POST /session/{id}/stop", handlers.HandleStopSession)
 
 	mux.HandleFunc("GET /stats/metrics", handlers.HandleStatsMetrics)
 	mux.HandleFunc("GET /stats/domains", handlers.HandleStatsDomains)
@@ -34,7 +38,6 @@ func Routes() *http.ServeMux {
 	mux.HandleFunc("GET /planner/month", handlers.HandlePlannerMonth)
 
 	// --- GROUPE 3 : ACTIONS (POST) ---
-	mux.HandleFunc("POST /toggle-status", handlers.HandleToggleStatus)
 	mux.HandleFunc("POST /toggle-done", handlers.HandleToggleDone)
 	mux.HandleFunc("POST /exercise/{id}/toggle-step", handlers.HandleToggleStep)
 	mux.HandleFunc("POST /exercise/{id}/review", handlers.HandleReview)
