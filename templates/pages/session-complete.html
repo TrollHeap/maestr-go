@@ -1,0 +1,60 @@
+{{define "session-complete"}}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Terminée - Maestro</title>
+    <link rel="stylesheet" href="/public/css/list-exercice.css">
+</head>
+<body>
+    <div class="scan-line"></div>
+
+    <nav>
+        <a href="/">[HOME]</a>
+        <a href="/exercises">[EXERCISES]</a>
+    </nav>
+
+    <div class="terminal-header">
+        <div class="terminal-title">
+            ╔═══════════════════════════════════╗<br>
+            ║   SESSION TERMINÉE ✅            ║<br>
+            ╚═══════════════════════════════════╝
+        </div>
+    </div>
+
+    <div style="max-width: 700px; margin: 50px auto; text-align: center; border: 2px solid var(--border-terminal); padding: 40px; background: #0d0d0d;">
+        <div style="font-size: 64px; margin-bottom: 20px;">🎉</div>
+        
+        <h2 style="font-size: 20px; text-transform: uppercase; color: var(--fg-terminal); margin-bottom: 15px;">
+            Bien joué !
+        </h2>
+        
+        <div style="font-size: 14px; margin-bottom: 30px; opacity: 0.8;">
+            <div style="margin-bottom: 10px;">
+                ✅ <strong>{{.CompletedCount}}</strong> exercice(s) terminé(s)
+            </div>
+            <div>
+                ⏱ Durée : <strong>{{.Duration}}</strong>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
+            <a href="/" style="padding: 15px 30px; border: 2px solid var(--fg-terminal); background: #0a0a0a; color: var(--fg-terminal); text-decoration: none; text-transform: uppercase; font-size: 12px;">
+                [🏠 RETOUR DASHBOARD]
+            </a>
+            
+            <a href="/session/builder" style="padding: 15px 30px; border: 2px solid var(--color-wip); background: rgba(255, 255, 0, 0.1); color: var(--color-wip); text-decoration: none; text-transform: uppercase; font-size: 12px;">
+                [🔁 NOUVELLE SESSION]
+            </a>
+        </div>
+    </div>
+
+    <div class="terminal-footer">
+        ┌────────────────────────────────────────────┐<br>
+        │ © 2025 GO v2 TERMINAL | ALL SYSTEMS NOMINAL │<br>
+        └────────────────────────────────────────────┘
+    </div>
+</body>
+</html>
+{{end}}
