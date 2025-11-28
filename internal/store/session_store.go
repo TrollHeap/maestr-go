@@ -10,9 +10,11 @@ import (
 )
 
 var (
-	sessions      = make(map[string]*models.ActiveSession)
-	sessionsMutex sync.RWMutex
-	sessionFile   = "data/sessions.json"
+	sessions          = make(map[string]*models.ActiveSession)
+	sessionsMutex     sync.RWMutex
+	sessionFile       = "data/sessions.json"
+	lastSessionResult *models.SessionResult
+	resultMutex       sync.RWMutex
 )
 
 // LoadSessions charge les sessions depuis le fichier
@@ -101,4 +103,25 @@ func ClearActiveSession() error {
 
 	sessions = make(map[string]*models.ActiveSession)
 	return SaveSessions()
+}
+
+// StoreSessionResult stocke le résultat d'une session terminée
+func StoreSessionResult(result *models.SessionResult) {
+	resultMutex.Lock()
+	defer resultMutex.Unlock()
+	lastSessionResult = result
+}
+
+// GetLastSessionResult récupère le dernier résultat
+func GetLastSessionResult() *models.SessionResult {
+	resultMutex.RLock()
+	defer resultMutex.RUnlock()
+	return lastSessionResult
+}
+
+// ClearSessionResult nettoie le résultat
+func ClearSessionResult() {
+	resultMutex.Lock()
+	defer resultMutex.Unlock()
+	lastSessionResult = nil
 }
