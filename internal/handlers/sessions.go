@@ -5,9 +5,11 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"maestro/internal/models"
 	"maestro/internal/service"
+	"maestro/internal/store"
 )
 
 func init() {
@@ -86,26 +88,32 @@ func HandleCurrentSession(w http.ResponseWriter, r *http.Request) {
 }
 
 // Complète un exercice de session
-func HandleCompleteSession(w http.ResponseWriter, r *http.Request) {
-	sessionID := r.PathValue("id")
+// HandleSessionComplete affiche la page de complétion
+func HandleSessionComplete(w http.ResponseWriter, r *http.Request) {
+	result := store.GetLastSessionResult()
 
-	nextEx, err := sessionService.CompleteExercise(sessionID, 0) // TODO: récupérer exerciseID
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	// Fallback si pas de résultat stocké
+	if result == nil {
+		result = &models.SessionResult{
+			CompletedCount: 0,
+			Duration:       0,
+			CompletedAt:    time.Now(),
+			Exercises:      []int{},
+		}
 	}
 
-	if nextEx != nil {
-		http.Redirect(
-			w,
-			r,
-			fmt.Sprintf("/exercise/%d?from=session&sid=%s", nextEx.ID, sessionID),
-			http.StatusSeeOther,
-		)
-	} else {
-		// Session terminée
-		sessionService.StopSession(sessionID)
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+	data := map[string]any{
+		"CompletedCount": result.CompletedCount,
+		"Duration":       result.Duration.Round(time.Second),
+		"CompletedAt":    result.CompletedAt.Format("15:04"),
+		"ExerciseCount":  len(result.Exercises),
+	}
+
+	// Nettoie après affichage
+	store.ClearSessionResult()
+
+	if err := Tmpl.ExecuteTemplate(w, "session-complete", data); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 

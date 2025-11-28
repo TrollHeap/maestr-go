@@ -202,7 +202,6 @@ func HandleReview(w http.ResponseWriter, r *http.Request) {
 	if fromSession {
 		activeSession := sessionService.GetActiveSession()
 		if activeSession != nil {
-			// Marque comme complété (même si "Oublié", on l'a vu)
 			activeSession.MarkCompleted(ex.ID)
 			nextEx := activeSession.NextExercise()
 
@@ -213,15 +212,20 @@ func HandleReview(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				return
 			} else {
-				// Session terminée
-				sessionService.ClearAllSessions()
-
-				data := map[string]any{
-					"CompletedCount": len(activeSession.CompletedIDs),
-					"Duration":       time.Since(activeSession.StartedAt).Round(time.Minute),
+				// ✅ Session terminée : stocke le résultat
+				result := &models.SessionResult{
+					CompletedCount: len(activeSession.CompletedIDs),
+					Duration:       time.Since(activeSession.StartedAt),
+					CompletedAt:    time.Now(),
+					Exercises:      activeSession.CompletedIDs,
 				}
 
-				Tmpl.ExecuteTemplate(w, "session-complete", data)
+				store.StoreSessionResult(result)
+				sessionService.ClearAllSessions()
+
+				// Redirect vers page de complétion
+				w.Header().Set("HX-Redirect", "/session/complete")
+				w.WriteHeader(http.StatusOK)
 				return
 			}
 		}

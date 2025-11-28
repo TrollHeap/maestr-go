@@ -27,7 +27,7 @@ func Routes() *http.ServeMux {
 	mux.HandleFunc("GET /session/builder", handlers.HandleSessionBuilder)
 	mux.HandleFunc("GET /session/start", handlers.HandleStartSession) // ← Corrigé
 	mux.HandleFunc("GET /session/{id}", handlers.HandleCurrentSession)
-	mux.HandleFunc("POST /session/{id}/complete", handlers.HandleCompleteSession)
+	mux.HandleFunc("GET /session/complete", handlers.HandleSessionComplete)
 	mux.HandleFunc("POST /session/{id}/stop", handlers.HandleStopSession)
 
 	mux.HandleFunc("GET /stats/metrics", handlers.HandleStatsMetrics)

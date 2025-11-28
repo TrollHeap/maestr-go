@@ -30,6 +30,14 @@ type AdaptiveSession struct {
 	CurrentIndex  int             `json:"current_index"`
 }
 
+// SessionResult représente le résultat d'une session terminée
+type SessionResult struct {
+	CompletedCount int           `json:"completed_count"`
+	Duration       time.Duration `json:"duration"`
+	CompletedAt    time.Time     `json:"completed_at"`
+	Exercises      []int         `json:"exercises"` // IDs des exercices faits
+}
+
 // Config pour chaque mode
 var SessionConfigs = map[EnergyLevel]struct {
 	Mode          SessionMode
