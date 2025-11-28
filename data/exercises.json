@@ -32,11 +32,11 @@
       2,
       3
     ],
-    "last_reviewed": "2025-11-28T00:53:26.457604223+01:00",
-    "next_review_at": "2025-11-30T00:53:26.457602956+01:00",
+    "last_reviewed": "2025-11-28T00:57:32.79373726+01:00",
+    "next_review_at": "2025-12-02T00:57:32.793736146+01:00",
     "ease_factor": 1.3,
-    "interval_days": 2,
-    "repetitions": 15,
+    "interval_days": 4,
+    "repetitions": 18,
     "skipped_count": 0,
     "deleted": false,
     "created_at": "2025-11-24T16:47:44.652374255+01:00",
@@ -67,9 +67,10 @@
       }
     ],
     "mnemonic": "Filtre à café : garde ce qui passe le test, rejette le reste",
-    "done": false,
+    "done": true,
     "completed_steps": [
       0,
+      1,
       2
     ],
     "last_reviewed": "2025-11-27T19:24:58.217179015+01:00",
@@ -108,16 +109,18 @@
       }
     ],
     "mnemonic": "Emballage cadeau : erreur → contexte → trace complète",
-    "done": false,
+    "done": true,
     "completed_steps": [
+      0,
       1,
-      2
+      2,
+      3
     ],
-    "last_reviewed": "2025-11-27T19:36:19.872231205+01:00",
-    "next_review_at": "2025-12-09T19:36:19.872231205+01:00",
+    "last_reviewed": "2025-11-28T00:59:23.105708729+01:00",
+    "next_review_at": "2025-12-22T00:59:23.105707368+01:00",
     "ease_factor": 2,
-    "interval_days": 12,
-    "repetitions": 8,
+    "interval_days": 24,
+    "repetitions": 9,
     "skipped_count": 0,
     "deleted": false,
     "created_at": "2025-11-24T19:00:00Z",
