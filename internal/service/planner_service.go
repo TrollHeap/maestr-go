@@ -1,6 +1,7 @@
 package service
 
 import (
+	"log"
 	"sort"
 	"time"
 
@@ -23,33 +24,48 @@ type DaySchedule struct {
 	Count     int
 }
 
+// normalizeDate supprime l'heure et force UTC
+func normalizeDate(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+}
+
 // GetReviewsForDate récupère les exercices à réviser pour une date
 func (s *PlannerService) GetReviewsForDate(date time.Time) []models.Exercise {
 	allExercises := store.GetAll()
 	var reviews []models.Exercise
 
-	// Normalise la date (ignore l'heure)
-	targetDate := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+	// Normalise la date cible (ignore l'heure, force UTC)
+	targetDate := normalizeDate(date)
+
+	log.Printf("🔍 [PlannerService] GetReviewsForDate pour %s (normalisé: %s)",
+		date.Format("2006-01-02"), targetDate.Format("2006-01-02"))
+	log.Printf("📚 [PlannerService] %d exercices au total dans le store", len(allExercises))
 
 	for _, ex := range allExercises {
+		// Skip si pas de date de révision
 		if ex.NextReviewAt.IsZero() {
 			continue
 		}
 
-		// Normalise la date de révision
-		reviewDate := time.Date(
-			ex.NextReviewAt.Year(),
-			ex.NextReviewAt.Month(),
-			ex.NextReviewAt.Day(),
-			0, 0, 0, 0,
-			ex.NextReviewAt.Location(),
-		)
+		// Normalise la date de révision (ignore l'heure, force UTC)
+		reviewDate := normalizeDate(ex.NextReviewAt)
 
-		// Compare les dates
+		// Debug pour chaque exercice
+		log.Printf("   ├─ Exo #%d '%s': NextReviewAt=%s (normalisé=%s) | Match=%v",
+			ex.ID, ex.Title,
+			ex.NextReviewAt.Format("2006-01-02 15:04"),
+			reviewDate.Format("2006-01-02"),
+			reviewDate.Equal(targetDate))
+
+		// Compare les dates normalisées
 		if reviewDate.Equal(targetDate) {
 			reviews = append(reviews, ex)
+			log.Printf("   └─ ✅ Match ! Ajouté à la liste")
 		}
 	}
+
+	log.Printf("✅ [PlannerService] %d révision(s) trouvée(s) pour %s",
+		len(reviews), targetDate.Format("2006-01-02"))
 
 	// Trie par difficulté (urgent d'abord)
 	sort.Slice(reviews, func(i, j int) bool {
@@ -61,6 +77,9 @@ func (s *PlannerService) GetReviewsForDate(date time.Time) []models.Exercise {
 
 // GetWeekSchedule récupère le planning de la semaine
 func (s *PlannerService) GetWeekSchedule(startDate time.Time) []DaySchedule {
+	log.Printf("📅 [PlannerService] GetWeekSchedule pour semaine du %s",
+		startDate.Format("2006-01-02"))
+
 	schedule := make([]DaySchedule, 7)
 
 	for i := 0; i < 7; i++ {
@@ -72,6 +91,9 @@ func (s *PlannerService) GetWeekSchedule(startDate time.Time) []DaySchedule {
 			Exercises: exercises,
 			Count:     len(exercises),
 		}
+
+		log.Printf("   Jour %d (%s): %d révision(s)",
+			i+1, date.Format("Mon 02 Jan"), len(exercises))
 	}
 
 	return schedule
