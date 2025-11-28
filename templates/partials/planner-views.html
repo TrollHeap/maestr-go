@@ -1,0 +1,137 @@
+{{define "planner-day-view"}}
+<div>
+    <h2 style="margin-bottom: 20px; font-size: 18px; text-transform: uppercase;">
+        📅 {{.Date.Format "Monday 02 January 2006"}}
+    </h2>
+
+    {{if .Reviews}}
+        {{range .Reviews}}
+        <div class="review-card {{if gt .Difficulty 3}}overdue{{else}}upcoming{{end}}">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h3 style="margin: 0 0 5px 0; font-size: 14px;">{{.Title}}</h3>
+                    <p style="margin: 0; font-size: 11px; color: #999;">
+                        {{.Domain}} | D{{.Difficulty}} | 
+                        Révision #{{.Repetitions}}
+                    </p>
+                </div>
+                <a href="/exercise/{{.ID}}" 
+                   style="padding: 8px 15px; background: #0a0a0a; border: 1px solid var(--fg-terminal); color: var(--fg-terminal); text-decoration: none; font-size: 11px;">
+                    RÉVISER
+                </a>
+            </div>
+        </div>
+        {{end}}
+    {{else}}
+        <div style="text-align: center; padding: 60px 20px; color: #666;">
+            <p style="font-size: 14px;">✅ Aucune révision prévue aujourd'hui</p>
+            <p style="font-size: 11px; margin-top: 10px;">Profite de ta journée libre !</p>
+        </div>
+    {{end}}
+</div>
+{{end}}
+
+{{define "planner-week-view"}}
+<div id="week-view-container">
+    <!-- Navigation Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <button 
+            hx-get="/planner/week?week={{.PrevWeek}}" 
+            hx-target="#week-view-container"
+            hx-swap="outerHTML"
+            style="padding: 8px 15px; background: #0a0a0a; border: 1px solid var(--fg-terminal); color: var(--fg-terminal); cursor: pointer; font-family: var(--mono-font); font-size: 11px; text-transform: uppercase; transition: all 0.2s;"
+            onmouseover="this.style.background='var(--fg-terminal)'; this.style.color='#0a0a0a';"
+            onmouseout="this.style.background='#0a0a0a'; this.style.color='var(--fg-terminal)';">
+            ← Précédente
+        </button>
+        
+        <h2 style="margin: 0; font-size: 18px; text-transform: uppercase;">
+            📅 Semaine du {{.StartDate.Format "02 Jan 2006"}}
+        </h2>
+        
+        <button 
+            hx-get="/planner/week?week={{.NextWeek}}" 
+            hx-target="#week-view-container"
+            hx-swap="outerHTML"
+            style="padding: 8px 15px; background: #0a0a0a; border: 1px solid var(--fg-terminal); color: var(--fg-terminal); cursor: pointer; font-family: var(--mono-font); font-size: 11px; text-transform: uppercase; transition: all 0.2s;"
+            onmouseover="this.style.background='var(--fg-terminal)'; this.style.color='#0a0a0a';"
+            onmouseout="this.style.background='#0a0a0a'; this.style.color='var(--fg-terminal)';">
+            Suivante →
+        </button>
+    </div>
+
+    <!-- Week Schedule -->
+    {{range .Schedule}}
+    <div style="margin-bottom: 15px; padding: 15px; background: #111; border: 1px solid var(--border-terminal);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="margin: 0; font-size: 14px;">
+                {{.Date.Format "Monday 02 Jan"}}
+            </h3>
+            <span style="font-size: 12px; color: {{if gt .Count 0}}#00ff00{{else}}#666{{end}};">
+                {{.Count}} révision(s)
+            </span>
+        </div>
+        
+        {{if .Exercises}}
+            {{range .Exercises}}
+            <div style="font-size: 11px; color: #999; margin: 5px 0;">
+                • {{.Title}} (D{{.Difficulty}})
+            </div>
+            {{end}}
+        {{else}}
+            <div style="font-size: 11px; color: #666; font-style: italic;">
+                Aucune révision
+            </div>
+        {{end}}
+    </div>
+    {{end}}
+</div>
+{{end}}
+
+{{define "planner-month-view"}}
+<div>
+    <!-- Navigation Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <button 
+            hx-get="/planner/month?year={{.PrevYear}}&month={{.PrevMonth}}" 
+            hx-target="#planner-content"
+            hx-swap="innerHTML"
+            style="padding: 8px 15px; background: #0a0a0a; border: 1px solid var(--fg-terminal); color: var(--fg-terminal); cursor: pointer; font-family: var(--mono-font); font-size: 11px;">
+            ← MOIS PRÉCÉDENT
+        </button>
+        
+        <h2 style="margin: 0; font-size: 18px; text-transform: uppercase;">
+            📅 {{.MonthName}} {{.Year}}
+        </h2>
+        
+        <button 
+            hx-get="/planner/month?year={{.NextYear}}&month={{.NextMonth}}" 
+            hx-target="#planner-content"
+            hx-swap="innerHTML"
+            style="padding: 8px 15px; background: #0a0a0a; border: 1px solid var(--fg-terminal); color: var(--fg-terminal); cursor: pointer; font-family: var(--mono-font); font-size: 11px;">
+            MOIS SUIVANT →
+        </button>
+    </div>
+
+    <!-- Month Grid -->
+    <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px;">
+        <!-- Headers (jours de la semaine) -->
+        {{range $day := .WeekDays}}
+        <div style="padding: 10px; text-align: center; font-size: 11px; color: #666; text-transform: uppercase;">
+            {{$day}}
+        </div>
+        {{end}}
+        
+        <!-- Days -->
+        {{range .Days}}
+        <div style="padding: 15px; background: #111; border: 1px solid var(--border-terminal); text-align: center; min-height: 60px;">
+            <div style="font-size: 14px; margin-bottom: 5px;">{{.}}</div>
+            {{$count := index $.Counts .}}
+            {{if $count}}
+            <div style="font-size: 10px; color: #00ff00;">{{$count}} rev</div>
+            {{end}}
+        </div>
+        {{end}}
+    </div>
+</div>
+{{end}}

@@ -1,79 +1,119 @@
-{{define "planner"}}
+{{define "planner-page"}}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planner - Terminal v2</title>
-    <link rel="stylesheet" href="/public/css/exercice.css">
-    <link rel="stylesheet" href="/public/css/badges.css">
-    <link rel="stylesheet" href="/public/css/planner.css">
+    <title>Planner - Maestro</title>
+    <link rel="stylesheet" href="/public/css/list-exercice.css">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        .planner-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .planner-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-terminal);
+        }
+
+        .planner-tab {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            color: var(--fg-terminal);
+            cursor: pointer;
+            font-family: var(--mono-font);
+            text-transform: uppercase;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .planner-tab:hover,
+        .planner-tab.active {
+            background: rgba(0,255,0,0.1);
+            border-bottom: 2px solid var(--fg-terminal);
+        }
+
+        .planner-content {
+            min-height: 500px;
+        }
+
+        .review-card {
+            padding: 15px;
+            margin: 10px 0;
+            background: #111;
+            border: 1px solid var(--border-terminal);
+            transition: all 0.2s;
+        }
+
+        .review-card:hover {
+            border-color: var(--fg-terminal);
+            box-shadow: 0 0 10px var(--shadow-glow);
+        }
+
+        .overdue {
+            border-left: 4px solid #ff6600;
+        }
+
+        .upcoming {
+            border-left: 4px solid #00ff00;
+        }
+    </style>
 </head>
 <body>
-    <!-- Scan line effect -->
     <div class="scan-line"></div>
+    
+    {{template "navbar"}}
 
-    <!-- Navigation -->
-    {{template "navbar" .}}
-
-    <!-- Header -->
     <div class="terminal-header">
         <div class="terminal-title">
             ╔═══════════════════════════════════╗<br>
-            ║    SYSTÈME PLANNER v2.0          ║<br>
+            ║ PLANNER & RÉVISIONS               ║<br>
             ╚═══════════════════════════════════╝
         </div>
         <div class="terminal-subtitle">
-            &gt; MODE: <span id="current-mode">JOUR</span> | DATE: <span id="current-date">{{.Date.Format "2006-01-02"}}</span> | STATUS: <span class="blink">ONLINE</span>
+            &gt; CALENDRIER SRS | STATUS: <span class="blink">ACTIF</span>
         </div>
     </div>
 
-    <!-- Tab Navigation HTMX -->
-    <div class="tab-container">
-        <div class="tab-nav">
-            <button 
-                class="tab-btn active" 
-                hx-get="/planner/day?date={{.Date.Format "2006-01-02"}}"
-                hx-target="#tab-content-area"
-                hx-swap="innerHTML"
-            >[JOUR]</button>
-            
-            <button 
-                class="tab-btn" 
-                hx-get="/planner/week"
-                hx-target="#tab-content-area"
-                hx-swap="innerHTML"
-            >[SEMAINE]</button>
-            
-            <button 
-                class="tab-btn" 
-                hx-get="/planner/month"
-                hx-target="#tab-content-area"
-                hx-swap="innerHTML"
-            >[MOIS]</button>
+    <div class="planner-container">
+        <!-- Tabs -->
+        <div class="planner-tabs">
+            <button class="planner-tab active" 
+                    hx-get="/planner/day?date={{.CurrentDate.Format "2006-01-02"}}" 
+                    hx-target="#planner-content"
+                    hx-swap="innerHTML">
+                Aujourd'hui
+            </button>
+            <button class="planner-tab" 
+                    hx-get="/planner/week" 
+                    hx-target="#planner-content"
+                    hx-swap="innerHTML">
+                Semaine
+            </button>
+            <button class="planner-tab" 
+                    hx-get="/planner/month" 
+                    hx-target="#planner-content"
+                    hx-swap="innerHTML">
+                Mois
+            </button>
         </div>
 
-        <!-- Zone de remplacement dynamique -->
-        <div id="tab-content-area" class="tab-content">
-            {{template "day-schedule" .}}
+        <!-- Content (swap par HTMX) -->
+        <div id="planner-content" class="planner-content">
+            {{template "planner-day-view" .}}
         </div>
     </div>
 
-    <!-- Footer -->
     <div class="terminal-footer">
         ┌────────────────────────────────────────────┐<br>
-        │ © 2025 GO v2 TERMINAL | ALL SYSTEMS NOMINAL │<br>
+        │ © 2025 MAESTRO | SRS PLANNER v2.0          │<br>
         └────────────────────────────────────────────┘
     </div>
-
-    <script>
-        // Minimal JS pour affichage date uniquement
-        document.addEventListener('DOMContentLoaded', function() {
-            const now = new Date();
-            document.getElementById('current-date').textContent = now.toISOString().split('T')[0];
-        });
-    </script>
 </body>
 </html>
 {{end}}
