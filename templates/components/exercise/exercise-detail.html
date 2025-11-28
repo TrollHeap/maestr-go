@@ -2,8 +2,14 @@
 <div id="exercise-detail" class="exercise-detail">
     <div class="exercise-detail__header">
         <h2 class="exercise-detail__title">{{.Exercise.Title}}</h2>
+        <!-- Status Badge (lecture seule) -->
+        <span class="badge badge--status {{if .Exercise.Done}}badge--done{{else}}badge--in-progress{{end}}">
+            {{if .Exercise.Done}}✓ Maîtrisé{{else}}⊙ En cours{{end}}
+        </span>
     </div>
+    
     <p class="exercise-detail__description">{{.Exercise.Description}}</p>
+    
     <div class="exercise-detail__badges">
         <span class="badge badge--domain-{{.Exercise.Domain | lower}} badge--md">
             {{.Exercise.Domain}}
@@ -15,7 +21,9 @@
             {{len .Exercise.CompletedSteps}}/{{len .Exercise.Steps}} étapes
         </span>
     </div>
+    
     <hr class="exercise-detail__divider">
+    
     <!-- Visuels -->
     {{if .Exercise.ConceptualVisuals}}
     <div class="conceptual-visuals">
@@ -38,18 +46,18 @@
     </div>
     <hr class="exercise-detail__divider">
     {{end}}
+    
     {{template "steps-exo" .Exercise}}
+    
     <hr class="exercise-detail__divider">
+    
     <div>
         <h3 class="exercise-detail__section-title">CONTENU</h3>
         <div class="exercise-detail__content">{{.Exercise.Content | noescape}}</div>
     </div>
+    
     <hr class="exercise-detail__divider">
-    <div class="exercise-detail__badges">
-    {{template "status-indicator" .Exercise}}
-    </div>
-    {{if .Exercise.Done}}
-    {{template "review-panel" .Exercise}}
-    {{end}}
+    
+        {{template "review-panel" .}}
 </div>
 {{end}}
