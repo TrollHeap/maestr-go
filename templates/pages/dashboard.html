@@ -4,80 +4,253 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Terminal v2</title>
-    <link rel="stylesheet" href="/public/css/dashboard.css">
-    <link rel="stylesheet" href="/public/css/visual-signature.css">
+    <title>Dashboard - Maestro</title>
+    <link rel="stylesheet" href="/public/css/list-exercice.css">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    
     <style>
-        .htmx-indicator{display:none} 
-        .htmx-request .htmx-indicator{display:inline;} 
-        .htmx-request.htmx-indicator{display:inline;}
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            padding: 20px;
+            background: #111;
+            border: 1px solid var(--border-terminal);
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--fg-terminal);
+            box-shadow: 0 0 15px var(--shadow-glow);
+        }
+
+        .stat-card__value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #00ff00;
+            margin: 10px 0;
+        }
+
+        .stat-card__label {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-card__bar {
+            margin-top: 10px;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .stat-card__bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #00cc00);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            background: #0a0a0a;
+            border: 2px solid var(--fg-terminal);
+            color: var(--fg-terminal);
+            text-decoration: none;
+            cursor: pointer;
+            font-family: var(--mono-font);
+            font-size: 12px;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background: var(--fg-terminal);
+            color: #0a0a0a;
+        }
+
+        .btn--urgent {
+            border-color: #ff6600;
+            color: #ff6600;
+        }
+
+        .btn--urgent:hover {
+            background: #ff6600;
+            color: #0a0a0a;
+        }
+
+        .activity-feed {
+            margin: 30px 0;
+            padding: 20px;
+            background: #111;
+            border: 1px solid var(--border-terminal);
+        }
+
+        .activity-item {
+            padding: 12px;
+            margin: 8px 0;
+            background: #0a0a0a;
+            border-left: 3px solid #666;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .activity-item--urgent {
+            border-left-color: #ff6600;
+            background: rgba(255, 102, 0, 0.05);
+        }
+
+        .activity-item--done {
+            border-left-color: #00ff00;
+            background: rgba(0, 255, 0, 0.05);
+        }
+
+        .activity-item--progress {
+            border-left-color: #00ccff;
+            background: rgba(0, 204, 255, 0.05);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #333;
+            margin: 8px 0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar__fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #00cc00);
+            transition: width 0.3s;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
     </style>
-    
 </head>
 <body>
-    <!-- Scan line effect -->
-    <!-- <div class="scan-line"></div> -->
+    <div class="scan-line"></div>
 
-    <!-- Navigation -->
-    {{template "navbar" .}}
+    {{template "navbar"}}
 
     <!-- Header -->
     <div class="terminal-header">
         <div class="terminal-title">
-            ╔═══════════════════════════════════╗<br>
-            ║   DASHBOARD SRS v2.0             ║<br>
-            ╚═══════════════════════════════════╝
+            ╔═══════════════════════════════════════════╗<br>
+            ║ COCKPIT MAESTRO SRS                       ║<br>
+            ╚═══════════════════════════════════════════╝
         </div>
         <div class="terminal-subtitle">
-            &gt; SYSTÈME D'APPRENTISSAGE ACTIF | STATUS: <span class="blink">ONLINE</span> | UPTIME: <span id="uptime">00:00:00</span>
+            &gt; TABLEAU DE BORD | STATUS: <span style="color: #00ff00;">ONLINE</span> | 
+            RÉVISIONS ATTENTE: <span style="color: #ff6600;">{{.OverdueCount}}</span> | 
+            AUJOURD'HUI: <span style="color: #00ff00;">{{.TodayCount}}</span>
         </div>
     </div>
 
-<a href="/session/builder" class="btn-primary">
-    [🎯 DÉMARRER SESSION]
-</a>
+    <div class="container">
+        <!-- Quick Actions -->
+        <div style="margin: 30px 0;">
+            <h2 style="font-size: 16px; margin-bottom: 15px; text-transform: uppercase;">⚡ ACTIONS RAPIDES</h2>
+            <div class="action-buttons">
+                <a href="/session/builder" class="btn">
+                    🎯 Démarrer Session
+                </a>
+                <a href="/planner" class="btn">
+                    📅 Voir Calendrier
+                </a>
+                <a href="/exercises" class="btn">
+                    📚 Tous Exercices
+                </a>
+                {{if gt .OverdueCount 0}}
+                <a href="/planner?overdue=1" class="btn btn--urgent">
+                    ⚠️ {{.OverdueCount}} En Retard
+                </a>
+                {{end}}
+            </div>
+        </div>
 
-    <!-- Recent Activity -->
-    <div class="activity-feed">
-        <div class="activity-feed__title">ACTIVITÉ RÉCENTE</div>
-        <div class="activity-item activity-item--urgent">
-            <div>⚠️ Révision en retard : "Gestion des Erreurs" (Go)</div>
-            <div class="activity-item__time">Il y a 2 heures</div>
+
+        <!-- Révisions en Retard -->
+        {{if gt .OverdueCount 0}}
+        <div style="margin-bottom: 30px;">
+            <h2 style="font-size: 16px; margin-bottom: 15px; text-transform: uppercase; color: #ff6600;">⚠️ RÉVISIONS EN RETARD ({{.OverdueCount}})</h2>
+            <div style="padding: 15px; background: rgba(255, 102, 0, 0.1); border: 1px solid #ff6600; border-radius: 3px;">
+                {{range .Overdue}}
+                <div style="padding: 10px; margin: 8px 0; background: #111; border-left: 3px solid #ff6600; font-size: 12px; display: flex; justify-content: space-between;">
+                    <div>
+                        <strong>{{.Title}}</strong><br>
+                        <span style="color: #999; font-size: 11px;">
+                            {{.Domain}} | D{{.Difficulty}} | Révision #{{.Repetitions}}
+                        </span>
+                    </div>
+                    <a href="/exercise/{{.ID}}" style="padding: 8px 15px; background: #ff6600; color: #0a0a0a; text-decoration: none; font-size: 11px; white-space: nowrap;">
+                        RÉVISER
+                    </a>
+                </div>
+                {{end}}
+            </div>
         </div>
-        <div class="activity-item activity-item--done">
-            <div>✓ Exercice terminé : "HTMX Filtres" (HTMX)</div>
-            <div class="activity-item__time">Il y a 5 heures</div>
+        {{end}}
+
+        <!-- Prochaines Révisions -->
+        <div style="margin-bottom: 30px;">
+            <h2 style="font-size: 16px; margin-bottom: 15px; text-transform: uppercase;">📅 PROCHAINES RÉVISIONS ({{.UpcomingCount}})</h2>
+            <div style="padding: 15px; background: rgba(0, 255, 0, 0.05); border: 1px solid #00ff00; border-radius: 3px;">
+                {{range .Upcoming}}
+                <div style="padding: 10px; margin: 8px 0; background: #111; border-left: 3px solid #00ff00; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>{{.Title}}</strong><br>
+                        <span style="color: #999; font-size: 11px;">
+                            {{.NextReviewAt.Format "02 Jan 15:04"}} | D{{.Difficulty}}
+                        </span>
+                    </div>
+                    <span style="font-size: 11px; color: #666;">
+                        {{.Domain}}
+                    </span>
+                </div>
+                {{end}}
+            </div>
         </div>
-        <div class="activity-item">
-            <div>◐ Progression : "Types Personnalisés" (2/4 étapes)</div>
-            <div class="activity-item__time">Il y a 1 jour</div>
-        </div>
-        <div class="activity-item activity-item--done">
-            <div>✓ Révision réussie : "Tri Rapide" - Facile (→ 12 jours)</div>
-            <div class="activity-item__time">Il y a 2 jours</div>
+
+        <!-- Breakdown par Domaine -->
+        <div style="margin-bottom: 30px;">
+            <h2 style="font-size: 16px; margin-bottom: 15px; text-transform: uppercase;">🗂️ RÉPARTITION PAR DOMAINE</h2>
+            <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                {{range $domain, $count := .Stats.DomainBreakdown}}
+                <div class="stat-card">
+                    <div class="stat-card__label">{{$domain}}</div>
+                    <div class="stat-card__value">{{$count}}</div>
+                    <div style="font-size: 11px; color: #999; margin-top: 5px;">exercices</div>
+                </div>
+                {{end}}
+            </div>
         </div>
     </div>
+
     <!-- Footer -->
     <div class="terminal-footer">
-        ┌────────────────────────────────────────────┐<br>
-        │ © 2025 GO v2 TERMINAL | ALL SYSTEMS NOMINAL │<br>
-        └────────────────────────────────────────────┘
+        ┌───────────────────────────────────────────────────────┐<br>
+        │ © 2025 MAESTRO v2.0 | SRS COCKPIT | STAY LEARNING 🚀 │<br>
+        └───────────────────────────────────────────────────────┘
     </div>
-
-
-    <script>
-        // Uptime counter
-        let uptimeSeconds = 0;
-        setInterval(() => {
-            uptimeSeconds++;
-            const hours = Math.floor(uptimeSeconds / 3600).toString().padStart(2, '0');
-            const minutes = Math.floor((uptimeSeconds % 3600) / 60).toString().padStart(2, '0');
-            const seconds = (uptimeSeconds % 60).toString().padStart(2, '0');
-            document.getElementById('uptime').textContent = `${hours}:${minutes}:${seconds}`;
-        }, 1000);
-    </script>
 </body>
 </html>
 {{end}}

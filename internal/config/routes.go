@@ -1,9 +1,8 @@
 package config
 
 import (
-	"net/http"
-
 	"maestro/internal/handlers"
+	"net/http"
 )
 
 // Routes définit et RETOURNE le routeur configuré
@@ -21,19 +20,12 @@ func Routes() *http.ServeMux {
 	mux.HandleFunc("POST /exercise/{id}/toggle-step", handlers.HandleToggleStep)
 	mux.HandleFunc("POST /exercise/{id}/review", handlers.HandleReview)
 
-	// internal/handlers/routes.go (AJOUTER)
-
 	// Routes sessions - Version corrigée
 	mux.HandleFunc("GET /session/builder", handlers.HandleSessionBuilder)
 	mux.HandleFunc("GET /session/start", handlers.HandleStartSession) // ← Corrigé
 	mux.HandleFunc("GET /session/{id}", handlers.HandleCurrentSession)
 	mux.HandleFunc("GET /session/complete", handlers.HandleSessionComplete)
 	mux.HandleFunc("POST /session/{id}/stop", handlers.HandleStopSession)
-
-	mux.HandleFunc("GET /stats", handlers.HandleStatsPage)
-	mux.HandleFunc("GET /stats/metrics", handlers.HandleStatsMetrics)
-	mux.HandleFunc("GET /stats/domains", handlers.HandleStatsDomains)
-	mux.HandleFunc("GET /stats/difficulties", handlers.HandleStatsDifficulties)
 
 	mux.HandleFunc("GET /planner", handlers.HandlePlannerPage)
 	mux.HandleFunc("GET /planner/day", handlers.HandlePlannerDay)     // ← AJOUTE

@@ -2,11 +2,10 @@ package service
 
 import (
 	"log"
-	"sort"
-	"time"
-
 	"maestro/internal/models"
 	"maestro/internal/store"
+	"sort"
+	"time"
 )
 
 // PlannerService gère la logique du calendrier
@@ -82,7 +81,7 @@ func (s *PlannerService) GetWeekSchedule(startDate time.Time) []DaySchedule {
 
 	schedule := make([]DaySchedule, 7)
 
-	for i := 0; i < 7; i++ {
+	for i := range 7 {
 		date := startDate.AddDate(0, 0, i)
 		exercises := s.GetReviewsForDate(date)
 

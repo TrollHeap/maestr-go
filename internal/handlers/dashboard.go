@@ -3,26 +3,43 @@ package handlers
 import (
 	"log"
 	"net/http"
+	"time"
 
-	"maestro/internal/store"
+	"maestro/internal/service"
 )
 
-// internal/handlers/exercises.go
-func HandleDashboard(w http.ResponseWriter, r *http.Request) {
-	log.Printf("🔍 HandleDashboard appelé - Path: %s", r.URL.Path)
+var dashboardService *service.DashboardService
 
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
+func init() {
+	dashboardService = service.NewDashboardService()
+}
+
+// HandleDashboard affiche le dashboard
+func HandleDashboard(w http.ResponseWriter, r *http.Request) {
+	// Récupère les stats
+	stats := dashboardService.GetDashboardStats()
+
+	// Récupère les révisions d'aujourd'hui
+	todayReviews := plannerService.GetReviewsForDate(time.Now())
+
+	// Récupère les révisions en retard
+	overdueReviews := plannerService.GetOverdueReviews()
+
+	// Récupère les prochaines révisions
+	upcomingReviews := plannerService.GetUpcomingReviews(5)
 
 	data := map[string]any{
-		"Exercises": store.GetAll(),
+		"Stats":         stats,
+		"TodayCount":    len(todayReviews),
+		"OverdueCount":  len(overdueReviews),
+		"UpcomingCount": len(upcomingReviews),
+		"Overdue":       overdueReviews,
+		"Upcoming":      upcomingReviews,
+		"Now":           time.Now(),
 	}
 
-	log.Println("✅ Exécution template 'dashboard'")
 	if err := Tmpl.ExecuteTemplate(w, "dashboard", data); err != nil {
-		log.Printf("❌ Erreur template: %v", err)
+		log.Printf("❌ Erreur template dashboard: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
