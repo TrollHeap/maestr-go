@@ -29,37 +29,38 @@ func HandleSessionBuilder(w http.ResponseWriter, r *http.Request) {
 
 // Démarre une session
 func HandleStartSession(w http.ResponseWriter, r *http.Request) {
-	log.Println("🔥 HandleStartSession appelé") // ← AJOUTE
+	log.Println("🔥 HandleStartSession appelé")
 
 	energyStr := r.URL.Query().Get("energy")
-	log.Printf("Energy reçu: %s", energyStr) // ← AJOUTE
+	log.Printf("Energy reçu: %s", energyStr)
 
 	energy, err := strconv.Atoi(energyStr)
 	if err != nil || energy < 1 || energy > 3 {
-		log.Printf("❌ Énergie invalide: %v", err) // ← AJOUTE
+		log.Printf("❌ Énergie invalide: %v", err)
 		http.Error(w, "Niveau d'énergie invalide", http.StatusBadRequest)
 		return
 	}
 
-	log.Println("🚀 Appel StartSession...") // ← AJOUTE
+	log.Println("🚀 Appel StartSession...")
 	sessionID, session, err := sessionService.StartSession(models.EnergyLevel(energy))
 	if err != nil {
-		log.Printf("❌ Erreur StartSession: %v", err) // ← AJOUTE
+		log.Printf("❌ Erreur StartSession: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("✅ Session créée: %s", sessionID) // ← AJOUTE
+	log.Printf("✅ Session créée: %s", sessionID)
 
 	if len(session.Exercises) == 0 {
 		log.Println("❌ Aucun exercice disponible")
-		http.Error(w, "Aucun exercice disponible", http.StatusNotFound)
+		// ✅ Affiche la belle page au lieu d'une erreur brute
+		Tmpl.ExecuteTemplate(w, "no-exercises", nil)
 		return
 	}
 
 	firstExercise := session.Exercises[0]
 	redirectURL := fmt.Sprintf("/exercise/%d?from=session&sid=%s", firstExercise.ID, sessionID)
-	log.Printf("➡️ Redirection vers: %s", redirectURL) // ← AJOUTE
+	log.Printf("➡️ Redirection vers: %s", redirectURL)
 
 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }
