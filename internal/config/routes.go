@@ -19,6 +19,7 @@ func Routes() *http.ServeMux {
 	// --- GROUPE 2 : FRAGMENTS HTMX (GET) ---
 	mux.HandleFunc("GET /exercises/list", handlers.HandleListExercice)  // ← FRAGMENT filtres
 	mux.HandleFunc("GET /exercise/{id}", handlers.HandleDetailExercice) // ← FRAGMENT détail
+	mux.HandleFunc("GET /exercise/next", handlers.HandleNextExercise)
 
 	// internal/handlers/routes.go (AJOUTER)
 

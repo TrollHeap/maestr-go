@@ -208,3 +208,63 @@ func BuildAdaptiveSession(energy models.EnergyLevel) models.AdaptiveSession {
 		BreakSchedule: config.Breaks,
 	}
 }
+
+// GetNextDueExercise retourne le prochain exercice à réviser
+// Priorité : 1. Exercices dus, 2. Nouveaux exercices
+func GetNextDueExercise(fromSession bool, sessionExercises []int) (*models.Exercise, error) {
+	var candidates []*models.Exercise
+	now := time.Now()
+
+	// 1️⃣ Si fromSession, ne prendre que les exercices de la session
+	if fromSession && len(sessionExercises) > 0 {
+		sessionMap := make(map[int]bool)
+		for _, id := range sessionExercises {
+			sessionMap[id] = true
+		}
+
+		// Filtrer les exercices de la session
+		for i := range exercises {
+			if sessionMap[exercises[i].ID] && !exercises[i].Deleted {
+				candidates = append(candidates, &exercises[i])
+			}
+		}
+	} else {
+		// 2️⃣ Mode libre : tous les exercices non supprimés
+		for i := range exercises {
+			if !exercises[i].Deleted {
+				candidates = append(candidates, &exercises[i])
+			}
+		}
+	}
+
+	// 3️⃣ Priorité 1 : Exercices dus (Done + NextReviewAt <= now)
+	var dueExercises []*models.Exercise
+	for _, ex := range candidates {
+		if ex.Done && ex.NextReviewAt.Before(now) {
+			dueExercises = append(dueExercises, ex)
+		}
+	}
+
+	if len(dueExercises) > 0 {
+		// Trier par date (plus ancien en premier)
+		sort.Slice(dueExercises, func(i, j int) bool {
+			return dueExercises[i].NextReviewAt.Before(dueExercises[j].NextReviewAt)
+		})
+		return dueExercises[0], nil
+	}
+
+	// 4️⃣ Priorité 2 : Nouveaux exercices (jamais révisés)
+	var newExercises []*models.Exercise
+	for _, ex := range candidates {
+		if ex.LastReviewed == nil {
+			newExercises = append(newExercises, ex)
+		}
+	}
+
+	if len(newExercises) > 0 {
+		return newExercises[0], nil
+	}
+
+	// 5️⃣ Aucun exercice disponible
+	return nil, nil
+}

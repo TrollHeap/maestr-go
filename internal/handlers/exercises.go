@@ -10,6 +10,7 @@ import (
 	"maestro/internal/models"
 	"maestro/internal/service"
 	"maestro/internal/srs"
+	"maestro/internal/store"
 	"maestro/internal/validator"
 )
 
@@ -171,7 +172,6 @@ func HandleReview(w http.ResponseWriter, r *http.Request) {
 	quality, _ := strconv.Atoi(r.URL.Query().Get("quality"))
 	fromSession := r.URL.Query().Get("from") == "session"
 
-	// Validation
 	if err := validator.ValidateID(id); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -181,38 +181,137 @@ func HandleReview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Appel SRS
+	// Appel au service SRS
 	ex, err := exerciseService.ReviewExercise(id, srs.ReviewQuality(quality))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// 🎯 MODE SESSION : Passer au suivant
+	// Marque DONE si qualité >= 1 (tous sauf "Oublié")
+	if quality >= 1 {
+		ex.Done = true
+		if err := store.Save(); err != nil {
+			http.Error(w, "Erreur sauvegarde", http.StatusInternalServerError)
+			return
+		}
+	}
+	// Si quality = 0 : Done reste false, mais on continue en session
+
+	// 🎯 MODE SESSION : Passer au suivant dans TOUS les cas
 	if fromSession {
 		activeSession := sessionService.GetActiveSession()
 		if activeSession != nil {
+			// Marque comme complété (même si "Oublié", on l'a vu)
+			activeSession.MarkCompleted(ex.ID)
 			nextEx := activeSession.NextExercise()
 
 			if nextEx != nil {
 				// Redirection vers exercice suivant
-				http.Redirect(w, r,
-					fmt.Sprintf("/exercise/%d?from=session", nextEx.ID),
-					http.StatusSeeOther)
+				redirectURL := fmt.Sprintf("/exercise/%d?from=session", nextEx.ID)
+				w.Header().Set("HX-Redirect", redirectURL)
+				w.WriteHeader(http.StatusOK)
 				return
 			} else {
 				// Session terminée
 				sessionService.ClearAllSessions()
+
 				data := map[string]any{
 					"CompletedCount": len(activeSession.CompletedIDs),
 					"Duration":       time.Since(activeSession.StartedAt).Round(time.Minute),
 				}
+
 				Tmpl.ExecuteTemplate(w, "session-complete", data)
 				return
 			}
 		}
 	}
 
-	// 🎯 MODE LIBRE : Affiche confirmation et mise à jour
-	Tmpl.ExecuteTemplate(w, "review-panel", ex)
+	// 🎯 MODE LIBRE : Recharge la page de détail
+	view := struct {
+		Exercise    *models.Exercise
+		FromSession bool
+	}{
+		Exercise:    ex,
+		FromSession: fromSession,
+	}
+	Tmpl.ExecuteTemplate(w, "exercise-detail", view)
+}
+
+func HandleSessionNext(w http.ResponseWriter, r *http.Request) {
+	sessionID := r.URL.Query().Get("sid")
+	currentID, _ := strconv.Atoi(r.URL.Query().Get("current"))
+
+	activeSession := sessionService.GetActiveSession()
+	if activeSession == nil || activeSession.ID != sessionID {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	// Marque l'exercice actuel comme complété
+	activeSession.MarkCompleted(currentID)
+
+	// Récupère le suivant
+	nextEx := activeSession.NextExercise()
+
+	if nextEx != nil {
+		// Redirige vers exercice suivant
+		http.Redirect(w, r,
+			fmt.Sprintf("/exercise/%d?from=session&sid=%s", nextEx.ID, sessionID),
+			http.StatusSeeOther)
+	} else {
+		// Session terminée
+		sessionService.ClearAllSessions()
+		data := map[string]any{
+			"CompletedCount": len(activeSession.CompletedIDs),
+			"Duration":       time.Since(activeSession.StartedAt).Round(time.Minute),
+		}
+		Tmpl.ExecuteTemplate(w, "session-complete", data)
+	}
+}
+
+// HandleNextExercise retourne le prochain exercice à réviser
+func HandleNextExercise(w http.ResponseWriter, r *http.Request) {
+	fromSession := r.URL.Query().Get("from") == "session"
+
+	// Récupère les IDs de la session active (si applicable)
+	var sessionExercises []int
+	if fromSession {
+		activeSession := sessionService.GetActiveSession()
+		if activeSession != nil {
+			for _, ex := range activeSession.Session.Exercises {
+				sessionExercises = append(sessionExercises, ex.ID)
+			}
+		}
+	}
+
+	// 1️⃣ Récupère le prochain exercice
+	nextExercise, err := store.GetNextDueExercise(fromSession, sessionExercises)
+	if err != nil {
+		log.Println("Erreur GetNextDueExercise:", err)
+		http.Error(w, "Erreur serveur", 500)
+		return
+	}
+
+	// 2️⃣ Aucun exercice disponible
+	if nextExercise == nil {
+		// Template de fin de session
+		data := map[string]any{
+			"Message": "🎉 Plus d'exercices à réviser !",
+		}
+		Tmpl.ExecuteTemplate(w, "no-more-exercises", data)
+		return
+	}
+
+	// 3️⃣ Construit les données template
+	view := models.ExerciseView{
+		Exercise:    nextExercise,
+		FromSession: fromSession,
+	}
+
+	// 4️⃣ Exécute le template
+	if err := Tmpl.ExecuteTemplate(w, "exercise-detail", view); err != nil {
+		log.Println("Erreur template next exercise:", err)
+		http.Error(w, "Erreur serveur", 500)
+	}
 }
