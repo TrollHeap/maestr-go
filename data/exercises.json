@@ -11,11 +11,11 @@
       "Récursion gauche et droite",
       "Tester avec des cas limites"
     ],
-    "content": "\u003ch1\u003eQuicksort en Go\u003c/h1\u003e\n\n\u003cp\u003eLe tri rapide est un algorithme de tri par comparaison utilisant la stratégie diviser pour régner.\u003c/p\u003e\n\n\u003ch2\u003ePrincipe\u003c/h2\u003e\n\n\u003col\u003e\n\u003cli\u003eChoisir un pivot\u003c/li\u003e\n\u003cli\u003ePartitionner autour du pivot\u003c/li\u003e\n\u003cli\u003eTrier récursivement les deux sous-parties\u003c/li\u003e\n\u003c/ol\u003e\n\n\u003ch2\u003eComplexité\u003c/h2\u003e\n\n\u003cul\u003e\n\u003cli\u003eMoyenne: O(n log n)\u003c/li\u003e\n\u003cli\u003ePire cas: O(n²) si pivot mal choisi\u003c/li\u003e\n\u003c/ul\u003e\n\n\u003ch2\u003eImplémentation\u003c/h2\u003e\n\n\u003cpre\u003e\u003ccode\u003e\n## Tests\n\n\u003c/code\u003e\u003c/pre\u003e\n",
+    "content": "<h1>Quicksort en Go</h1>\n\n<p>Le tri rapide est un algorithme de tri par comparaison utilisant la stratégie diviser pour régner.</p>\n\n<h2>Principe</h2>\n\n<ol>\n<li>Choisir un pivot</li>\n<li>Partitionner autour du pivot</li>\n<li>Trier récursivement les deux sous-parties</li>\n</ol>\n\n<h2>Complexité</h2>\n\n<ul>\n<li>Moyenne: O(n log n)</li>\n<li>Pire cas: O(n²) si pivot mal choisi</li>\n</ul>\n\n<h2>Implémentation</h2>\n\n<pre>de>\n## Tests\n\n</code></pre>\n",
     "conceptual_visuals": [
       {
         "type": "ascii",
-        "content": "┌──────────────────────────────┐\n│ QUICKSORT = Diviser \u0026 Régner │\n├──────────────────────────────┤\n│                              │\n│     [8, 3, 1, 7, 0, 10, 2]   │\n│              ↓               │\n│        Choisir pivot (7)     │\n│              ↓               │\n│  ┌───────────┼───────────┐  │\n│  │           │           │  │\n│ [3,1,0,2]    7      [8,10]  │\n│  petits   pivot   grands    │\n│    ↓                  ↓      │\n│ trier()           trier()   │\n│    ↓                  ↓      │\n│ [0,1,2,3]  +  7  +  [8,10]  │\n│              ↓               │\n│     [0,1,2,3,7,8,10]        │\n│                              │\n└──────────────────────────────┘",
+        "content": "┌──────────────────────────────┐\n│ QUICKSORT = Diviser & Régner │\n├──────────────────────────────┤\n│                              │\n│     [8, 3, 1, 7, 0, 10, 2]   │\n│              ↓               │\n│        Choisir pivot (7)     │\n│              ↓               │\n│  ┌───────────┼───────────┐  │\n│  │           │           │  │\n│ [3,1,0,2]    7      [8,10]  │\n│  petits   pivot   grands    │\n│    ↓                  ↓      │\n│ trier()           trier()   │\n│    ↓                  ↓      │\n│ [0,1,2,3]  +  7  +  [8,10]  │\n│              ↓               │\n│     [0,1,2,3,7,8,10]        │\n│                              │\n└──────────────────────────────┘",
         "caption": "Partition autour du pivot puis récursion sur les sous-parties"
       },
       {
@@ -25,20 +25,18 @@
       }
     ],
     "mnemonic": "Chef d'orchestre : petits musiciens ← pivot → grands musiciens",
-    "done": true,
-    "completed_steps": [
-      0,
-      2
-    ],
-    "last_reviewed": "2025-11-28T06:04:38.998848306+01:00",
-    "next_review_at": "2025-12-30T06:04:38.998846631+01:00",
+    "done": false,
+    "completed_steps": [0, 2],
+    "last_reviewed_date": 20251128,
+    "next_review_date": 20251230,
     "ease_factor": 1.3,
     "interval_days": 32,
     "repetitions": 6,
     "skipped_count": 0,
+    "last_skipped_date": null,
     "deleted": false,
-    "created_at": "2025-11-24T16:47:44.652374255+01:00",
-    "updated_at": "0001-01-01T00:00:00Z"
+    "created_at": 20251124,
+    "updated_at": 20251128
   },
   {
     "id": 2,
@@ -51,11 +49,11 @@
       "Implémenter la boucle de filtrage",
       "Écrire les tests unitaires"
     ],
-    "content": "\u003ch1\u003eFiltrage avec Go Generics\u003c/h1\u003e\n\n\u003cp\u003eDepuis Go 1.18, les generics permettent de créer des fonctions type-safe réutilisables.\u003c/p\u003e\n\n\u003ch2\u003eFonction Filter générique\u003c/h2\u003e\n\n\u003cpre\u003e\u003ccode\u003e\n## Usage\n\n\u003c/code\u003e\u003c/pre\u003e\n\n\u003ch2\u003eTests\u003c/h2\u003e\n\n\u003cp\u003e\u0026rdquo;\u0026ldquo;\u0026rdquo;\u003c/p\u003e\n",
+    "content": "<h1>Filtrage avec Go Generics</h1>\n\n<p>Depuis Go 1.18, les generics permettent de créer des fonctions type-safe réutilisables.</p>\n\n<h2>Fonction Filter générique</h2>\n\n<pre>de>\n## Usage\n\n</code></pre>\n\n<h2>Tests</h2>\n\n<p>&rdquo;&ldquo;&rdquo;</p>\n",
     "conceptual_visuals": [
       {
         "type": "ascii",
-        "content": "┌─────────────────────────────┐\n│  FILTER = Sélection         │\n├─────────────────────────────┤\n│                             │\n│ Input: [1, 2, 3, 4, 5, 6]   │\n│                             │\n│         ↓ predicate(x\u003e3)    │\n│                             │\n│    ┌────┼────┬────┬────┐    │\n│    │    │    │    │    │    │\n│    1    2    3    4    5    │\n│    ❌   ❌   ❌   ✅   ✅   │\n│                  │    │     │\n│                  └────┘     │\n│                    ↓        │\n│            Output: [4, 5]   │\n│                             │\n└─────────────────────────────┘",
+        "content": "┌─────────────────────────────┐\n│  FILTER = Sélection         │\n├─────────────────────────────┤\n│                             │\n│ Input: [1, 2, 3, 4, 5, 6]   │\n│                             │\n│         ↓ predicate(x>3)    │\n│                             │\n│    ┌────┼────┬────┬────┐    │\n│    │    │    │    │    │    │\n│    1    2    3    4    5    │\n│    ❌   ❌   ❌   ✅   ✅   │\n│                  │    │     │\n│                  └────┘     │\n│                    ↓        │\n│            Output: [4, 5]   │\n│                             │\n└─────────────────────────────┘",
         "caption": "Seuls les éléments validant le prédicat passent dans le résultat"
       },
       {
@@ -66,20 +64,17 @@
     ],
     "mnemonic": "Filtre à café : garde ce qui passe le test, rejette le reste",
     "done": false,
-    "completed_steps": [
-      0,
-      1,
-      2
-    ],
-    "last_reviewed": "2025-11-28T03:59:46.268829252+01:00",
-    "next_review_at": "2025-11-30T03:59:46.268827981+01:00",
+    "completed_steps": [0, 1, 2],
+    "last_reviewed_date": 20251128,
+    "next_review_date": 20251130,
     "ease_factor": 1.3,
     "interval_days": 2,
     "repetitions": 2,
     "skipped_count": 0,
+    "last_skipped_date": null,
     "deleted": false,
-    "created_at": "2025-11-24T16:47:44.652376651+01:00",
-    "updated_at": "0001-01-01T00:00:00Z"
+    "created_at": 20251124,
+    "updated_at": 20251128
   },
   {
     "id": 3,
@@ -93,7 +88,7 @@
       "Tester avec errors.Is() et errors.As()",
       "Appliquer dans un projet réel (http handler)"
     ],
-    "content": "\u003ch1\u003eError Wrapping en Go\u003c/h1\u003e\n\n\u003cp\u003eDepuis Go 1.13, les erreurs peuvent être wrappées pour conserver le contexte.\u003c/p\u003e\n\n\u003ch2\u003ePrincipe\u003c/h2\u003e\n\n\u003cpre\u003e\u003ccode\u003e\n## Unwrapping\n\n\u003c/code\u003e\u003c/pre\u003e\n\n\u003ch2\u003eDifférence %v vs %w\u003c/h2\u003e\n\n\u003cpre\u003e\u003ccode\u003e\n## Application HTTP Handler\n\n\u003c/code\u003e\u003c/pre\u003e\n",
+    "content": "<h1>Error Wrapping en Go</h1>\n\n<p>Depuis Go 1.13, les erreurs peuvent être wrappées pour conserver le contexte.</p>\n\n<h2>Principe</h2>\n\n<pre>de>\n## Unwrapping\n\n</code></pre>\n\n<h2>Différence %v vs %w</h2>\n\n<pre>de>\n## Application HTTP Handler\n\n</code></pre>\n",
     "conceptual_visuals": [
       {
         "type": "ascii",
@@ -107,19 +102,17 @@
       }
     ],
     "mnemonic": "Emballage cadeau : erreur → contexte → trace complète",
-    "done": true,
-    "completed_steps": [
-      0,
-      1
-    ],
-    "last_reviewed": "2025-11-28T04:26:40.123714602+01:00",
-    "next_review_at": "2025-11-29T04:26:40.123713103+01:00",
+    "done": false,
+    "completed_steps": [0, 1],
+    "last_reviewed_date": 20251128,
+    "next_review_date": 20251129,
     "ease_factor": 1.3,
     "interval_days": 1,
     "repetitions": 1,
     "skipped_count": 0,
+    "last_skipped_date": null,
     "deleted": false,
-    "created_at": "2025-11-24T19:00:00Z",
-    "updated_at": "0001-01-01T00:00:00Z"
+    "created_at": 20251124,
+    "updated_at": 20251128
   }
 ]
