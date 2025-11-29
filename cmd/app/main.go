@@ -10,37 +10,24 @@ import (
 )
 
 func main() {
-	// 1. INIT TEMPLATES
+	log.Println("🚀 Démarrage Maestro Go v2...")
+
+	// ✅ NOUVEAU : Init SQLite
+	if err := store.InitDB("data/maestro.db"); err != nil {
+		log.Fatal("Erreur init DB:", err)
+	}
+	defer store.CloseDB()
+
+	// Init templates
 	if err := handlers.InitTemplates(); err != nil {
-		log.Fatalf("❌ Erreur chargement templates: %v", err)
-	}
-	log.Println("✅ Templates chargés")
-
-	// 2. CHARGE LES DONNÉES EXERCICES
-	if err := store.Load(); err != nil {
-		log.Fatalf("❌ Erreur chargement données: %v", err)
-	}
-	log.Println("✅ Données exercices chargées")
-
-	// 3. ✅ CHARGE LES SESSIONS SAUVEGARDÉES
-	if err := store.LoadSessions(); err != nil {
-		// Non fatal : fichier peut ne pas exister au premier lancement
-		log.Printf("⚠️  Sessions non chargées (normal au 1er lancement): %v", err)
-	} else {
-		log.Println("✅ Sessions chargées")
+		log.Fatal("Erreur templates:", err)
 	}
 
-	// 4. INITIALISE AVEC DONNÉES PAR DÉFAUT SI VIDE
-	if err := store.InitDefaultExercises(); err != nil {
-		log.Fatalf("❌ Erreur initialisation: %v", err)
-	}
-	log.Println("✅ Exercices initialisés")
-
-	// 5. ROUTEUR
+	// Routes
 	mux := config.Routes()
-	log.Println("✅ Routes configurées")
 
-	// 6. LANCEMENT SERVEUR
-	log.Println("🚀 Serveur sur http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	log.Println("✅ Serveur démarré sur http://localhost:8080")
+	if err := http.ListenAndServe(":8080", mux); err != nil {
+		log.Fatal(err)
+	}
 }
