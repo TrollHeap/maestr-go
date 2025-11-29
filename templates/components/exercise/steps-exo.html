@@ -1,37 +1,37 @@
 {{define "steps-exo"}}
-    <div class="exercise-detail__steps" id="steps-container-wrapper">
-        <h3 class="exercise-detail__section-title">
-            [ ETAPES ] {{len .CompletedSteps}}/{{len .Steps}}
-        </h3>
-        
-        <div id="steps-container">
-            {{range $index, $step := .Steps}}
-            {{$isCompleted := false}}
-            {{range $.CompletedSteps}}
-                {{if eq . $index}}{{$isCompleted = true}}{{end}}
-            {{end}}
-            
-            <div class="exercise-detail__step {{if $isCompleted}}exercise-detail__step--completed{{end}}">
-                <label class="exercise-detail__step-label">
-                    <input 
-                        type="checkbox" 
-                        class="exercise-detail__step-checkbox"
-                        hx-post="/exercise/{{$.ID}}/toggle-step?step={{$index}}"
-                        hx-target="#steps-container-wrapper"
-                        hx-swap="outerHTML"
-                        {{if $isCompleted}}checked{{end}}
-                    >
-                    
-                    <span class="exercise-detail__step-number {{if $isCompleted}}exercise-detail__step-number--completed{{end}}">
-                        {{add $index 1}}
-                    </span>
-                    
-                    <span class="exercise-detail__step-text {{if $isCompleted}}exercise-detail__step-text--completed{{end}}">
-                        {{$step}}
-                    </span>
-                </label>
-            </div>
-            {{end}}
-        </div>
+<div class="exercise-detail__steps" id="steps-container-wrapper">
+  <h3 class="exercise-detail__section-title">
+    [ ETAPES ] {{len .CompletedSteps}}/{{len .Steps}}
+  </h3>
+
+  <div id="steps-container">
+    {{range $index, $step := .Steps}}
+    {{$isCompleted := false}}
+    {{range $.CompletedSteps}}
+      {{if eq . $index}}{{$isCompleted = true}}{{end}}
+    {{end}}
+
+    <div class="exercise-detail__step {{if $isCompleted}}exercise-detail__step--completed{{end}}">
+      <label class="exercise-detail__step-label">
+        <input
+          type="checkbox"
+          class="exercise-detail__step-checkbox"
+          hx-post="/exercise/{{$.ID}}/toggle-step?step={{$index}}"
+          hx-target="#steps-container-wrapper"
+          hx-swap="outerHTML"
+          {{if $isCompleted}}checked{{end}}
+        >
+
+        <span class="exercise-detail__step-number {{if $isCompleted}}exercise-detail__step-number--completed{{end}}">
+          {{add $index 1}}
+        </span>
+
+        <span class="exercise-detail__step-text {{if $isCompleted}}exercise-detail__step-text--completed{{end}}">
+          {{$step}}
+        </span>
+      </label>
     </div>
+    {{end}}
+  </div>
+</div>
 {{end}}

@@ -1,63 +1,568 @@
 {{define "exercise-detail"}}
-<div id="exercise-detail" class="exercise-detail">
-    <div class="exercise-detail__header">
-        <h2 class="exercise-detail__title">{{.Exercise.Title}}</h2>
-        <!-- Status Badge (lecture seule) -->
-        <span class="badge badge--status {{if .Exercise.Done}}badge--done{{else}}badge--in-progress{{end}}">
-            {{if .Exercise.Done}}✓ Maîtrisé{{else}}⊙ En cours{{end}}
-        </span>
+<div id="exercise-detail" class="exercise-detail-layout">
+  <!-- Sidebar Sticky -->
+  <aside class="exercise-sidebar">
+    <!-- Header Info -->
+    <div class="exercise-header-compact">
+      <h2 class="exercise-title-compact">{{.Exercise.Title}}</h2>
+      <span class="badge badge--status {{if .Exercise.Done}}badge--done{{else}}badge--in-progress{{end}}">
+        {{if .Exercise.Done}}✓ Maîtrisé{{else}}⊙ En cours{{end}}
+      </span>
     </div>
-    
-    <p class="exercise-detail__description">{{.Exercise.Description}}</p>
-    
-    <div class="exercise-detail__badges">
-        <span class="badge badge--domain-{{.Exercise.Domain | lower}} badge--md">
-            {{.Exercise.Domain}}
-        </span>
-        <span class="badge badge--difficulty-{{.Exercise.Difficulty}} badge--md">
-            D{{.Exercise.Difficulty}}
-        </span>
-        <span class="badge badge--progress badge--md">
-            {{len .Exercise.CompletedSteps}}/{{len .Exercise.Steps}} étapes
-        </span>
+
+    <!-- Badges -->
+    <div class="exercise-badges-compact">
+      <span class="badge badge--domain-{{.Exercise.Domain | lower}} badge--sm">
+        {{.Exercise.Domain}}
+      </span>
+      <span class="badge badge--difficulty-{{.Exercise.Difficulty}} badge--sm">
+        D{{.Exercise.Difficulty}}
+      </span>
     </div>
-    
-    <hr class="exercise-detail__divider">
-    
-    <!-- Visuels -->
-    {{if .Exercise.ConceptualVisuals}}
-    <div class="conceptual-visuals">
-        <h3 class="exercise-detail__section-title">VISUALISATION</h3>
-        {{range $index, $visual := .Exercise.ConceptualVisuals}}
-        <div class="visual-aid">
+
+    <hr class="sidebar-divider">
+
+    <!-- Progress Bar -->
+<div class="progress-section">
+  <div class="progress-label">PROGRESSION</div>
+  <div class="progress-bar">
+    <div class="progress-bar-fill" id="progress-fill"></div>
+  </div>
+  <div class="progress-text">
+    {{len .Exercise.CompletedSteps}}/{{len .Exercise.Steps}} étapes
+  </div>
+</div>
+
+    <hr class="sidebar-divider">
+
+    <!-- Steps List -->
+    <div class="steps-sidebar" id="steps-container-wrapper">
+      <h3 class="sidebar-section-title">ÉTAPES</h3>
+      <div id="steps-container">
+        {{range $index, $step := .Exercise.Steps}}
+        {{$isCompleted := false}}
+        {{range $.Exercise.CompletedSteps}}
+          {{if eq . $index}}{{$isCompleted = true}}{{end}}
+        {{end}}
+
+        <div class="step-item {{if $isCompleted}}step-item--completed{{end}}">
+          <label class="step-label">
+            <input
+              type="checkbox"
+              class="step-checkbox"
+              hx-post="/exercise/{{$.Exercise.ID}}/toggle-step?step={{$index}}"
+              hx-target="#steps-container-wrapper"
+              hx-swap="outerHTML"
+              {{if $isCompleted}}checked{{end}}
+            >
+            <span class="step-number">{{add $index 1}}</span>
+            <span class="step-text">{{$step}}</span>
+          </label>
+        </div>
+        {{end}}
+      </div>
+    </div>
+
+    <hr class="sidebar-divider">
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <h3 class="sidebar-section-title">ACTIONS</h3>
+      <button class="action-btn" onclick="switchTab('review')">
+        ⚡ Review Now
+      </button>
+      <a href="/exercises" class="action-btn action-btn--secondary">
+        ← Retour Liste
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content with Tabs -->
+  <main class="exercise-main">
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+      <button class="tab-btn active" data-tab="visual" onclick="switchTab('visual')">
+        🎨 Visualisation
+      </button>
+      <button class="tab-btn" data-tab="content" onclick="switchTab('content')">
+        📖 Contenu
+      </button>
+      <button class="tab-btn" data-tab="review" onclick="switchTab('review')">
+        ⚡ Review
+      </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content-wrapper">
+      <!-- Tab 1: Visualisation -->
+      <div id="tab-visual" class="tab-pane active">
+        <h2 class="tab-title">Visualisation & Mnémotechniques</h2>
+
+        {{if .Exercise.Description}}
+        <div class="description-box">
+          <strong>Description :</strong> {{.Exercise.Description}}
+        </div>
+        {{end}}
+
+        {{if .Exercise.ConceptualVisuals}}
+        <div class="visual-section">
+          {{range $index, $visual := .Exercise.ConceptualVisuals}}
+          <div class="visual-item">
             {{if eq $visual.Type "ascii"}}
             <pre class="ascii-diagram">{{$visual.Content}}</pre>
             {{end}}
             {{if $visual.Caption}}
             <div class="visual-caption">💡 {{$visual.Caption}}</div>
             {{end}}
+          </div>
+          {{end}}
         </div>
         {{end}}
+
         {{if .Exercise.Mnemonic}}
         <div class="mnemonic-box">
-            🧠 <strong>Mnémotechnique :</strong> {{.Exercise.Mnemonic}}
+          🧠 <strong>Mnémotechnique :</strong> {{.Exercise.Mnemonic}}
+        </div>
+        {{else}}
+        <div class="empty-state">
+          <p>Aucune visualisation disponible pour cet exercice.</p>
         </div>
         {{end}}
+      </div>
+
+      <!-- Tab 2: Contenu -->
+      <div id="tab-content" class="tab-pane">
+        <h2 class="tab-title">Contenu de l'Exercice</h2>
+        <div class="content-scrollable">
+          {{.Exercise.Content | noescape}}
+        </div>
+      </div>
+
+      <!-- Tab 3: Review -->
+      <div id="tab-review" class="tab-pane">
+        <h2 class="tab-title">Révision SRS</h2>
+        {{template "review-panel" .}}
+      </div>
     </div>
-    <hr class="exercise-detail__divider">
-    {{end}}
-    
-    {{template "steps-exo" .Exercise}}
-    
-    <hr class="exercise-detail__divider">
-    
-    <div>
-        <h3 class="exercise-detail__section-title">CONTENU</h3>
-        <div class="exercise-detail__content">{{.Exercise.Content | noescape}}</div>
-    </div>
-    
-    <hr class="exercise-detail__divider">
-    
-    {{template "review-panel" .}}
+  </main>
 </div>
+
+<style>
+/* Layout Principal */
+.exercise-detail-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
+  min-height: calc(100vh - 200px);
+}
+
+/* Sidebar Sticky */
+.exercise-sidebar {
+  position: sticky;
+  top: 80px;
+  height: fit-content;
+  max-height: calc(100vh - 100px);
+  background: #111;
+  padding: 1.5rem;
+  border-radius: 10px;
+  border: 2px solid #00ff00;
+  box-shadow: 0 0 20px #00ff0088;
+  overflow-y: auto;
+}
+
+/* Header Compact */
+.exercise-header-compact {
+  margin-bottom: 1rem;
+}
+
+.exercise-title-compact {
+  font-size: 1.4rem;
+  color: #00ff00;
+  font-family: monospace;
+  margin: 0 0 0.5rem 0;
+  font-weight: bold;
+  line-height: 1.3;
+}
+
+.exercise-badges-compact {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  padding: 0.25em 0.6em;
+  border-radius: 4px;
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 0.75rem;
+  user-select: none;
+  color: #0a0a0a;
+  background-color: #00ff00;
+  border: 1px solid #00cc00;
+}
+
+.badge--sm {
+  font-size: 0.7rem;
+  padding: 0.2em 0.5em;
+}
+
+.badge--status {
+  font-size: 0.75rem;
+}
+
+.badge--done {
+  background-color: #00cc00;
+  color: #0a0a0a;
+}
+
+.badge--in-progress {
+  background-color: #ffaa00;
+  color: #0a0a0a;
+}
+
+/* Progress Section */
+.progress-section {
+  margin: 1rem 0;
+}
+
+.progress-label {
+  font-size: 0.75rem;
+  color: #00ff00;
+  font-family: monospace;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 12px;
+  background: #222;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #00ff0066;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00ff00, #00cc00);
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #99ff99;
+  font-family: monospace;
+  text-align: center;
+}
+
+/* Sidebar Divider */
+.sidebar-divider {
+  border: none;
+  border-top: 1px solid #00ff0044;
+  margin: 1.5rem 0;
+}
+
+/* Steps Sidebar */
+.steps-sidebar {
+  margin: 1rem 0;
+}
+
+.sidebar-section-title {
+  font-size: 0.85rem;
+  color: #00ff00;
+  font-family: monospace;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.step-item {
+  margin-bottom: 0.75rem;
+}
+
+.step-item--completed .step-text {
+  text-decoration: line-through;
+  opacity: 0.5;
+  color: #66ff66;
+}
+
+.step-label {
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.step-checkbox {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  accent-color: #00ff00;
+}
+
+.step-number {
+  font-weight: bold;
+  color: #00ff00;
+  font-family: monospace;
+  min-width: 20px;
+  flex-shrink: 0;
+}
+
+.step-text {
+  color: #ccffcc;
+  font-family: monospace;
+  line-height: 1.4;
+}
+
+/* Quick Actions */
+.quick-actions {
+  margin-top: 1rem;
+}
+
+.action-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  background: #00ff00;
+  color: #0a0a0a;
+  border: none;
+  border-radius: 6px;
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  text-decoration: none;
+  display: block;
+}
+
+.action-btn:hover {
+  background: #00cc00;
+  box-shadow: 0 0 10px #00ff00;
+  transform: translateY(-2px);
+}
+
+.action-btn--secondary {
+  background: transparent;
+  color: #00ff00;
+  border: 2px solid #00ff00;
+}
+
+.action-btn--secondary:hover {
+  background: rgba(0, 255, 0, 0.1);
+}
+
+/* Main Content Area */
+.exercise-main {
+  background: #111;
+  border-radius: 10px;
+  border: 2px solid #00ff00;
+  box-shadow: 0 0 20px #00ff0088;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tab Navigation */
+.tab-navigation {
+  display: flex;
+  background: #0a0a0a;
+  border-bottom: 2px solid #00ff00;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 1rem;
+  background: transparent;
+  color: #66ff66;
+  border: none;
+  font-family: monospace;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-right: 1px solid #00ff0033;
+}
+
+.tab-btn:last-child {
+  border-right: none;
+}
+
+.tab-btn:hover {
+  background: rgba(0, 255, 0, 0.1);
+  color: #00ff00;
+}
+
+.tab-btn.active {
+  background: #00ff00;
+  color: #0a0a0a;
+}
+
+/* Tab Content */
+.tab-content-wrapper {
+  padding: 2rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 280px);
+}
+
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tab-title {
+  font-size: 1.5rem;
+  color: #00ff00;
+  font-family: monospace;
+  margin: 0 0 1.5rem 0;
+  font-weight: bold;
+}
+
+/* Description Box */
+.description-box {
+  background: rgba(0, 255, 0, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #00ff0066;
+  margin-bottom: 1.5rem;
+  color: #ccffcc;
+  font-family: monospace;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* Visual Section */
+.visual-section {
+  margin: 1.5rem 0;
+}
+
+.visual-item {
+  margin-bottom: 1.5rem;
+}
+
+.ascii-diagram {
+  background: #000;
+  color: #00ff00;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #00ff0066;
+  font-family: monospace;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  line-height: 1.4;
+}
+
+.visual-caption {
+  margin-top: 0.5rem;
+  color: #99ff99;
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* Mnemonic Box */
+.mnemonic-box {
+  background: rgba(0, 255, 0, 0.15);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 2px solid #00ff0088;
+  font-family: monospace;
+  color: #00ff00;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-top: 1.5rem;
+}
+
+/* Content Scrollable */
+.content-scrollable {
+  font-family: monospace;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #ccffcc;
+  background: #0a0a0a;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #00ff0066;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #66ff66;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .exercise-detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .exercise-sidebar {
+    position: relative;
+    top: auto;
+    max-height: none;
+  }
+
+  .tab-content-wrapper {
+    max-height: none;
+  }
+}
+</style>
+
+<script>
+
+  // Calcule le pourcentage
+  const completed = {{len .Exercise.CompletedSteps}};
+  const total = {{len .Exercise.Steps}};
+  const percent = total > 0 ? Math.round((completed * 100) / total) : 0;
+  document.getElementById('progress-fill').style.width = percent + '%';
+function switchTab(tabName) {
+  // Hide all tabs
+  document.querySelectorAll('.tab-pane').forEach(pane => {
+    pane.classList.remove('active');
+  });
+
+  // Remove active from all buttons
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+
+  // Show target tab
+  const targetPane = document.getElementById('tab-' + tabName);
+  if (targetPane) {
+    targetPane.classList.add('active');
+  }
+
+  // Activate button
+  const targetBtn = document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
+  if (targetBtn) {
+    targetBtn.classList.add('active');
+  }
+}
+</script>
 {{end}}
