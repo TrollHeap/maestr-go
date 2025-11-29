@@ -1,153 +1,202 @@
 package service
 
 import (
+	"database/sql"
 	"fmt"
-	"log"
+	"sort"
 	"time"
 
 	"maestro/internal/models"
 	"maestro/internal/store"
-
-	"github.com/google/uuid"
 )
 
-// SessionService gère la logique métier des sessions
 type SessionService struct{}
 
-// NewSessionService crée une nouvelle instance
 func NewSessionService() *SessionService {
 	return &SessionService{}
 }
 
-// BuildAdaptiveSession construit une session selon le niveau d'énergie
-func (s *SessionService) BuildAdaptiveSession(
+// StartSession : Crée une session adaptative
+// StartSession : Crée une session adaptative
+// StartSession : Crée une session adaptative
+func (s *SessionService) StartSession(
 	energy models.EnergyLevel,
-) (*models.AdaptiveSession, error) {
-	log.Printf("📍 [SessionService] BuildAdaptiveSession energy=%d", energy) // ← AJOUTE
+) (int64, *models.AdaptiveSession, error) {
+	config := models.SessionConfigs[energy]
 
-	config, exists := models.SessionConfigs[energy]
-	if !exists {
-		log.Printf("❌ [SessionService] Config introuvable pour energy=%d", energy) // ← AJOUTE
-		return nil, fmt.Errorf("niveau d'énergie invalide: %d", energy)
+	// 1. Récupère rapport + exercices disponibles aujourd'hui
+	report, exercises, err := store.GetTodayReport()
+	if err != nil {
+		return 0, nil, err
 	}
-	log.Printf("✅ [SessionService] Config trouvée: %+v", config) // ← AJOUTE
 
-	session := &models.AdaptiveSession{
+	// 2. Si aucun exercice disponible aujourd'hui
+	if len(exercises) == 0 {
+		return 0, nil, &models.NoExercisesTodayError{
+			Report: report,
+		}
+	}
+
+	// Tri par priorité
+	exercises = sortByPriority(exercises)
+
+	// Limite au nombre d'exercices configuré
+	if len(exercises) > config.ExerciseCount {
+		exercises = exercises[:config.ExerciseCount]
+	}
+
+	// 3. Build session
+	session := models.AdaptiveSession{
 		Mode:          config.Mode,
 		EnergyLevel:   energy,
 		EstimatedTime: config.Duration,
+		Exercises:     exercises,
 		BreakSchedule: config.Breaks,
 		StartedAt:     time.Now(),
 		CurrentIndex:  0,
 	}
 
-	// Sélectionne les exercices selon le niveau
-	log.Println("🔍 [SessionService] Appel pickDueExercises...") // ← AJOUTE
-	exercises := s.pickDueExercises(config.ExerciseCount)
-	log.Printf("✅ [SessionService] %d exercices sélectionnés", len(exercises)) // ← AJOUTE
-
-	session.Exercises = exercises
-
-	return session, nil
-}
-
-// StartSession démarre une nouvelle session
-// StartSession démarre une nouvelle session
-func (s *SessionService) StartSession(
-	energy models.EnergyLevel,
-) (string, *models.AdaptiveSession, error) {
-	log.Println("📍 [SessionService] StartSession début") // ← AJOUTE
-
-	session, err := s.BuildAdaptiveSession(energy)
+	// 4. Stocke dans SQLite
+	sessionID, err := store.StartSession(energy, exercises)
 	if err != nil {
-		log.Printf("❌ [SessionService] BuildAdaptiveSession erreur: %v", err) // ← AJOUTE
-		return "", nil, err
+		return 0, nil, err
 	}
-	log.Printf("✅ [SessionService] Session construite: %+v", session) // ← AJOUTE
 
-	// Génère un ID unique
-	sessionID := uuid.New().String()
-	log.Printf("🆔 [SessionService] ID généré: %s", sessionID) // ← AJOUTE
-
-	// Crée la session active
-	activeSession := &models.ActiveSession{
-		ID:           sessionID,
-		Session:      *session,
-		CurrentIndex: 0,
-		StartedAt:    time.Now(),
-		CompletedIDs: []int{},
-	}
-	log.Printf("🔧 [SessionService] ActiveSession créée") // ← AJOUTE
-
-	// Sauvegarde dans le store
-	log.Println("💾 [SessionService] Appel store.CreateSession...") // ← AJOUTE
-	if err := store.CreateSession(sessionID, activeSession); err != nil {
-		log.Printf("❌ [SessionService] store.CreateSession erreur: %v", err) // ← AJOUTE
-		return "", nil, fmt.Errorf("erreur création session: %w", err)
-	}
-	log.Println("✅ [SessionService] Session sauvegardée dans store") // ← AJOUTE
-
-	log.Printf("🎉 [SessionService] StartSession terminé avec succès, ID=%s", sessionID) // ← AJOUTE
-	return sessionID, session, nil
+	return sessionID, &session, nil
 }
 
-// GetActiveSession récupère la session active
-func (s *SessionService) GetActiveSession() *models.ActiveSession {
+// ============================================
+// HELPERS
+// ============================================
+// CompleteExercise : Marque un exercice comme complété dans la session
+func (s *SessionService) CompleteExercise(sessionID int64, exerciseID int, quality int) error {
+	return store.CompleteSessionExercise(sessionID, exerciseID, quality)
+}
+
+// EndSession : Termine une session
+func (s *SessionService) EndSession(sessionID int64) error {
+	return store.EndSession(sessionID)
+}
+
+// GetActiveSession : Session en cours (retourne ID ou 0)
+func (s *SessionService) GetActiveSession() (int64, error) {
 	return store.GetActiveSession()
 }
 
-// CompleteExercise marque un exercice comme complété
-func (s *SessionService) CompleteExercise(
-	sessionID string,
-	exerciseID int,
-) (*models.Exercise, error) {
-	session, err := store.GetSession(sessionID)
+// ClearAllSessions : Ferme toutes les sessions actives
+func (s *SessionService) ClearAllSessions() error {
+	sessionID, err := store.GetActiveSession()
+	if err != nil || sessionID == 0 {
+		return err
+	}
+	return store.EndSession(sessionID)
+}
+
+// GetSessionResult : Récupère le résultat d'une session terminée
+func (s *SessionService) GetSessionResult(sessionID int64) (*models.SessionResult, error) {
+	query := `SELECT 
+        completed_count, 
+        duration_min, 
+        ended_at
+    FROM sessions WHERE id = ?`
+
+	var completedCount, durationMin int
+	var endedAt int64
+
+	db := store.GetDB()
+	err := db.QueryRow(query, sessionID).Scan(
+		&completedCount, &durationMin, &endedAt,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	session.MarkCompleted(exerciseID)
+	// Récupère les IDs des exercices complétés
+	exerciseQuery := `SELECT exercise_id FROM session_exercises 
+                      WHERE session_id = ? AND completed = 1
+                      ORDER BY position`
 
-	if err := store.UpdateSession(sessionID, session); err != nil {
-		return nil, fmt.Errorf("erreur mise à jour session: %w", err)
+	rows, _ := db.Query(exerciseQuery, sessionID)
+	defer rows.Close()
+
+	var exerciseIDs []int
+	for rows.Next() {
+		var id int
+		rows.Scan(&id)
+		exerciseIDs = append(exerciseIDs, id)
 	}
 
-	return session.NextExercise(), nil
+	return &models.SessionResult{
+		CompletedCount: completedCount,
+		Duration:       time.Duration(durationMin) * time.Minute,
+		CompletedAt:    time.Unix(endedAt, 0),
+		Exercises:      exerciseIDs,
+	}, nil
 }
 
-// StopSession arrête une session
-func (s *SessionService) StopSession(sessionID string) error {
-	return store.DeleteSession(sessionID)
+// GetNextExercise : Prochain exercice dans la session
+func (s *SessionService) GetNextExercise(sessionID int64) (*models.Exercise, error) {
+	// Récupère l'ID du prochain exercice non complété
+	query := `SELECT se.exercise_id
+              FROM session_exercises se
+              WHERE se.session_id = ? AND se.completed = 0
+              ORDER BY se.position ASC
+              LIMIT 1`
+
+	var exerciseID int
+	db := store.GetDB()
+	err := db.QueryRow(query, sessionID).Scan(&exerciseID)
+
+	if err == sql.ErrNoRows {
+		return nil, nil // Plus d'exercices
+	}
+	if err != nil {
+		return nil, fmt.Errorf("query next exercise: %w", err)
+	}
+
+	// Charge l'exercice complet
+	return store.FindExercise(exerciseID)
 }
 
-// ClearAllSessions supprime toutes les sessions
-func (s *SessionService) ClearAllSessions() error {
-	return store.ClearActiveSession()
+// StopSession : Alias pour EndSession
+func (s *SessionService) StopSession(sessionID int64) error {
+	return s.EndSession(sessionID)
 }
 
-// pickDueExercises sélectionne les N exercices les plus urgents
-func (s *SessionService) pickDueExercises(count int) []models.Exercise {
-	allExercises := store.GetAll()
+// ============================================
+// HELPERS
+// ============================================
+
+func sortByPriority(exercises []models.Exercise) []models.Exercise {
 	now := time.Now()
 
-	var due []models.Exercise
-	for _, ex := range allExercises {
-		if !ex.Done && ex.NextReviewAt.Before(now) {
-			due = append(due, ex)
-			if len(due) >= count {
-				break
-			}
-		}
-	}
+	sort.Slice(exercises, func(i, j int) bool {
+		a, b := exercises[i], exercises[j]
 
-	// Si pas assez d'exercices dus, prendre des nouveaux
-	if len(due) < count {
-		for _, ex := range allExercises {
-			if !ex.Done && len(due) < count {
-				due = append(due, ex)
-			}
+		// Priorité 1 : En retard (urgent)
+		aOverdue := a.Done && a.NextReviewAt.Before(now)
+		bOverdue := b.Done && b.NextReviewAt.Before(now)
+		if aOverdue != bOverdue {
+			return aOverdue
 		}
-	}
 
-	return due
+		// Priorité 2 : À réviser aujourd'hui
+		today := now.Truncate(24 * time.Hour)
+		tomorrow := today.Add(24 * time.Hour)
+		aToday := a.Done && a.NextReviewAt.After(today) && a.NextReviewAt.Before(tomorrow)
+		bToday := b.Done && b.NextReviewAt.After(today) && b.NextReviewAt.Before(tomorrow)
+		if aToday != bToday {
+			return aToday
+		}
+
+		// Priorité 3 : Nouveaux
+		if !a.Done && !b.Done {
+			return a.ID < b.ID
+		}
+
+		// Priorité 4 : Par date
+		return a.NextReviewAt.Before(b.NextReviewAt)
+	})
+
+	return exercises
 }
