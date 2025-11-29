@@ -105,7 +105,7 @@ func HandlePlannerMonth(w http.ResponseWriter, r *http.Request) {
 	daysInMonth := lastDay.Day()
 
 	days := make([]int, daysInMonth)
-	for i := 0; i < daysInMonth; i++ {
+	for i := range daysInMonth {
 		days[i] = i + 1
 	}
 

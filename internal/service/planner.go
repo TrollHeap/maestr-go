@@ -35,7 +35,7 @@ func (s *PlannerService) GetUpcomingReviews(limit int) []models.Exercise {
 
 func (s *PlannerService) GetWeekSchedule(startDate time.Time) []models.DaySchedule {
 	schedule := make([]models.DaySchedule, 7)
-	for i := 0; i < 7; i++ {
+	for i := range 7 {
 		date := startDate.AddDate(0, 0, i)
 		schedule[i] = models.DaySchedule{
 			Date:      date,
