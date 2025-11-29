@@ -1,6 +1,10 @@
 package exercise
 
-import "maestro/internal/models"
+import (
+	"slices"
+
+	"maestro/internal/models"
+)
 
 // MarkAsDone : Règle métier "marquer exercice DONE"
 func MarkAsDone(ex *models.Exercise) {
@@ -49,12 +53,7 @@ func ShouldMarkDone(quality int) bool {
 
 // IsStepCompleted : Vérifie si une étape est complétée
 func IsStepCompleted(ex *models.Exercise, stepIndex int) bool {
-	for _, s := range ex.CompletedSteps {
-		if s == stepIndex {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(ex.CompletedSteps, stepIndex)
 }
 
 // CompletionRate : Taux de complétion des étapes
