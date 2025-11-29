@@ -1,5 +1,9 @@
-.PHONY: run
+.PHONY: run migrate
 
 run:
 	@echo "Running the application..."
-	go run main.go
+	go run cmd/app/main.go
+
+migrate:
+	@echo "Running the application..."
+	go run cmd/migrate/main.go
