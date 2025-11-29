@@ -47,6 +47,12 @@ func InitTemplates() error {
 			}
 			return days
 		},
+		"div": func(a, b int) int {
+			if b == 0 {
+				return 0
+			}
+			return a / b
+		},
 	})
 
 	Tmpl, err = Tmpl.ParseGlob("templates/pages/*.html")
