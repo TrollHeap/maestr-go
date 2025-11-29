@@ -32,13 +32,13 @@ type Exercise struct {
 	// SRS tracking
 	Done           bool       `json:"done"`
 	CompletedSteps []int      `json:"completed_steps"`
-	LastReviewed   *time.Time `json:"last_reviewed,omitempty"`
-	NextReviewAt   time.Time  `json:"next_review_at"`
+	LastReviewed   *time.Time `json:"last_reviewed_date,omitempty"`
+	NextReviewAt   time.Time  `json:"next_review_date"`
 	EaseFactor     float64    `json:"ease_factor"`
 	IntervalDays   int        `json:"interval_days"`
 	Repetitions    int        `json:"repetitions"`
 	SkippedCount   int        `json:"skipped_count"`
-	LastSkipped    *time.Time `json:"last_skipped,omitempty"`
+	LastSkipped    *time.Time `json:"last_skipped_date,omitempty"`
 
 	// Soft delete
 	Deleted   bool       `json:"deleted"`
