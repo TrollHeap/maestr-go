@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
+	"maestro/internal/domain/exercise"
+	"maestro/internal/domain/srs"
 	"maestro/internal/models"
-	"maestro/internal/srs"
 	"maestro/internal/store"
 )
 
-// ExerciseService gère la logique métier des exercices
 type ExerciseService struct{}
 
 func NewExerciseService() *ExerciseService {
@@ -21,13 +21,13 @@ func (s *ExerciseService) ReviewExercise(
 	exerciseID int,
 	quality srs.ReviewQuality,
 ) (*models.Exercise, error) {
-	// 1. Charge depuis SQLite
+	// 1. Récupère depuis store
 	ex, err := store.FindExercise(exerciseID)
 	if err != nil || ex == nil {
-		return nil, fmt.Errorf("exercice %d introuvable", exerciseID)
+		return nil, fmt.Errorf("review exercise %d: %w", exerciseID, err)
 	}
 
-	// 2. Calcul SRS (pur, sans effet de bord)
+	// 2. Applique SRS (domain)
 	result := srs.CalculateNextReview(
 		quality,
 		ex.IntervalDays,
@@ -35,7 +35,7 @@ func (s *ExerciseService) ReviewExercise(
 		ex.Repetitions,
 	)
 
-	// 3. Applique le résultat
+	// 3. Met à jour modèle
 	now := time.Now()
 	ex.LastReviewed = &now
 	ex.IntervalDays = result.IntervalDays
@@ -43,15 +43,19 @@ func (s *ExerciseService) ReviewExercise(
 	ex.Repetitions = result.Repetitions
 	ex.NextReviewAt = result.NextReview
 
-	// 4. Sauve dans SQLite
-	if err := store.SaveExercise(ex); err != nil {
-		return nil, fmt.Errorf("erreur sauvegarde: %w", err)
+	// 4. Applique règle métier "mark done" (domain)
+	if exercise.ShouldMarkDone(int(quality)) {
+		exercise.MarkAsDone(ex) // ✅ Délègue à domain
 	}
 
-	// 5. ✅ NOUVEAU : Log dans l'historique
+	// 5. Sauvegarde
+	if err := store.SaveExercise(ex); err != nil {
+		return nil, fmt.Errorf("save reviewed exercise %d: %w", exerciseID, err)
+	}
+
+	// 6. Log historique (non-bloquant)
 	if err := store.LogProgress(exerciseID, int(quality), ex); err != nil {
-		// Non-bloquant, log l'erreur
-		fmt.Printf("Avertissement: échec log progress: %v\n", err)
+		fmt.Printf("⚠️ Log progress failed: %v\n", err)
 	}
 
 	return ex, nil
@@ -61,53 +65,39 @@ func (s *ExerciseService) ReviewExercise(
 func (s *ExerciseService) ToggleExerciseDone(exerciseID int) (*models.Exercise, error) {
 	ex, err := store.FindExercise(exerciseID)
 	if err != nil || ex == nil {
-		return nil, fmt.Errorf("exercice %d introuvable", exerciseID)
+		return nil, fmt.Errorf("toggle done %d: %w", exerciseID, err)
 	}
 
-	// Toggle
-	ex.Done = !ex.Done
-
-	// Si DONE → complète toutes les étapes
+	// ✅ Applique règle métier (domain)
 	if ex.Done {
-		ex.CompletedSteps = []int{}
-		for i := range ex.Steps {
-			ex.CompletedSteps = append(ex.CompletedSteps, i)
-		}
+		exercise.MarkAsNotDone(ex)
+	} else {
+		exercise.MarkAsDone(ex)
 	}
 
-	// Sauve
+	// Sauvegarde
 	if err := store.SaveExercise(ex); err != nil {
-		return nil, fmt.Errorf("erreur sauvegarde: %w", err)
+		return nil, fmt.Errorf("save toggled exercise %d: %w", exerciseID, err)
 	}
 
 	return ex, nil
 }
 
 // ToggleExerciseStep : Toggle une étape individuelle
-func (s *ExerciseService) ToggleExerciseStep(exerciseID, step int) (*models.Exercise, error) {
+func (s *ExerciseService) ToggleExerciseStep(exerciseID, stepIndex int) (*models.Exercise, error) {
 	ex, err := store.FindExercise(exerciseID)
 	if err != nil || ex == nil {
-		return nil, fmt.Errorf("exercice %d introuvable", exerciseID)
+		return nil, fmt.Errorf("toggle step exercise %d: %w", exerciseID, err)
 	}
 
-	// Toggle étape
-	found := false
-	for i, s := range ex.CompletedSteps {
-		if s == step {
-			// Retire l'étape
-			ex.CompletedSteps = append(ex.CompletedSteps[:i], ex.CompletedSteps[i+1:]...)
-			found = true
-			break
-		}
-	}
-	if !found {
-		// Ajoute l'étape
-		ex.CompletedSteps = append(ex.CompletedSteps, step)
+	// ✅ Applique règle métier (domain)
+	if err := exercise.ToggleStep(ex, stepIndex); err != nil {
+		return nil, fmt.Errorf("toggle step %d on exercise %d: %w", stepIndex, exerciseID, err)
 	}
 
-	// Sauve
+	// Sauvegarde
 	if err := store.SaveExercise(ex); err != nil {
-		return nil, fmt.Errorf("erreur sauvegarde: %w", err)
+		return nil, fmt.Errorf("save stepped exercise %d: %w", exerciseID, err)
 	}
 
 	return ex, nil
@@ -117,24 +107,28 @@ func (s *ExerciseService) ToggleExerciseStep(exerciseID, step int) (*models.Exer
 func (s *ExerciseService) GetExerciseWithMarkdown(exerciseID int) (*models.Exercise, error) {
 	ex, err := store.FindExercise(exerciseID)
 	if err != nil || ex == nil {
-		return nil, fmt.Errorf("exercice %d introuvable", exerciseID)
+		return nil, fmt.Errorf("get exercise %d: %w", exerciseID, err)
 	}
 	return ex, nil
 }
 
-// GetFilteredExercises : Liste filtrée
+// GetFilteredExercises : Liste filtrée (délègue à store)
 func (s *ExerciseService) GetFilteredExercises(
 	filter models.ExerciseFilter,
 ) ([]models.Exercise, error) {
-	return store.GetFiltered(filter)
+	exercises, err := store.GetFiltered(filter)
+	if err != nil {
+		return nil, fmt.Errorf("get filtered exercises: %w", err)
+	}
+	return exercises, nil
 }
 
 // GetAllExercises : Tous les exercices
 func (s *ExerciseService) GetAllExercises() ([]models.Exercise, error) {
-	return store.GetFiltered(models.ExerciseFilter{})
+	return s.GetFilteredExercises(models.ExerciseFilter{})
 }
 
-// GetExerciseStats : Stats par vue
+// GetExerciseStats : Stats par vue (délègue à store)
 func (s *ExerciseService) GetExerciseStats() map[string]int {
 	return map[string]int{
 		"urgent":   store.CountByView("urgent"),
@@ -145,10 +139,14 @@ func (s *ExerciseService) GetExerciseStats() map[string]int {
 	}
 }
 
-// ✅ NOUVEAU : Historique d'un exercice
+// GetExerciseHistory : Historique d'un exercice
 func (s *ExerciseService) GetExerciseHistory(
 	exerciseID int,
 	limit int,
 ) ([]map[string]any, error) {
-	return store.GetProgressHistory(exerciseID, limit)
+	history, err := store.GetProgressHistory(exerciseID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("get history for exercise %d: %w", exerciseID, err)
+	}
+	return history, nil
 }

@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"maestro/internal/domain/exercise"
+	"maestro/internal/domain/srs"
 	"maestro/internal/models"
 	"maestro/internal/service"
-	"maestro/internal/srs"
 	"maestro/internal/store"
-	"maestro/internal/validator"
 )
 
 // Services globaux
@@ -82,7 +82,7 @@ func HandleDetailExercice(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(r.PathValue("id"))
 	sessionIDStr := r.URL.Query().Get("session")
 
-	if err := validator.ValidateID(id); err != nil {
+	if err := exercise.ValidateID(id); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -120,7 +120,7 @@ func HandleToggleDone(w http.ResponseWriter, r *http.Request) {
 	fromSession := r.URL.Query().Get("from") == "session"
 	sessionIDStr := r.URL.Query().Get("session")
 
-	if err := validator.ValidateID(id); err != nil {
+	if err := exercise.ValidateID(id); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -173,7 +173,7 @@ func HandleToggleStep(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(r.PathValue("id"))
 	step, _ := strconv.Atoi(r.URL.Query().Get("step"))
 
-	if err := validator.ValidateID(id); err != nil {
+	if err := exercise.ValidateID(id); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -184,7 +184,7 @@ func HandleToggleStep(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validator.ValidateStep(step, len(ex.Steps)); err != nil {
+	if err := exercise.ValidateStep(step, len(ex.Steps)); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -209,13 +209,13 @@ func HandleReview(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔍 [HandleReview] exID=%d, quality=%d, from=%v, session=%s",
 		id, quality, fromSession, sessionIDStr)
 
-	if err := validator.ValidateID(id); err != nil {
+	if err := exercise.ValidateID(id); err != nil {
 		log.Printf("❌ Validation ID échouée: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if err := validator.ValidateQuality(quality); err != nil {
+	if err := exercise.ValidateQuality(quality); err != nil {
 		log.Printf("❌ Validation Quality échouée: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
