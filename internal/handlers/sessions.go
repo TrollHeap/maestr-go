@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"maestro/internal/domain/session" // ✅ NOUVEAU
 	"maestro/internal/models"
 	"maestro/internal/store"
 )
@@ -17,11 +18,19 @@ import (
 
 // HandleSessionBuilder : Page de sélection d'énergie
 func HandleSessionBuilder(w http.ResponseWriter, r *http.Request) {
+	// ✅ Utilise domain configs au lieu de models
+	configs := []session.Config{
+		session.GetConfig(models.EnergyLow),
+		session.GetConfig(models.EnergyMedium),
+		session.GetConfig(models.EnergyHigh),
+	}
+
 	data := map[string]any{
-		"Configs": models.SessionConfigs,
+		"Configs": configs,
 	}
 
 	if err := Tmpl.ExecuteTemplate(w, "session-builder", data); err != nil {
+		log.Printf("❌ Template error: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -31,66 +40,67 @@ func HandleSessionBuilder(w http.ResponseWriter, r *http.Request) {
 // ============================================
 
 func HandleStartSession(w http.ResponseWriter, r *http.Request) {
+	// 1. PARSE energy
 	energyStr := r.URL.Query().Get("energy")
 	energy, err := strconv.Atoi(energyStr)
 	if err != nil || energy < 1 || energy > 3 {
 		energy = 2 // Default medium
 	}
 
+	energyLevel := models.EnergyLevel(energy)
 	log.Printf("🔍 START SESSION: energy=%d", energy)
 
-	// Récupère exercices DISPONIBLES
-	report, _, err := store.GetTodayReport()
+	// 2. RÉCUPÈRE EXERCICES DISPONIBLES
+	report, exercises, err := store.GetTodayReport()
 	if err != nil {
-		log.Printf("❌ Erreur GetTodayReport: %v", err)
+		log.Printf("❌ GetTodayReport failed: %v", err)
 		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
 		return
 	}
 
-	// ✅ LOG DÉTAILLÉ
-	log.Printf("🔍 SESSION disponible: %d dus + %d nouveaux = %d total",
-		report.TodayDue, report.TodayNew, report.TotalAvailable)
+	log.Printf("🔍 [SESSION] Disponibles: %d dus + %d nouveaux = %d total",
+		report.TodayDue, report.TodayNew, len(exercises))
 
-	// AUCUN exercice ? Affiche rapport
-	if report.TotalAvailable == 0 {
-		data := map[string]interface{}{
-			"Message":         "🎉 Aucun exercice à réviser aujourd'hui !",
-			"Report":          report,
-			"TodayDue":        report.TodayDue,
-			"TodayNew":        report.TodayNew,
-			"NextReviewDate":  report.NextReviewDate,
-			"UpcomingReviews": report.UpcomingReviews,
-		}
-		Tmpl.ExecuteTemplate(w, "no-exercises-today", data)
+	// 3. AUCUN EXERCICE ? Affiche rapport
+	if len(exercises) == 0 {
+		renderNoExercises(w, report)
 		return
 	}
 
-	// CRÉE SESSION
-	sessionID, session, err := sessionService.StartSession(models.EnergyLevel(energy))
+	// 4. ✅ APPLIQUE LIMITE ÉNERGIE (domain)
+	exerciseIDs := make([]int, len(exercises))
+	for i, ex := range exercises {
+		exerciseIDs[i] = ex.ID
+	}
+
+	limitedIDs := session.LimitExercises(exerciseIDs, energyLevel)
+
+	log.Printf("🔍 [SESSION] Limité à %d exercices (max=%d pour energy=%d)",
+		len(limitedIDs),
+		session.GetMaxExercises(energyLevel),
+		energy,
+	)
+
+	// 5. CRÉE SESSION (via service)
+	sessionID, sessionData, err := sessionService.StartSession(energyLevel, limitedIDs)
 	if err != nil {
-		if noExErr, ok := err.(*models.NoExercisesTodayError); ok {
-			data := map[string]interface{}{
-				"Message":         "🎉 Aucun exercice à réviser aujourd'hui !",
-				"Report":          noExErr.Report,
-				"TodayDue":        noExErr.Report.TodayDue,
-				"TodayNew":        noExErr.Report.TodayNew,
-				"NextReviewDate":  noExErr.Report.NextReviewDate,
-				"UpcomingReviews": noExErr.Report.UpcomingReviews,
-			}
-			Tmpl.ExecuteTemplate(w, "no-exercises-today", data)
-			return
-		}
-		log.Printf("❌ Erreur StartSession: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("❌ StartSession failed: %v", err)
+		http.Error(w, "Erreur création session", http.StatusInternalServerError)
 		return
 	}
 
-	// Redirige vers premier exercice
-	firstExercise := session.Exercises[0]
+	// 6. REDIRIGE vers premier exercice
+	if len(sessionData.Exercises) == 0 {
+		log.Printf("⚠️ Session created but no exercises")
+		renderNoExercises(w, report)
+		return
+	}
+
+	firstExerciseID := sessionData.Exercises[0]
 	redirectURL := fmt.Sprintf("/exercise/%d?from=session&session=%d",
-		firstExercise.ID, sessionID)
-	log.Printf("🚀 Session %d démarrée → exo #%d '%s'",
-		sessionID, firstExercise.ID, firstExercise.Title)
+		firstExerciseID, sessionID)
+
+	log.Printf("🚀 Session %d started → exo #%d", sessionID, firstExerciseID)
 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }
 
@@ -106,40 +116,42 @@ func HandleSessionComplete(w http.ResponseWriter, r *http.Request) {
 	if sessionIDStr == "" {
 		sessionID, err := sessionService.GetActiveSession()
 		if err != nil || sessionID == 0 {
-			log.Printf("Aucune session active trouvée")
+			log.Printf("⚠️ No active session found")
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 		sessionIDStr = fmt.Sprintf("%d", sessionID)
 	}
 
-	sessionID, _ := strconv.ParseInt(sessionIDStr, 10, 64)
+	sessionID, err := strconv.ParseInt(sessionIDStr, 10, 64)
+	if err != nil {
+		log.Printf("❌ Invalid session ID: %s", sessionIDStr)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
 
-	// Récupère résultat depuis SQLite
+	// Récupère résultat depuis service
 	result, err := sessionService.GetSessionResult(sessionID)
 	if err != nil {
-		log.Printf("Erreur récupération résultat: %v", err)
+		log.Printf("❌ GetSessionResult failed: %v", err)
 
 		// Fallback : affiche page vide
-		data := map[string]any{
-			"CompletedCount": 0,
-			"Duration":       0,
-			"CompletedAt":    time.Now().Format("15:04"),
-			"ExerciseCount":  0,
-		}
-		Tmpl.ExecuteTemplate(w, "session-complete", data)
+		renderEmptySessionComplete(w)
 		return
 	}
 
 	// Affiche résultats
 	data := map[string]any{
+		"SessionID":      sessionID,
 		"CompletedCount": result.CompletedCount,
 		"Duration":       result.Duration.Round(time.Second),
 		"CompletedAt":    result.CompletedAt.Format("15:04"),
 		"ExerciseCount":  len(result.Exercises),
+		"ExerciseIDs":    result.Exercises,
 	}
 
 	if err := Tmpl.ExecuteTemplate(w, "session-complete", data); err != nil {
+		log.Printf("❌ Template error: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -153,19 +165,56 @@ func HandleStopSession(w http.ResponseWriter, r *http.Request) {
 	sessionIDStr := r.PathValue("id")
 	sessionID, err := strconv.ParseInt(sessionIDStr, 10, 64)
 	if err != nil {
+		log.Printf("❌ Invalid session ID: %s", sessionIDStr)
 		http.Error(w, "ID de session invalide", http.StatusBadRequest)
 		return
 	}
 
 	// Termine la session
 	if err := sessionService.StopSession(sessionID); err != nil {
-		log.Printf("Erreur stop session: %v", err)
+		log.Printf("❌ StopSession failed: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("✅ Session %d arrêtée", sessionID)
+	log.Printf("✅ Session %d stopped manually", sessionID)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-// Dans internal/service/session.go (ou équivalent)
+// ============================================
+// HELPERS (Render Templates)
+// ============================================
+
+// renderNoExercises : Affiche message "aucun exercice disponible"
+func renderNoExercises(w http.ResponseWriter, report models.SessionReport) {
+	data := map[string]interface{}{
+		"Message":         "🎉 Aucun exercice à réviser aujourd'hui !",
+		"Report":          report,
+		"TodayDue":        report.TodayDue,
+		"TodayNew":        report.TodayNew,
+		"NextReviewDate":  report.NextReviewDate,
+		"UpcomingReviews": report.UpcomingReviews,
+	}
+
+	if err := Tmpl.ExecuteTemplate(w, "no-exercises-today", data); err != nil {
+		log.Printf("❌ Template error: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// renderEmptySessionComplete : Affiche page session vide (fallback)
+func renderEmptySessionComplete(w http.ResponseWriter) {
+	data := map[string]any{
+		"SessionID":      0,
+		"CompletedCount": 0,
+		"Duration":       0,
+		"CompletedAt":    time.Now().Format("15:04"),
+		"ExerciseCount":  0,
+		"ExerciseIDs":    []int{},
+	}
+
+	if err := Tmpl.ExecuteTemplate(w, "session-complete", data); err != nil {
+		log.Printf("❌ Template error: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
