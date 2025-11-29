@@ -3,46 +3,38 @@
     <p class="review-panel__title">REVIEW:</p>
     <div class="review-panel__buttons">
         
-        <!-- Oublié (Again) - NE MARQUE PAS DONE -->
+        <!-- Oublié (Again) -->
         <button 
-            hx-post="/exercise/{{.Exercise.ID}}/review?quality=0{{if .FromSession}}&from=session{{end}}" 
-            hx-target="#exercise-detail"
-            hx-swap="outerHTML"
+            hx-post="/exercise/{{.Exercise.ID}}/review?quality=0{{if .FromSession}}&from=session&session={{.SessionID}}{{end}}" 
+            hx-target="body"
             class="review-btn review-btn--again"
-            title="Oublié - Revoir dans 10min"
         >
             ∅ Oublié 
         </button>
         
-        <!-- Dur - MARQUE DONE -->
+        <!-- Dur -->
         <button 
-            hx-post="/exercise/{{.Exercise.ID}}/review?quality=1{{if .FromSession}}&from=session{{end}}" 
-            hx-target="#exercise-detail"
-            hx-swap="outerHTML"
+            hx-post="/exercise/{{.Exercise.ID}}/review?quality=1{{if .FromSession}}&from=session&session={{.SessionID}}{{end}}" 
+            hx-target="body"
             class="review-btn review-btn--hard"
-            title="Difficile - Revoir demain"
         >
             ⊡ Difficile
         </button>
         
-        <!-- Bien - MARQUE DONE -->
+        <!-- Bien → CHANGE 2 en 3 -->
         <button 
-            hx-post="/exercise/{{.Exercise.ID}}/review?quality=3{{if .FromSession}}&from=session{{end}}" 
-            hx-target="#exercise-detail"
-            hx-swap="outerHTML"
+            hx-post="/exercise/{{.Exercise.ID}}/review?quality=3{{if .FromSession}}&from=session&session={{.SessionID}}{{end}}" 
+            hx-target="body"
             class="review-btn review-btn--good"
-            title="Bien - Doubler l'intervalle"
         >
             ⊞ Avec effort
         </button>
         
-        <!-- Facile - MARQUE DONE -->
+        <!-- Facile → CHANGE 3 en 5 -->
         <button 
-            hx-post="/exercise/{{.Exercise.ID}}/review?quality=5{{if .FromSession}}&from=session{{end}}" 
-            hx-target="#exercise-detail"
-            hx-swap="outerHTML"
+            hx-post="/exercise/{{.Exercise.ID}}/review?quality=5{{if .FromSession}}&from=session&session={{.SessionID}}{{end}}" 
+            hx-target="body"
             class="review-btn review-btn--easy"
-            title="Facile - Tripler l'intervalle"
         >
             ⊕ Facile
         </button>
