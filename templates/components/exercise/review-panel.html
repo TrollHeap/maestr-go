@@ -3,7 +3,7 @@
     <p class="review-panel__title">REVIEW:</p>
     <div class="review-panel__buttons">
         
-        <!-- Oublié (Again) -->
+        <!-- Oublié (Again = 0) -->
         <button 
             hx-post="/exercise/{{.Exercise.ID}}/review?quality=0{{if .FromSession}}&from=session&session={{.SessionID}}{{end}}" 
             hx-target="body"
@@ -12,7 +12,7 @@
             ∅ Oublié 
         </button>
         
-        <!-- Dur -->
+        <!-- Difficile (Hard = 1) -->
         <button 
             hx-post="/exercise/{{.Exercise.ID}}/review?quality=1{{if .FromSession}}&from=session&session={{.SessionID}}{{end}}" 
             hx-target="body"
@@ -21,18 +21,18 @@
             ⊡ Difficile
         </button>
         
-        <!-- Bien → CHANGE 2 en 3 -->
+        <!-- Bien (Good = 2) ✅ CORRIGÉ -->
         <button 
-            hx-post="/exercise/{{.Exercise.ID}}/review?quality=3{{if .FromSession}}&from=session&session={{.SessionID}}{{end}}" 
+            hx-post="/exercise/{{.Exercise.ID}}/review?quality=2{{if .FromSession}}&from=session&session={{.SessionID}}{{end}}" 
             hx-target="body"
             class="review-btn review-btn--good"
         >
             ⊞ Avec effort
         </button>
         
-        <!-- Facile → CHANGE 3 en 5 -->
+        <!-- Facile (Easy = 3) ✅ CORRIGÉ -->
         <button 
-            hx-post="/exercise/{{.Exercise.ID}}/review?quality=5{{if .FromSession}}&from=session&session={{.SessionID}}{{end}}" 
+            hx-post="/exercise/{{.Exercise.ID}}/review?quality=3{{if .FromSession}}&from=session&session={{.SessionID}}{{end}}" 
             hx-target="body"
             class="review-btn review-btn--easy"
         >
