@@ -37,6 +37,16 @@ func InitTemplates() error {
 		"noescape": func(s string) template.HTML {
 			return template.HTML(s)
 		},
+		// ✅ AJOUTE CETTE FONCTION
+		"daysUntil": func(t time.Time) int {
+			now := time.Now()
+			diff := t.Sub(now)
+			days := int(diff.Hours() / 24)
+			if days < 0 {
+				return 0
+			}
+			return days
+		},
 	})
 
 	Tmpl, err = Tmpl.ParseGlob("templates/pages/*.html")

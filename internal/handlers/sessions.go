@@ -8,17 +8,14 @@ import (
 	"time"
 
 	"maestro/internal/models"
-	"maestro/internal/service"
 	"maestro/internal/store"
 )
 
-func init() {
-	exerciseService = service.NewExerciseService()
-	sessionService = service.NewSessionService() // ← AJOUTE CETTE LIGNE
-	log.Println("✅ SessionService initialisé")   // ← AJOUTE
-}
+// ============================================
+// SESSION BUILDER (Choix énergie)
+// ============================================
 
-// Page sélection énergie
+// HandleSessionBuilder : Page de sélection d'énergie
 func HandleSessionBuilder(w http.ResponseWriter, r *http.Request) {
 	data := map[string]any{
 		"Configs": models.SessionConfigs,
@@ -29,79 +26,112 @@ func HandleSessionBuilder(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Démarre une session
+// ============================================
+// SESSION START (Démarrage)
+// ============================================
+
 func HandleStartSession(w http.ResponseWriter, r *http.Request) {
-	log.Println("🔥 HandleStartSession appelé")
-
 	energyStr := r.URL.Query().Get("energy")
-	log.Printf("Energy reçu: %s", energyStr)
-
 	energy, err := strconv.Atoi(energyStr)
 	if err != nil || energy < 1 || energy > 3 {
-		log.Printf("❌ Énergie invalide: %v", err)
-		http.Error(w, "Niveau d'énergie invalide", http.StatusBadRequest)
+		energy = 2 // Default medium
+	}
+
+	log.Printf("🔍 START SESSION: energy=%d", energy)
+
+	// Récupère exercices DISPONIBLES
+	report, _, err := store.GetTodayReport()
+	if err != nil {
+		log.Printf("❌ Erreur GetTodayReport: %v", err)
+		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
 		return
 	}
 
-	log.Println("🚀 Appel StartSession...")
+	// ✅ LOG DÉTAILLÉ
+	log.Printf("🔍 SESSION disponible: %d dus + %d nouveaux = %d total",
+		report.TodayDue, report.TodayNew, report.TotalAvailable)
+
+	// AUCUN exercice ? Affiche rapport
+	if report.TotalAvailable == 0 {
+		data := map[string]interface{}{
+			"Message":         "🎉 Aucun exercice à réviser aujourd'hui !",
+			"Report":          report,
+			"TodayDue":        report.TodayDue,
+			"TodayNew":        report.TodayNew,
+			"NextReviewDate":  report.NextReviewDate,
+			"UpcomingReviews": report.UpcomingReviews,
+		}
+		Tmpl.ExecuteTemplate(w, "no-exercises-today", data)
+		return
+	}
+
+	// CRÉE SESSION
 	sessionID, session, err := sessionService.StartSession(models.EnergyLevel(energy))
 	if err != nil {
+		if noExErr, ok := err.(*models.NoExercisesTodayError); ok {
+			data := map[string]interface{}{
+				"Message":         "🎉 Aucun exercice à réviser aujourd'hui !",
+				"Report":          noExErr.Report,
+				"TodayDue":        noExErr.Report.TodayDue,
+				"TodayNew":        noExErr.Report.TodayNew,
+				"NextReviewDate":  noExErr.Report.NextReviewDate,
+				"UpcomingReviews": noExErr.Report.UpcomingReviews,
+			}
+			Tmpl.ExecuteTemplate(w, "no-exercises-today", data)
+			return
+		}
 		log.Printf("❌ Erreur StartSession: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("✅ Session créée: %s", sessionID)
-
-	if len(session.Exercises) == 0 {
-		log.Println("❌ Aucun exercice disponible")
-		// ✅ Affiche la belle page au lieu d'une erreur brute
-		Tmpl.ExecuteTemplate(w, "no-exercises", nil)
-		return
-	}
-
+	// Redirige vers premier exercice
 	firstExercise := session.Exercises[0]
-	redirectURL := fmt.Sprintf("/exercise/%d?from=session&sid=%s", firstExercise.ID, sessionID)
-	log.Printf("➡️ Redirection vers: %s", redirectURL)
-
+	redirectURL := fmt.Sprintf("/exercise/%d?from=session&session=%d",
+		firstExercise.ID, sessionID)
+	log.Printf("🚀 Session %d démarrée → exo #%d '%s'",
+		sessionID, firstExercise.ID, firstExercise.Title)
 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }
 
-// Affiche la session en cours
-func HandleCurrentSession(w http.ResponseWriter, r *http.Request) {
-	sessionID := r.PathValue("id")
+// ============================================
+// SESSION COMPLETE (Résultats)
+// ============================================
 
-	activeSession := sessionService.GetActiveSession()
-	if activeSession == nil || activeSession.ID != sessionID {
-		http.NotFound(w, r)
+// HandleSessionComplete : Page de complétion
+func HandleSessionComplete(w http.ResponseWriter, r *http.Request) {
+	sessionIDStr := r.URL.Query().Get("id")
+
+	// Si pas d'ID fourni, essaie de récupérer la dernière session active
+	if sessionIDStr == "" {
+		sessionID, err := sessionService.GetActiveSession()
+		if err != nil || sessionID == 0 {
+			log.Printf("Aucune session active trouvée")
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+		sessionIDStr = fmt.Sprintf("%d", sessionID)
+	}
+
+	sessionID, _ := strconv.ParseInt(sessionIDStr, 10, 64)
+
+	// Récupère résultat depuis SQLite
+	result, err := sessionService.GetSessionResult(sessionID)
+	if err != nil {
+		log.Printf("Erreur récupération résultat: %v", err)
+
+		// Fallback : affiche page vide
+		data := map[string]any{
+			"CompletedCount": 0,
+			"Duration":       0,
+			"CompletedAt":    time.Now().Format("15:04"),
+			"ExerciseCount":  0,
+		}
+		Tmpl.ExecuteTemplate(w, "session-complete", data)
 		return
 	}
 
-	data := map[string]any{
-		"Session":  activeSession,
-		"Exercise": &activeSession.Session.Exercises[activeSession.CurrentIndex],
-	}
-
-	if err := Tmpl.ExecuteTemplate(w, "session-current", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-// Complète un exercice de session
-// HandleSessionComplete affiche la page de complétion
-func HandleSessionComplete(w http.ResponseWriter, r *http.Request) {
-	result := store.GetLastSessionResult()
-
-	// Fallback si pas de résultat stocké
-	if result == nil {
-		result = &models.SessionResult{
-			CompletedCount: 0,
-			Duration:       0,
-			CompletedAt:    time.Now(),
-			Exercises:      []int{},
-		}
-	}
-
+	// Affiche résultats
 	data := map[string]any{
 		"CompletedCount": result.CompletedCount,
 		"Duration":       result.Duration.Round(time.Second),
@@ -109,22 +139,33 @@ func HandleSessionComplete(w http.ResponseWriter, r *http.Request) {
 		"ExerciseCount":  len(result.Exercises),
 	}
 
-	// Nettoie après affichage
-	store.ClearSessionResult()
-
 	if err := Tmpl.ExecuteTemplate(w, "session-complete", data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-// Arrête une session
-func HandleStopSession(w http.ResponseWriter, r *http.Request) {
-	sessionID := r.PathValue("id")
+// ============================================
+// SESSION STOP (Arrêt manuel)
+// ============================================
 
+// HandleStopSession : Arrête une session en cours
+func HandleStopSession(w http.ResponseWriter, r *http.Request) {
+	sessionIDStr := r.PathValue("id")
+	sessionID, err := strconv.ParseInt(sessionIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "ID de session invalide", http.StatusBadRequest)
+		return
+	}
+
+	// Termine la session
 	if err := sessionService.StopSession(sessionID); err != nil {
+		log.Printf("Erreur stop session: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	log.Printf("✅ Session %d arrêtée", sessionID)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
+
+// Dans internal/service/session.go (ou équivalent)
