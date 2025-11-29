@@ -26,6 +26,13 @@ type DayData struct {
 	TimeSlots []TimeSlot
 }
 
+// DaySchedule représente les exercices et données d'un jour
+type DaySchedule struct {
+	Date      time.Time
+	Exercises []Exercise
+	Count     int
+}
+
 // WeekDay représente un jour dans la vue SEMAINE
 type WeekDay struct {
 	DayName   string
