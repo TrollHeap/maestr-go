@@ -1,0 +1,124 @@
+package views
+
+import "fmt"
+import "go-retro-terminal/internal/models"
+
+templ DashboardPage() {
+	@Layout("Dashboard", DashboardContent())
+}
+
+templ DashboardContent() {
+	<div class="terminal-content">
+		<div class="ascii-art">
+╔═══════════════════════════════════════════════╗
+║                                               ║
+║         🟢 RETRO TERMINAL 3000 🟢            ║
+║                                               ║
+║              GO + TEMPL + HTMX                ║
+║                                               ║
+╚═══════════════════════════════════════════════╝
+		</div>
+
+		<p class="status-line">
+			STATUS: <span class="status-ok">OPERATIONAL</span><br/>
+			VERSION: 1.0.0<br/>
+			UPTIME: 127h 42m
+		</p>
+
+		<div class="section">
+			<h2>🎮 MAIN MENU</h2>
+			@MenuItems()
+		</div>
+
+		<div class="section">
+			<h2>⚡ QUICK STATS</h2>
+			<div class="stats-grid">
+				@StatCard("CPU", "45.2%")
+				@StatCard("MEMORY", "62.1%")
+				@StatCard("DISK", "78.5%")
+			</div>
+		</div>
+
+		<div class="section">
+			<p class="footer-text">
+				Press any menu item to navigate<br/>
+				All graphics created with CSS
+			</p>
+		</div>
+	</div>
+}
+
+templ StatsPage(stats *models.StatsData) {
+	@Layout("Stats", StatsContent(stats))
+}
+
+templ StatsContent(stats *models.StatsData) {
+	<div class="terminal-content">
+		<h1 class="title-retro">⚙️ SYSTEM STATS</h1>
+
+		<div class="stats-grid">
+			@StatCard("CPU USAGE", fmt.Sprintf("%.1f%%", stats.CPU))
+			@StatCard("MEMORY", fmt.Sprintf("%.1f%%", stats.Memory))
+			@StatCard("UPTIME", stats.Uptime)
+		</div>
+
+		<div class="card-retro">
+			<h3>📊 DETAILED INFO</h3>
+			<table class="stats-table">
+				<tr>
+					<td class="table-label">Status:</td>
+					<td class="status-ok">{ stats.Status }</td>
+				</tr>
+				<tr>
+					<td class="table-label">Version:</td>
+					<td>{ stats.Version }</td>
+				</tr>
+				<tr>
+					<td class="table-label">Framework:</td>
+					<td>Go 1.21 + templ + HTMX</td>
+				</tr>
+			</table>
+		</div>
+
+		<div class="section">
+			<h2>🔄 REFRESH</h2>
+			<!-- Reload avec JS natif -->
+			<button class="btn-retro btn-primary" onclick="location.reload()">RELOAD STATS</button>
+			<a href="/" class="menu-item">→ BACK TO MAIN</a>
+		</div>
+	</div>
+}
+
+templ TerminalPage() {
+	@Layout("Terminal", TerminalContent())
+}
+
+templ TerminalContent() {
+	<div class="terminal-content">
+		<h1 class="title-retro">💻 INTERACTIVE TERMINAL</h1>
+
+		<p class="info-text">Type commands below. Available: help, status, date, about, clear</p>
+
+		<div class="terminal-section">
+			<div id="terminal-output" class="terminal-output" hx-trigger="load" hx-get="/api/terminal/execute?command=help"></div>
+
+			<form hx-post="/api/terminal/execute" hx-target="#terminal-output" hx-swap="afterbegin" hx-on::after-request="if(event.detail.successful) this.reset()">
+				<div class="input-group">
+					<span class="prompt">$</span>
+					<input 
+						type="text" 
+						name="command"
+						class="terminal-input" 
+						placeholder="Enter command..."
+						autocomplete="off"
+					/>
+					<button type="submit" class="btn-retro btn-small">EXECUTE</button>
+				</div>
+			</form>
+		</div>
+
+		<div class="section">
+			<a href="/" class="menu-item">→ BACK TO MAIN</a>
+		</div>
+	</div>
+}
