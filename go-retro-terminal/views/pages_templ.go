@@ -61,7 +61,7 @@ func DashboardContent() templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"terminal-content\"><div class=\"ascii-art\">╔═══════════════════════════════════════════════╗ ║                                               ║ ║         🟢 RETRO TERMINAL 3000 🟢            ║ ║                                               ║ ║              GO + TEMPL + HTMX                ║ ║                                               ║ ╚═══════════════════════════════════════════════╝</div><p class=\"status-line\">STATUS: <span class=\"status-ok\">OPERATIONAL</span><br>VERSION: 1.0.0<br>UPTIME: 127h 42m</p><div class=\"section\"><h2>🎮 MAIN MENU</h2>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"terminal-content\"><pre class=\"ascii-art\">║  RETRO TERMINAL 3000  ║</pre><p class=\"status-line\">STATUS: <span class=\"status-ok\">OPERATIONAL</span><br>VERSION: 1.0.0<br>UPTIME: 127h 42m</p><div class=\"section\"><h2>🎮 MAIN MENU</h2>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -166,7 +166,7 @@ func StatsContent(stats *models.StatsData) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(stats.Status)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages.templ`, Line: 70, Col: 41}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages.templ`, Line: 64, Col: 41}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -179,7 +179,7 @@ func StatsContent(stats *models.StatsData) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(stats.Version)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages.templ`, Line: 74, Col: 24}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/pages.templ`, Line: 68, Col: 24}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
