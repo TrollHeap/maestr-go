@@ -1,0 +1,472 @@
+/* ============================================================================
+   RETRO CRT TERMINAL - Base Styles
+   Green Phosphor CRT aesthetic (1980s/1990s)
+   Modified to adhere to Perplexity Design System
+   ========================================================================== */
+
+/* Reset */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;  /* ← Ajoute ça */
+  padding: 0; /* ← Ajoute ça */
+  overflow: hidden; /* ← Ajoute ça pour enlever scrollbar */
+}
+
+body {
+  background: var(--retro-bg);
+  color: var(--retro-text);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  overflow: hidden; /* ← Important */
+  -webkit-font-smoothing: antialiased;
+}
+/* ============================================================================
+   CRT MONITOR WRAPPER
+   ========================================================================== */
+
+/* Applique au wrapper */
+.wrapper {
+  position: fixed; /* ← Change de relative à fixed */
+  top: 0;
+  left: 0;
+  width: 100vw; /* ← 100% viewport width */
+  height: 100vh; /* ← 100% viewport height */
+  transform-origin: 50% 50%;
+  animation: pulse 5s linear infinite, flicker 6s linear infinite;
+  overflow: hidden; /* ← Ajoute ça */
+}
+
+
+.wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 31;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 30, 20, 0) 0%,
+    var(--crt-vignette) 100%
+  );
+  pointer-events: none;
+}
+
+.wrapper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 32;
+  opacity: 0.5;
+  background: radial-gradient(
+    ellipse at center,
+    var(--crt-glow-inner) 0%,
+    rgba(0, 255, 119, 0) 50%
+  );
+  pointer-events: none;
+  animation: glow 2s linear infinite;
+}
+
+.interlace {
+  position: absolute;
+  inset: 0;
+  z-index: 21;
+  opacity: 0.08; /* Plus subtil */
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  mix-blend-mode: multiply; /* Plus authentique */
+}
+
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px; /* Plus fin = plus réaliste */
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  animation: scanline 6s linear infinite; /* Plus lent = plus fluide */
+  z-index: 40;
+  pointer-events: none;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); /* Glow sur la ligne */
+}
+
+.envelope {
+  position: absolute;
+  top: 0; /* ← Enlève le 2em */
+  left: 0; /* ← Enlève le 2em */
+  right: 0; /* ← Enlève le 2em */
+  bottom: 0; /* ← Enlève le 2em */
+  z-index: 40;
+  border-radius: 0; /* ← Enlève le radius si tu veux full screen */
+  background: rgba(0, 0, 0, 0.25);
+}
+.terminal {
+  position: relative;
+  z-index: 50;
+  width: 100%;
+  height: 100%;
+  padding: var(--space-16);
+  overflow-y: auto;
+  text-shadow: 
+    0 0 1px rgba(64, 255, 128, 0.8),
+    0 0 2px rgba(64, 255, 128, 0.6),
+    0 0 3px rgba(64, 255, 128, 0.4),
+    0 0 8px rgba(64, 255, 128, 0.2); /* Multi-layer glow */
+}
+
+}
+.terminal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  mix-blend-mode: screen;
+  opacity: 0.03;
+  z-index: -1;
+  transform: translate(1px, 0);
+  filter: hue-rotate(120deg);
+  pointer-events: none;
+}
+
+.terminal::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  mix-blend-mode: screen;
+  opacity: 0.03;
+  z-index: -1;
+  transform: translate(-1px, 0);
+  filter: hue-rotate(-120deg);
+  pointer-events: none;
+}
+
+
+.terminal::-webkit-scrollbar {
+  width: 10px;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.terminal::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.5);
+  border-left: 1px solid rgba(64, 255, 128, 0.2);
+}
+
+.terminal::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(64, 255, 128, 0.6),
+    rgba(64, 255, 128, 0.8),
+    rgba(64, 255, 128, 0.6)
+  );
+  box-shadow: 
+    0 0 5px rgba(64, 255, 128, 0.8),
+    inset 0 0 2px rgba(0, 0, 0, 0.5);
+  border-radius: var(--radius-sm);
+}
+
+.terminal::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 255, 0, 0.7),
+    rgba(0, 255, 0, 0.9),
+    rgba(0, 255, 0, 0.7)
+  );
+  box-shadow: 
+    0 0 10px rgba(0, 255, 0, 1),
+    inset 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================================================
+   TYPOGRAPHY
+   ========================================================================== */
+
+h1, h2, h3, h4, h5, h6 {
+  text-shadow: 
+    0 0 2px rgba(64, 255, 128, 0.8),
+    0 0 5px rgba(64, 255, 128, 0.6),
+    0 0 10px rgba(64, 255, 128, 0.3);
+  margin: var(--space-16) 0 var(--space-8) 0;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.1em; /* Plus espacé = plus retro */
+  text-transform: uppercase;
+  line-height: var(--line-height-tight);
+}
+
+h1 { 
+  font-size: var(--font-size-3xl);
+}
+
+h2 { 
+  font-size: var(--font-size-xl);
+}
+
+h3 { 
+  font-size: var(--font-size-lg);
+}
+
+.title-retro {
+  font-size: var(--font-size-3xl);
+  border-bottom: 2px solid var(--retro-text);
+  padding-bottom: var(--space-8);
+  margin: var(--space-24) 0 var(--space-16) 0;
+}
+
+p {
+  margin: var(--space-8) 0;
+  color: var(--retro-text-secondary);
+  line-height: var(--line-height-normal);
+}
+
+a {
+  color: var(--retro-text);
+  text-decoration: none;
+  text-shadow: 0 0 3px var(--retro-shadow);
+  transition: all var(--duration-fast) var(--ease-standard);
+}
+
+a:hover {
+  color: #00ff00;
+  text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+}
+
+a:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--space-2);
+}
+
+/* ASCII Art */
+.ascii-art {
+  font-size: var(--font-size-sm);
+  text-shadow: 0 0 5px var(--retro-shadow);
+  margin: var(--space-24) 0;
+  white-space: pre;
+  line-height: 1.2;
+  font-family: var(--font-family-mono);
+}
+
+/* Status Line */
+.status-line {
+  color: var(--retro-text);
+  text-shadow: 0 0 3px var(--retro-shadow);
+  margin: var(--space-16) 0;
+  font-size: var(--font-size-sm);
+}
+
+.status-ok {
+  color: #00ff00;
+  text-shadow: 0 0 5px rgba(0, 255, 0, 0.8);
+  font-weight: var(--font-weight-bold);
+}
+
+.status-error {
+  color: #ff0000;
+  text-shadow: 0 0 5px rgba(255, 0, 0, 0.8);
+  font-weight: var(--font-weight-bold);
+}
+
+/* Info text */
+.info-text {
+  color: rgba(51, 255, 119, 0.8);
+  text-shadow: 0 0 3px var(--retro-shadow);
+  font-size: var(--font-size-sm);
+  font-style: italic;
+  margin: var(--space-8) 0;
+}
+
+.footer-text {
+  color: rgba(51, 255, 119, 0.6);
+  text-shadow: 0 0 3px var(--retro-shadow);
+  font-size: var(--font-size-xs);
+  margin-top: var(--space-24);
+  text-align: center;
+}
+
+/* ============================================================================
+   LAYOUT SECTIONS
+   ========================================================================== */
+
+.section {
+  margin: var(--space-24) 0;
+  padding: var(--space-16);
+  border-left: 3px solid var(--retro-text);
+  padding-left: var(--space-24);
+  position: relative;
+}
+
+.section::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 0;
+  width: 5px;
+  height: 100%;
+  background: var(--retro-text);
+  box-shadow: 
+    0 0 5px rgba(64, 255, 128, 0.6),
+    0 0 10px rgba(64, 255, 128, 0.4),
+    0 0 15px rgba(64, 255, 128, 0.2);
+  opacity: 0.8;
+  animation: border-pulse 2s ease-in-out infinite;
+}
+
+.terminal-content {
+  max-width: 120ch;
+  margin: 0 auto;
+}
+
+/* ============================================================================
+   ANIMATIONS - Required for CRT effects
+   ========================================================================== */
+
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.9998);
+    opacity: 0.98;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Ajoute un nouveau flicker */
+@keyframes flicker {
+  0%, 19.9%, 22%, 62.9%, 64%, 100% {
+    opacity: 1;
+  }
+  20%, 21.9%, 63%, 63.9% {
+    opacity: 0.85;
+  }
+}
+
+@keyframes scanline {
+  0% {
+    top: 0;
+  }
+  100% {
+    top: 100%;
+  }
+}
+
+@keyframes skew {
+  0%, 100% {
+    transform: skewY(0deg);
+  }
+  50% {
+    transform: skewY(0.01deg);
+  }
+}
+
+@keyframes blur {
+  0%, 100% {
+    filter: blur(0px);
+  }
+  50% {
+    filter: blur(0.3px);
+  }
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN - Mobile Portrait (480px breakpoint)
+   ========================================================================== */
+
+@media (max-width: 480px) {
+  .crt-monitor {
+    padding: var(--space-8);
+  }
+  
+  .screen {
+    border-radius: var(--radius-sm);
+    max-height: 100vh;
+  }
+  
+  .screen::before {
+    border-radius: var(--radius-sm);
+  }
+  
+  .envelope {
+    top: 1em;
+    left: 1em;
+    right: 1em;
+    bottom: 1em;
+  }
+  
+  .terminal {
+    padding: var(--space-12);
+  }
+  
+  h1 {
+    font-size: var(--font-size-2xl);
+  }
+  
+  h2 {
+    font-size: var(--font-size-lg);
+  }
+  
+  h3 {
+    font-size: var(--font-size-md);
+  }
+  
+  .title-retro {
+    font-size: var(--font-size-2xl);
+    margin: var(--space-16) 0 var(--space-12) 0;
+    padding-bottom: var(--space-6);
+  }
+  
+  .ascii-art {
+    font-size: var(--font-size-xs);
+    margin: var(--space-16) 0;
+    overflow-x: auto;
+  }
+  
+  .section {
+    margin: var(--space-16) 0;
+    padding: var(--space-12);
+    padding-left: var(--space-16);
+    border-left-width: 2px;
+  }
+  
+  .terminal-content {
+    max-width: 100%;
+  }
+  
+  .footer-text {
+    font-size: 10px;
+    margin-top: var(--space-16);
+  }
+  
+  .terminal::-webkit-scrollbar {
+    width: 8px;
+  }
+}
