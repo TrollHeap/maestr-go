@@ -1,0 +1,85 @@
+package pages
+
+import (
+	"fmt"
+	"maestro/internal/models"          // ✅ Import models, pas service
+	"maestro/internal/service"
+	"maestro/internal/views/layouts"
+)
+
+// ✅ Component dashboard avec models.Exercise
+templ Dashboard(
+	stats service.DashboardStats,
+	todayCount int,
+	overdueCount int,
+	upcomingCount int,
+	overdue []models.Exercise,         // ✅ models.Exercise
+	upcoming []models.Exercise,        // ✅ models.Exercise
+) {
+	@layouts.BaseLayout("Dashboard") {
+		<div class="container mx-auto px-4 py-8">
+			<!-- Stats Cards -->
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+				@StatsCard("Révisions Aujourd'hui", todayCount, "blue")
+				@StatsCard("En Retard", overdueCount, "red")
+				@StatsCard("À Venir", upcomingCount, "green")
+			</div>
+
+			<!-- Overdue Reviews -->
+			if len(overdue) > 0 {
+				<div class="mb-8">
+					<h2 class="text-2xl font-bold mb-4">Révisions en retard</h2>
+					@ReviewList(overdue, true)
+				</div>
+			}
+
+			<!-- Upcoming Reviews -->
+			if len(upcoming) > 0 {
+				<div>
+					<h2 class="text-2xl font-bold mb-4">Prochaines révisions</h2>
+					@ReviewList(upcoming, false)
+				</div>
+			}
+		</div>
+	}
+}
+
+// ✅ Component Stats Card réutilisable
+templ StatsCard(title string, count int, color string) {
+	<div class={ "rounded-lg shadow p-6 border-l-4 border-" + color + "-500" }>
+		<h3 class="text-gray-600 text-sm font-medium">{ title }</h3>
+		<p class={ "text-3xl font-bold mt-2 text-" + color + "-600" }>
+			{ fmt.Sprintf("%d", count) }
+		</p>
+	</div>
+}
+
+// ✅ Component Review List avec models.Exercise
+templ ReviewList(reviews []models.Exercise, showOverdue bool) {
+	<div class="space-y-3">
+		for _, review := range reviews {
+			<div class="bg-white rounded-lg shadow p-4 flex justify-between items-center">
+				<div>
+					<h4 class="font-semibold">{ review.Title }</h4>
+					<p class="text-sm text-gray-600">
+						{ review.Domain } | Difficulté: { fmt.Sprintf("%d", review.Difficulty) }
+					</p>
+					if !review.NextReviewAt.IsZero() {
+						<p class="text-xs text-gray-500">
+							Prochaine révision: { review.NextReviewAt.Format("02/01/2006 15:04") }
+						</p>
+					}
+				</div>
+				
+				<div class="flex gap-2">
+					<a 
+						href={ templ.URL(fmt.Sprintf("/exercise/%d", review.ID)) }
+						class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+					>
+						Réviser
+					</a>
+				</div>
+			</div>
+		}
+	</div>
+}
