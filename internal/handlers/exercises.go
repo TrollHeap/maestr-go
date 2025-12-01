@@ -13,7 +13,10 @@ import (
 	"maestro/internal/store"
 )
 
-// Services globaux
+// ============================================
+// SERVICES GLOBAUX
+// ============================================
+
 var (
 	exerciseService *service.ExerciseService
 	sessionService  *service.SessionService
@@ -25,19 +28,21 @@ func init() {
 }
 
 // ============================================
-// PAGES COMPLÈTES
+// 1️⃣ PAGE PRINCIPALE EXERCICES
 // ============================================
 
-// HandleExercisesPage : Page principale exercices
 func HandleExercisesPage(w http.ResponseWriter, r *http.Request) {
+	// 1. Récupère données
 	allExercises, err := exerciseService.GetAllExercises()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("❌ GetAllExercises error: %v", err)
+		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
 		return
 	}
 
 	stats := exerciseService.GetExerciseStats()
 
+	// 2. Structure données
 	data := map[string]any{
 		"Exercises":     allExercises,
 		"UrgentCount":   stats["urgent"],
@@ -47,246 +52,69 @@ func HandleExercisesPage(w http.ResponseWriter, r *http.Request) {
 		"NewCount":      stats["new"],
 	}
 
-	if err := Tmpl.ExecuteTemplate(w, "exercise-list-page", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	// 3. ✅ Render avec helper (gère errors automatiquement)
+	RenderTemplateOrError(w, "exercise-list-page", data)
 }
 
 // ============================================
-// FRAGMENTS HTMX
+// 2️⃣ FRAGMENT HTMX : Liste filtrée
 // ============================================
 
-// HandleListExercice : Liste filtrée (Fragment)
 func HandleListExercice(w http.ResponseWriter, r *http.Request) {
+	// 1. Parse query params
 	view := r.URL.Query().Get("view")
 	domain := r.URL.Query().Get("domain")
 	difficulty, _ := strconv.Atoi(r.URL.Query().Get("difficulty"))
 
+	// 2. Construit filtre
 	filter := models.ExerciseFilter{
 		View:       view,
 		Domain:     domain,
 		Difficulty: difficulty,
 	}
 
+	// 3. Récupère exercices filtrés
 	filteredList, err := exerciseService.GetFilteredExercises(filter)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("❌ GetFilteredExercises error: %v", err)
+		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
 		return
 	}
 
-	Tmpl.ExecuteTemplate(w, "exercise-list", filteredList)
+	// 4. ✅ Render fragment
+	RenderTemplateOrError(w, "exercise-list", filteredList)
 }
 
-// HandleDetailExercice : Détail d'un exercice (Fragment)
+// ============================================
+// 3️⃣ PAGE DÉTAIL EXERCICE
+// ============================================
+
 func HandleDetailExercice(w http.ResponseWriter, r *http.Request) {
+	// 1. Parse params
 	id, _ := strconv.Atoi(r.PathValue("id"))
+	fromSession := r.URL.Query().Get("from") == "session"
 	sessionIDStr := r.URL.Query().Get("session")
 
+	log.Printf("🔍 DetailExercice: id=%d, fromSession=%v, sessionID=%s",
+		id, fromSession, sessionIDStr)
+
+	// 2. Validation ID
 	if err := exercise.ValidateID(id); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("❌ Invalid ID: %v", err)
+		http.Error(w, "ID invalide", http.StatusBadRequest)
 		return
 	}
 
+	// 3. Récupère exercice
 	ex, err := exerciseService.GetExerciseWithMarkdown(id)
 	if err != nil {
+		log.Printf("❌ Exercice #%d non trouvé: %v", id, err)
 		http.NotFound(w, r)
 		return
 	}
 
-	// ✅ AJOUTE SessionID dans les données
-	view := struct {
-		Exercise    *models.Exercise
-		FromSession bool
-		SessionID   string // ← NOUVEAU
-	}{
-		Exercise:    ex,
-		FromSession: r.URL.Query().Get("from") == "session",
-		SessionID:   sessionIDStr, // ← NOUVEAU
-	}
-
-	if err := Tmpl.ExecuteTemplate(w, "exercise-detail-page", view); err != nil {
-		log.Printf("Erreur template: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-// ============================================
-// ACTIONS (POST)
-// ============================================
-
-// HandleToggleDone : Toggle TODO ↔ DONE
-func HandleToggleDone(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
-	fromSession := r.URL.Query().Get("from") == "session"
-	sessionIDStr := r.URL.Query().Get("session")
-
-	if err := exercise.ValidateID(id); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Toggle via service
-	ex, err := exerciseService.ToggleExerciseDone(id)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Gestion session si applicable
-	if fromSession && ex.Done && sessionIDStr != "" {
-		sessionID, _ := strconv.ParseInt(sessionIDStr, 10, 64)
-
-		// Marque exercice complété dans la session
-		if err := sessionService.CompleteExercise(sessionID, id, 3); err != nil {
-			log.Printf("Erreur complete exercise: %v", err)
-		}
-
-		// Récupère prochain exercice
-		nextEx, err := sessionService.GetNextExercise(sessionID)
-		if err != nil {
-			log.Printf("Erreur next exercise: %v", err)
-		}
-
-		if nextEx != nil {
-			// Redirige vers suivant
-			redirectURL := fmt.Sprintf("/exercise/%d?from=session&session=%d", nextEx.ID, sessionID)
-			http.Redirect(w, r, redirectURL, http.StatusSeeOther)
-			return
-		} else {
-			// Session terminée
-			if err := sessionService.EndSession(sessionID); err != nil {
-				log.Printf("Erreur end session: %v", err)
-			}
-
-			// Redirige vers page de complétion
-			http.Redirect(w, r, fmt.Sprintf("/session/complete?id=%d", sessionID), http.StatusSeeOther)
-			return
-		}
-	}
-
-	// Mode normal : renvoie juste le bouton status
-	Tmpl.ExecuteTemplate(w, "status-indicator", ex)
-}
-
-// HandleToggleStep : Toggle une étape individuelle
-func HandleToggleStep(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.Atoi(r.PathValue("id"))
-	step, _ := strconv.Atoi(r.URL.Query().Get("step"))
-
-	if err := exercise.ValidateID(id); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	ex, err := exerciseService.GetExerciseWithMarkdown(id)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	if err := exercise.ValidateStep(step, len(ex.Steps)); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	ex, err = exerciseService.ToggleExerciseStep(id, step)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	Tmpl.ExecuteTemplate(w, "steps-exo", ex)
-}
-
-// HandleReview : Enregistre une révision SRS
-func HandleReview(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.Atoi(r.PathValue("id"))
-	quality, _ := strconv.Atoi(r.URL.Query().Get("quality"))
-	fromSession := r.URL.Query().Get("from") == "session"
-	sessionIDStr := r.URL.Query().Get("session")
-
-	// ✅ AJOUTE CES LOGS
-	log.Printf("🔍 [HandleReview] exID=%d, quality=%d, from=%v, session=%s",
-		id, quality, fromSession, sessionIDStr)
-
-	if err := exercise.ValidateID(id); err != nil {
-		log.Printf("❌ Validation ID échouée: %v", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if err := exercise.ValidateQuality(quality); err != nil {
-		log.Printf("❌ Validation Quality échouée: %v", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Applique SRS
-	ex, err := exerciseService.ReviewExercise(id, srs.ReviewQuality(quality))
-	if err != nil {
-		log.Printf("❌ Erreur ReviewExercise: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	log.Printf("✅ Review appliquée: newEaseFactor=%.2f, nextReview=%s",
-		ex.EaseFactor, ex.NextReviewAt.Format("2006-01-02"))
-
-	// Marque DONE si qualité >= 1
-	if quality >= 1 {
-		ex.Done = true
-		if err := store.SaveExercise(ex); err != nil {
-			log.Printf("❌ Erreur SaveExercise: %v", err)
-			http.Error(w, "Erreur sauvegarde", http.StatusInternalServerError)
-			return
-		}
-		log.Printf("✅ Exercice marqué DONE")
-	}
-
-	// MODE SESSION : Passer au suivant
-	if fromSession && sessionIDStr != "" {
-		sessionID, _ := strconv.ParseInt(sessionIDStr, 10, 64)
-
-		log.Printf("🔄 Mode session: sessionID=%d", sessionID)
-
-		// Enregistre dans session
-		if err := sessionService.CompleteExercise(sessionID, id, quality); err != nil {
-			log.Printf("❌ Erreur CompleteExercise: %v", err)
-		} else {
-			log.Printf("✅ Exercice complété dans session")
-		}
-
-		// Prochain exercice
-		nextEx, err := sessionService.GetNextExercise(sessionID)
-		if err != nil {
-			log.Printf("❌ Erreur GetNextExercise: %v", err)
-		}
-
-		if nextEx != nil {
-			// Redirection HTMX
-			redirectURL := fmt.Sprintf("/exercise/%d?from=session&session=%d", nextEx.ID, sessionID)
-			log.Printf("➡️ Redirection vers: %s", redirectURL)
-
-			w.Header().Set("HX-Redirect", redirectURL)
-			w.WriteHeader(http.StatusOK)
-			return
-		} else {
-			// Session terminée
-			log.Println("✅ Session terminée, aucun exercice suivant")
-
-			if err := sessionService.EndSession(sessionID); err != nil {
-				log.Printf("❌ Erreur EndSession: %v", err)
-			}
-
-			w.Header().Set("HX-Redirect", fmt.Sprintf("/session/complete?id=%d", sessionID))
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-	}
-
-	// MODE LIBRE : Recharge détail
-	log.Println("🔄 Mode libre, recharge détail")
-	view := struct {
+	// 4. Structure données (struct typé)
+	data := struct {
 		Exercise    *models.Exercise
 		FromSession bool
 		SessionID   string
@@ -295,26 +123,258 @@ func HandleReview(w http.ResponseWriter, r *http.Request) {
 		FromSession: fromSession,
 		SessionID:   sessionIDStr,
 	}
-	Tmpl.ExecuteTemplate(w, "exercise-detail", view)
+
+	// 5. ✅ Render template
+	RenderTemplateOrError(w, "exercise-detail-page", data)
 }
 
-// HandleNextExercise : Prochain exercice à réviser
-func HandleNextExercise(w http.ResponseWriter, r *http.Request) {
-	log.Println("🔍 HandleNextExercise: Mode libre")
+// ============================================
+// 4️⃣ ACTION : Toggle Done
+// ============================================
 
-	// 1. Récupère rapport complet + exercices disponibles aujourd'hui
-	report, exercises, err := store.GetTodayReport()
+func HandleToggleDone(w http.ResponseWriter, r *http.Request) {
+	// 1. Parse params
+	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	fromSession := r.URL.Query().Get("from") == "session"
+	sessionIDStr := r.URL.Query().Get("session")
+
+	log.Printf("🔄 ToggleDone: id=%d, fromSession=%v, sessionID=%s",
+		id, fromSession, sessionIDStr)
+
+	// 2. Validation
+	if err := exercise.ValidateID(id); err != nil {
+		log.Printf("❌ Validation ID failed: %v", err)
+		http.Error(w, "ID invalide", http.StatusBadRequest)
+		return
+	}
+
+	// 3. Toggle via service
+	ex, err := exerciseService.ToggleExerciseDone(id)
 	if err != nil {
-		log.Printf("❌ Erreur GetTodayReport: %v", err)
+		log.Printf("❌ ToggleExerciseDone error: %v", err)
 		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
 		return
 	}
 
-	// 2. Aucun exercice disponible aujourd'hui → Affiche rapport
-	if len(exercises) == 0 {
-		log.Println("ℹ️ Aucun exercice disponible, affichage du rapport")
+	log.Printf("✅ Exercice #%d toggled: Done=%v", id, ex.Done)
 
-		data := map[string]interface{}{
+	// 4. MODE SESSION : Gestion flow
+	if fromSession && ex.Done && sessionIDStr != "" {
+		sessionID, _ := strconv.ParseInt(sessionIDStr, 10, 64)
+
+		// a) Marque exercice complété
+		if err := sessionService.CompleteExercise(sessionID, id, 3); err != nil {
+			log.Printf("❌ CompleteExercise error: %v", err)
+		}
+
+		// b) Récupère prochain exercice
+		nextEx, err := sessionService.GetNextExercise(sessionID)
+		if err != nil {
+			log.Printf("❌ GetNextExercise error: %v", err)
+		}
+
+		if nextEx != nil {
+			// → Redirige vers exercice suivant
+			redirectURL := fmt.Sprintf("/exercise/%d?from=session&session=%d",
+				nextEx.ID, sessionID)
+			log.Printf("➡️ Redirect to: %s", redirectURL)
+
+			http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+			return
+		} else {
+			// → Session terminée
+			log.Println("✅ Session complete, no more exercises")
+
+			if err := sessionService.EndSession(sessionID); err != nil {
+				log.Printf("❌ EndSession error: %v", err)
+			}
+
+			http.Redirect(w, r, fmt.Sprintf("/session/complete?id=%d", sessionID),
+				http.StatusSeeOther)
+			return
+		}
+	}
+
+	// 5. MODE NORMAL : Render fragment status
+	RenderTemplateOrError(w, "status-indicator", ex)
+}
+
+// ============================================
+// 5️⃣ ACTION : Toggle Step
+// ============================================
+
+func HandleToggleStep(w http.ResponseWriter, r *http.Request) {
+	// 1. Parse params
+	id, _ := strconv.Atoi(r.PathValue("id"))
+	step, _ := strconv.Atoi(r.URL.Query().Get("step"))
+
+	log.Printf("🔄 ToggleStep: id=%d, step=%d", id, step)
+
+	// 2. Validation ID
+	if err := exercise.ValidateID(id); err != nil {
+		log.Printf("❌ Invalid ID: %v", err)
+		http.Error(w, "ID invalide", http.StatusBadRequest)
+		return
+	}
+
+	// 3. Récupère exercice
+	ex, err := exerciseService.GetExerciseWithMarkdown(id)
+	if err != nil {
+		log.Printf("❌ Exercise #%d not found: %v", id, err)
+		http.NotFound(w, r)
+		return
+	}
+
+	// 4. Validation step
+	if err := exercise.ValidateStep(step, len(ex.Steps)); err != nil {
+		log.Printf("❌ Invalid step: %v", err)
+		http.Error(w, "Step invalide", http.StatusBadRequest)
+		return
+	}
+
+	// 5. Toggle step
+	ex, err = exerciseService.ToggleExerciseStep(id, step)
+	if err != nil {
+		log.Printf("❌ ToggleExerciseStep error: %v", err)
+		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("✅ Step #%d toggled", step)
+
+	// 6. ✅ Render fragment (HTMX swap)
+	RenderTemplateOrError(w, "steps-exo", ex)
+}
+
+// ============================================
+// 6️⃣ ACTION : Review (SRS)
+// ============================================
+
+func HandleReview(w http.ResponseWriter, r *http.Request) {
+	// 1. Parse params
+	id, _ := strconv.Atoi(r.PathValue("id"))
+	quality, _ := strconv.Atoi(r.URL.Query().Get("quality"))
+	fromSession := r.URL.Query().Get("from") == "session"
+	sessionIDStr := r.URL.Query().Get("session")
+
+	log.Printf("🔍 [Review] id=%d, quality=%d, fromSession=%v, sessionID=%s",
+		id, quality, fromSession, sessionIDStr)
+
+	// 2. Validation ID
+	if err := exercise.ValidateID(id); err != nil {
+		log.Printf("❌ Validation ID failed: %v", err)
+		http.Error(w, "ID invalide", http.StatusBadRequest)
+		return
+	}
+
+	// 3. Validation quality (0-5)
+	if err := exercise.ValidateQuality(quality); err != nil {
+		log.Printf("❌ Validation Quality failed: %v", err)
+		http.Error(w, "Quality invalide", http.StatusBadRequest)
+		return
+	}
+
+	// 4. Applique algorithme SRS
+	ex, err := exerciseService.ReviewExercise(id, srs.ReviewQuality(quality))
+	if err != nil {
+		log.Printf("❌ ReviewExercise error: %v", err)
+		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("✅ Review applied: ease=%.2f, nextReview=%s",
+		ex.EaseFactor, ex.NextReviewAt.Format("2006-01-02"))
+
+	// 5. Marque DONE si quality >= 1
+	if quality >= 1 {
+		ex.Done = true
+		if err := store.SaveExercise(ex); err != nil {
+			log.Printf("❌ SaveExercise error: %v", err)
+			http.Error(w, "Erreur sauvegarde", http.StatusInternalServerError)
+			return
+		}
+		log.Printf("✅ Exercise marked DONE")
+	}
+
+	// 6. MODE SESSION : Flow exercice suivant
+	if fromSession && sessionIDStr != "" {
+		sessionID, _ := strconv.ParseInt(sessionIDStr, 10, 64)
+
+		log.Printf("🔄 Session mode: sessionID=%d", sessionID)
+
+		// a) Enregistre dans session
+		if err := sessionService.CompleteExercise(sessionID, id, quality); err != nil {
+			log.Printf("❌ CompleteExercise error: %v", err)
+		} else {
+			log.Printf("✅ Exercise completed in session")
+		}
+
+		// b) Prochain exercice
+		nextEx, err := sessionService.GetNextExercise(sessionID)
+		if err != nil {
+			log.Printf("❌ GetNextExercise error: %v", err)
+		}
+
+		if nextEx != nil {
+			// → Redirection HTMX vers exercice suivant
+			redirectURL := fmt.Sprintf("/exercise/%d?from=session&session=%d",
+				nextEx.ID, sessionID)
+			log.Printf("➡️ HX-Redirect to: %s", redirectURL)
+
+			w.Header().Set("HX-Redirect", redirectURL)
+			w.WriteHeader(http.StatusOK)
+			return
+		} else {
+			// → Session terminée
+			log.Println("✅ Session complete, no more exercises")
+
+			if err := sessionService.EndSession(sessionID); err != nil {
+				log.Printf("❌ EndSession error: %v", err)
+			}
+
+			w.Header().Set("HX-Redirect", fmt.Sprintf("/session/complete?id=%d", sessionID))
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+	}
+
+	// 7. MODE LIBRE : Recharge détail exercice
+	log.Println("🔄 Free mode, reload detail")
+
+	data := struct {
+		Exercise    *models.Exercise
+		FromSession bool
+		SessionID   string
+	}{
+		Exercise:    ex,
+		FromSession: fromSession,
+		SessionID:   sessionIDStr,
+	}
+
+	// ✅ Render template
+	RenderTemplateOrError(w, "exercise-detail", data)
+}
+
+// ============================================
+// 7️⃣ ACTION : Prochain exercice (Mode libre)
+// ============================================
+
+func HandleNextExercise(w http.ResponseWriter, r *http.Request) {
+	log.Println("🔍 HandleNextExercise: Free mode")
+
+	// 1. Récupère rapport + exercices disponibles
+	report, exercises, err := store.GetTodayReport()
+	if err != nil {
+		log.Printf("❌ GetTodayReport error: %v", err)
+		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
+		return
+	}
+
+	// 2. Aucun exercice disponible → Affiche page "No exercises"
+	if len(exercises) == 0 {
+		log.Println("ℹ️ No exercises available, showing report")
+
+		data := map[string]any{
 			"Message":         "🎉 Aucun exercice à réviser aujourd'hui !",
 			"Report":          report,
 			"TodayDue":        report.TodayDue,
@@ -323,16 +383,15 @@ func HandleNextExercise(w http.ResponseWriter, r *http.Request) {
 			"UpcomingReviews": report.UpcomingReviews,
 		}
 
-		if err := Tmpl.ExecuteTemplate(w, "no-exercises-today", data); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		// ✅ Render template
+		RenderTemplateOrError(w, "no-exercises-today", data)
 		return
 	}
 
-	// 3. Exercice(s) disponible(s) → Redirige vers le premier (plus urgent)
+	// 3. Exercice(s) disponible(s) → Redirige vers le plus urgent
 	nextExercise := exercises[0]
 	redirectURL := fmt.Sprintf("/exercise/%d", nextExercise.ID)
 
-	log.Printf("➡️ Redirection vers exercice #%d: %s", nextExercise.ID, nextExercise.Title)
+	log.Printf("➡️ Redirect to exercise #%d: %s", nextExercise.ID, nextExercise.Title)
 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }
