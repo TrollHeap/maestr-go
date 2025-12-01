@@ -1,0 +1,48 @@
+package layouts
+
+templ BaseLayout(title string) {
+	<!DOCTYPE html>
+	<html lang="fr">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ title } - Maestro</title>
+			
+			<!-- CSS -->
+			<link rel="stylesheet" href="/public/css/list-exercice.css"/>
+			
+			<!-- HTMX -->
+			<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+		</head>
+		<body class="bg-gray-50">
+			<div class="scan-line"></div>
+			
+			<nav class="terminal-nav">
+				<div class="nav-container">
+					<a href="/" class="nav-link">[DASHBOARD]</a>
+					<a href="/exercises" class="nav-link">[EXERCICES]</a>
+					<a href="/planner" class="nav-link">[PLANNER]</a>
+					<a href="/session/builder" class="nav-link">[SESSION]</a>
+				</div>
+			</nav>
+			
+			<div class="terminal-header">
+				<div class="terminal-title">
+					╔═══════════════════════════════════════════╗<br/>
+					║ { title }                                 ║<br/>
+					╚═══════════════════════════════════════════╝
+				</div>
+			</div>
+			
+			<main class="container">
+				{ children... }
+			</main>
+			
+			<footer class="terminal-footer">
+				┌───────────────────────────────────────────────────────┐<br/>
+				│ © 2025 MAESTRO v2.0 | SRS COCKPIT | STAY LEARNING 🚀 │<br/>
+				└───────────────────────────────────────────────────────┘
+			</footer>
+		</body>
+	</html>
+}
