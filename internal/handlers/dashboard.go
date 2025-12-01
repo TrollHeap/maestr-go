@@ -6,40 +6,47 @@ import (
 	"time"
 
 	"maestro/internal/service"
+	"maestro/internal/views/pages"
 )
 
-var dashboardService *service.DashboardService
+var (
+	dashboardService *service.DashboardService
+	plannerService   *service.PlannerService
+)
 
 func init() {
 	dashboardService = service.NewDashboardService()
+	plannerService = service.NewPlannerService()
 }
 
-// HandleDashboard affiche le dashboard
 func HandleDashboard(w http.ResponseWriter, r *http.Request) {
-	// Récupère les stats
+	log.Println("🔍 Dashboard: rendering with templ")
+
+	// Récupère stats
 	stats := dashboardService.GetDashboardStats()
-
-	// Récupère les révisions d'aujourd'hui
 	todayReviews := plannerService.GetReviewsForDate(time.Now())
-
-	// Récupère les révisions en retard
 	overdueReviews := plannerService.GetOverdueReviews()
-
-	// Récupère les prochaines révisions
 	upcomingReviews := plannerService.GetUpcomingReviews(5)
 
-	data := map[string]any{
-		"Stats":         stats,
-		"TodayCount":    len(todayReviews),
-		"OverdueCount":  len(overdueReviews),
-		"UpcomingCount": len(upcomingReviews),
-		"Overdue":       overdueReviews,
-		"Upcoming":      upcomingReviews,
-		"Now":           time.Now(),
+	log.Printf("📊 Stats: today=%d, overdue=%d, upcoming=%d",
+		len(todayReviews), len(overdueReviews), len(upcomingReviews))
+
+	// ✅ Pass models.Exercise slices directement
+	component := pages.Dashboard(
+		stats,
+		len(todayReviews),
+		len(overdueReviews),
+		len(upcomingReviews),
+		overdueReviews,  // []models.Exercise
+		upcomingReviews, // []models.Exercise
+	)
+
+	// Render component
+	if err := component.Render(r.Context(), w); err != nil {
+		log.Printf("❌ Error rendering dashboard: %v", err)
+		http.Error(w, "Error rendering page", http.StatusInternalServerError)
+		return
 	}
 
-	if err := Tmpl.ExecuteTemplate(w, "dashboard", data); err != nil {
-		log.Printf("❌ Erreur template dashboard: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	log.Println("✅ Dashboard rendered successfully")
 }
