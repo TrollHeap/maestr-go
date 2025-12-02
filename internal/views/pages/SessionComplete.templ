@@ -1,0 +1,109 @@
+package pages
+
+import (
+	"fmt"
+	"maestro/internal/views/layouts"
+	"time"
+)
+
+// SessionComplete - Page résultats session
+templ SessionComplete(sessionID int64, completedCount int, duration time.Duration, completedAt time.Time, exerciseIDs []int) {
+	@layouts.Base("Session Complétée - Maestro") {
+		<link rel="stylesheet" href="/public/css/session-complete.css"/>
+		<div class="scan-line"></div>
+		<div class="terminal-header">
+			<div class="terminal-subtitle">
+				&gt; SESSION COMPLETED | SESSION_ID: { fmt.Sprintf("%d", sessionID) } | STATUS: <span class="blink">SUCCESS</span>
+			</div>
+		</div>
+		<div class="session-complete-container">
+			<!-- Success Banner -->
+			<div class="success-banner">
+				<div class="success-icon">✅</div>
+				<h1 class="success-title">Session Complétée !</h1>
+				<p class="success-subtitle">Excellent travail 🎉</p>
+			</div>
+			<!-- Stats Grid -->
+			<div class="stats-grid">
+				<div class="stat-card stat-card--primary">
+					<div class="stat-icon">📊</div>
+					<div class="stat-label">Exercices complétés</div>
+					<div class="stat-value">{ fmt.Sprintf("%d", completedCount) }</div>
+				</div>
+				<div class="stat-card stat-card--secondary">
+					<div class="stat-icon">⏱️</div>
+					<div class="stat-label">Durée totale</div>
+					<div class="stat-value">{ formatDuration(duration) }</div>
+				</div>
+				<div class="stat-card stat-card--tertiary">
+					<div class="stat-icon">🕐</div>
+					<div class="stat-label">Terminée à</div>
+					<div class="stat-value">{ completedAt.Format("15:04") }</div>
+				</div>
+				<div class="stat-card stat-card--quaternary">
+					<div class="stat-icon">🆔</div>
+					<div class="stat-label">Session ID</div>
+					<div class="stat-value">{ fmt.Sprintf("#%d", sessionID) }</div>
+				</div>
+			</div>
+			<!-- Exercises List -->
+			if len(exerciseIDs) > 0 {
+				<div class="exercises-summary">
+					<h2 class="exercises-title">📝 Exercices révisés</h2>
+					<div class="exercises-list">
+						for _, exID := range exerciseIDs {
+							<div class="exercise-item">
+								<span class="exercise-check">✓</span>
+								<a href={ templ.URL(fmt.Sprintf("/exercise/%d", exID)) } class="exercise-link">
+									Exercice #{ fmt.Sprintf("%d", exID) }
+								</a>
+							</div>
+						}
+					</div>
+				</div>
+			}
+			<!-- Actions -->
+			<div class="complete-actions">
+				<a href="/planner" class="btn-primary">📅 Voir le Planner</a>
+				<a href="/session/new" class="btn-primary">⚡ Nouvelle Session</a>
+				<a href="/" class="btn-secondary">← Dashboard</a>
+			</div>
+		</div>
+	}
+}
+
+// SessionCompleteEmpty - Page session vide (fallback)
+templ SessionCompleteEmpty() {
+	@layouts.Base("Session - Maestro") {
+		<link rel="stylesheet" href="/public/css/session-complete.css"/>
+		<div class="scan-line"></div>
+		<div class="terminal-header">
+			<div class="terminal-subtitle">
+				&gt; SESSION RESULT | STATUS: <span class="blink">EMPTY</span>
+			</div>
+		</div>
+		<div class="session-complete-container">
+			<!-- Empty State -->
+			<div class="empty-state">
+				<div class="empty-icon">⚠️</div>
+				<h1 class="empty-title">Aucune session trouvée</h1>
+				<p class="empty-subtitle">Impossible de charger les résultats</p>
+			</div>
+			<!-- Actions -->
+			<div class="complete-actions">
+				<a href="/session/new" class="btn-primary">⚡ Nouvelle Session</a>
+				<a href="/" class="btn-secondary">← Dashboard</a>
+			</div>
+		</div>
+	}
+}
+
+// Helper
+func formatDuration(d time.Duration) string {
+	minutes := int(d.Minutes())
+	seconds := int(d.Seconds()) % 60
+	if minutes > 0 {
+		return fmt.Sprintf("%d min %d s", minutes, seconds)
+	}
+	return fmt.Sprintf("%d s", seconds)
+}

@@ -2,7 +2,7 @@ package pages
 
 import (
 	"fmt"
-	"maestro/internal/models"          // ✅ Import models, pas service
+	"maestro/internal/models" // ✅ Import models, pas service
 	"maestro/internal/service"
 	"maestro/internal/views/layouts"
 )
@@ -13,10 +13,10 @@ templ Dashboard(
 	todayCount int,
 	overdueCount int,
 	upcomingCount int,
-	overdue []models.Exercise,         // ✅ models.Exercise
-	upcoming []models.Exercise,        // ✅ models.Exercise
+	overdue []models.Exercise, // ✅ models.Exercise
+	upcoming []models.Exercise, // ✅ models.Exercise
 ) {
-	@layouts.BaseLayout("Dashboard") {
+	@layouts.Base("Dashboard") {
 		<div class="container mx-auto px-4 py-8">
 			<!-- Stats Cards -->
 			<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -24,7 +24,6 @@ templ Dashboard(
 				@StatsCard("En Retard", overdueCount, "red")
 				@StatsCard("À Venir", upcomingCount, "green")
 			</div>
-
 			<!-- Overdue Reviews -->
 			if len(overdue) > 0 {
 				<div class="mb-8">
@@ -32,7 +31,6 @@ templ Dashboard(
 					@ReviewList(overdue, true)
 				</div>
 			}
-
 			<!-- Upcoming Reviews -->
 			if len(upcoming) > 0 {
 				<div>
@@ -70,9 +68,8 @@ templ ReviewList(reviews []models.Exercise, showOverdue bool) {
 						</p>
 					}
 				</div>
-				
 				<div class="flex gap-2">
-					<a 
+					<a
 						href={ templ.URL(fmt.Sprintf("/exercise/%d", review.ID)) }
 						class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
 					>

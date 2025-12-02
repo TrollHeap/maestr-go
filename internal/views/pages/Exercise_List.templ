@@ -1,0 +1,65 @@
+package pages
+
+import (
+	"fmt"
+	"maestro/internal/models"
+	"maestro/internal/views/components"
+	"maestro/internal/views/layouts"
+)
+
+// ExerciseListPage - Page complète liste exercices
+templ ExerciseListPage(exercises []models.Exercise, urgentCount, todayCount, upcomingCount, activeCount, newCount int) {
+	@layouts.Base("Exercices - Maestro Terminal") {
+		<link rel="stylesheet" href="/public/css/exercises.css"/>
+		<div class="scan-line"></div>
+		<div class="terminal-header">
+			<div class="terminal-subtitle">
+				&gt; EXERCICES DATABASE | STATUS: <span class="blink">ONLINE</span>
+			</div>
+		</div>
+		<div class="exercises-container">
+			<!-- Header avec stats -->
+			<div class="exercises-header">
+				<h1 class="page-title">📚 BIBLIOTHÈQUE D'EXERCICES</h1>
+				<!-- Stats Cards -->
+				<div class="stats-grid">
+					@StatCard("🔥 Urgent", urgentCount, "urgent")
+					@StatCard("📅 Aujourd'hui", todayCount, "today")
+					@StatCard("⏰ À venir", upcomingCount, "upcoming")
+					@StatCard("⚡ Actifs", activeCount, "active")
+					@StatCard("🆕 Nouveaux", newCount, "new")
+				</div>
+				<!-- Filtres -->
+				<div class="filter-bar">
+					<button class="filter-btn active" hx-get="/exercises/list?view=all" hx-target="#exercise-list" hx-swap="innerHTML">
+						Tous
+					</button>
+					<button class="filter-btn" hx-get="/exercises/list?view=urgent" hx-target="#exercise-list" hx-swap="innerHTML">
+						Urgents
+					</button>
+					<button class="filter-btn" hx-get="/exercises/list?view=today" hx-target="#exercise-list" hx-swap="innerHTML">
+						Aujourd'hui
+					</button>
+					<button class="filter-btn" hx-get="/exercises/list?view=upcoming" hx-target="#exercise-list" hx-swap="innerHTML">
+						À venir
+					</button>
+					<button class="filter-btn" hx-get="/exercises/list?view=new" hx-target="#exercise-list" hx-swap="innerHTML">
+						Nouveaux
+					</button>
+				</div>
+			</div>
+			<!-- Liste exercices (HTMX target) -->
+			<div id="exercise-list">
+				@components.ExerciseListFragment(exercises)
+			</div>
+		</div>
+	}
+}
+
+// StatCard - Card statistique
+templ StatCard(label string, count int, cssClass string) {
+	<div class={ "stat-card", fmt.Sprintf("stat-card--%s", cssClass) }>
+		<div class="stat-label">{ label }</div>
+		<div class="stat-value">{ fmt.Sprintf("%d", count) }</div>
+	</div>
+}

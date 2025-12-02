@@ -1,0 +1,177 @@
+package pages
+
+import (
+	"fmt"
+	"maestro/internal/models"
+	"maestro/internal/views/components"
+	"maestro/internal/views/layouts"
+)
+
+// ExerciseDetail - Page complète exercice (avec layout HTML)
+templ ExerciseDetail(ex models.Exercise, fromSession bool, sessionID string) {
+	@layouts.Base(ex.Title + " - Terminal v2") {
+		<link rel="stylesheet" href="/public/css/exercice-detail.css"/>
+		<link rel="stylesheet" href="/public/css/review-panel.css"/>
+		<div class="scan-line"></div>
+		<div class="terminal-header">
+			<div class="terminal-subtitle">
+				&gt; { ex.Title } #{ fmt.Sprintf("%03d", ex.ID) } | STATUS: <span class="blink">ONLINE</span>
+			</div>
+		</div>
+		@ExerciseDetailContent(ex, fromSession, sessionID)
+	}
+}
+
+// ExerciseDetailContent - Contenu principal (sans layout)
+templ ExerciseDetailContent(ex models.Exercise, fromSession bool, sessionID string) {
+	<div id="exercise-detail" class="exercise-detail-layout">
+		<!-- Sidebar Sticky -->
+		<aside class="exercise-sidebar">
+			<!-- Header Info -->
+			<div class="exercise-header-compact">
+				<h2 class="exercise-title-compact">{ ex.Title }</h2>
+				<span class={ "badge", "badge--status", templ.KV("badge--done", ex.Done), templ.KV("badge--in-progress", !ex.Done) }>
+					if ex.Done {
+						✓ Maîtrisé
+					} else {
+						⊙ En cours
+					}
+				</span>
+			</div>
+			<!-- Badges -->
+			<div class="exercise-badges-compact">
+				<span class={ "badge", fmt.Sprintf("badge--domain-%s", ex.Domain), "badge--sm" }>
+					{ ex.Domain }
+				</span>
+				<span class={ "badge", fmt.Sprintf("badge--difficulty-%d", ex.Difficulty), "badge--sm" }>
+					D{ fmt.Sprintf("%d", ex.Difficulty) }
+				</span>
+			</div>
+			<hr class="sidebar-divider"/>
+			<!-- Progress Bar -->
+			@components.ProgressBar(len(ex.CompletedSteps), len(ex.Steps))
+			<hr class="sidebar-divider"/>
+			<!-- Steps List -->
+			@components.StepsFragmentWrapper(ex)
+			<hr class="sidebar-divider"/>
+			<!-- Quick Actions -->
+			<div class="quick-actions">
+				<h3 class="sidebar-section-title">ACTIONS</h3>
+				<button class="action-btn" onclick="switchTab('review')">
+					⚡ Review Now
+				</button>
+				<a href="/exercises" class="action-btn action-btn--secondary">
+					← Retour Liste
+				</a>
+			</div>
+		</aside>
+		<!-- Main Content with Tabs -->
+		<main class="exercise-main">
+			<!-- Tab Navigation -->
+			<div class="tab-navigation">
+				<button class="tab-btn active" data-tab="visual" onclick="switchTab('visual')">
+					🎨 Visualisation
+				</button>
+				<button class="tab-btn" data-tab="content" onclick="switchTab('content')">
+					📖 Contenu
+				</button>
+				<button class="tab-btn" data-tab="review" onclick="switchTab('review')">
+					⚡ Review
+				</button>
+			</div>
+			<!-- Tab Content -->
+			<div class="tab-content-wrapper">
+				<!-- Tab 1: Visualisation -->
+				@VisualisationTab(ex)
+				<!-- Tab 2: Contenu -->
+				@ContentTab(ex)
+				<!-- Tab 3: Review -->
+				@ReviewTab(ex, fromSession, sessionID)
+			</div>
+		</main>
+	</div>
+	<!-- JavaScript pour les tabs -->
+	@TabScript()
+}
+
+// VisualisationTab - Tab Visualisation
+templ VisualisationTab(ex models.Exercise) {
+	<div id="tab-visual" class="tab-pane active">
+		<h2 class="tab-title">Visualisation & Mnémotechniques</h2>
+		if ex.Description != "" {
+			<div class="description-box">
+				<strong>Description :</strong> { ex.Description }
+			</div>
+		}
+		if len(ex.ConceptualVisuals) > 0 {
+			<div class="visual-section">
+				for _, visual := range ex.ConceptualVisuals {
+					<div class="visual-item">
+						if visual.Type == "ascii" {
+							<pre class="ascii-diagram">{ visual.Content }</pre>
+						}
+						if visual.Caption != "" {
+							<div class="visual-caption">💡 { visual.Caption }</div>
+						}
+					</div>
+				}
+			</div>
+		}
+		if ex.Mnemonic != "" {
+			<div class="mnemonic-box">
+				🧠 <strong>Mnémotechnique :</strong> { ex.Mnemonic }
+			</div>
+		} else {
+			<div class="empty-state">
+				<p>Aucune visualisation disponible pour cet exercice.</p>
+			</div>
+		}
+	</div>
+}
+
+// ContentTab - Tab Contenu
+templ ContentTab(ex models.Exercise) {
+	<div id="tab-content" class="tab-pane">
+		<h2 class="tab-title">Contenu de l'Exercice</h2>
+		<div class="content-scrollable">
+			@templ.Raw(ex.Content)
+		</div>
+	</div>
+}
+
+// ReviewTab - Tab Review
+templ ReviewTab(ex models.Exercise, fromSession bool, sessionID string) {
+	<div id="tab-review" class="tab-pane">
+		<h2 class="tab-title">Révision SRS</h2>
+		@components.ReviewPanel(ex, fromSession, sessionID)
+	</div>
+}
+
+// TabScript - Script pour gestion tabs
+templ TabScript() {
+	<script>
+		function switchTab(tabName) {
+			// Hide all tabs
+			document.querySelectorAll('.tab-pane').forEach(pane => {
+				pane.classList.remove('active');
+			});
+
+			// Remove active from all buttons
+			document.querySelectorAll('.tab-btn').forEach(btn => {
+				btn.classList.remove('active');
+			});
+
+			// Show target tab
+			const targetPane = document.getElementById('tab-' + tabName);
+			if (targetPane) {
+				targetPane.classList.add('active');
+			}
+
+			// Activate button
+			const targetBtn = document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
+			if (targetBtn) {
+				targetBtn.classList.add('active');
+			}
+		}
+	</script>
+}

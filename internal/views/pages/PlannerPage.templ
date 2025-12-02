@@ -1,0 +1,74 @@
+package pages
+
+import (
+	"fmt"
+	"maestro/internal/models"
+	"maestro/internal/views/components"
+	"maestro/internal/views/layouts"
+	"time"
+)
+
+// PlannerPage - Page principale Planner
+templ PlannerPage(currentDate time.Time, reviews, upcoming, overdue []models.Exercise) {
+	@layouts.Base("Planner - Maestro Terminal") {
+		<link rel="stylesheet" href="/public/css/planner.css"/>
+		<div class="scan-line"></div>
+		<div class="terminal-header">
+			<div class="terminal-subtitle">
+				&gt; PLANNING SYSTÈME | DATE: { currentDate.Format("2006-01-02") } | STATUS: <span class="blink">ONLINE</span>
+			</div>
+		</div>
+		<div class="planner-container">
+			<!-- Header -->
+			<div class="planner-header">
+				<h1 class="page-title">📅 PLANIFICATEUR</h1>
+				<!-- Stats rapides -->
+				<div class="planner-stats">
+					<div class="stat-box stat-box--today">
+						<div class="stat-label">Aujourd'hui</div>
+						<div class="stat-value">{ fmt.Sprintf("%d", len(reviews)) }</div>
+					</div>
+					<div class="stat-box stat-box--upcoming">
+						<div class="stat-label">À venir</div>
+						<div class="stat-value">{ fmt.Sprintf("%d", len(upcoming)) }</div>
+					</div>
+					<div class="stat-box stat-box--overdue">
+						<div class="stat-label">En retard</div>
+						<div class="stat-value">{ fmt.Sprintf("%d", len(overdue)) }</div>
+					</div>
+				</div>
+				<!-- Navigation vues -->
+				<div class="view-nav">
+					<button
+						class="view-btn active"
+						hx-get={ fmt.Sprintf("/planner/day?date=%s", currentDate.Format("2006-01-02")) }
+						hx-target="#planner-view"
+						hx-swap="innerHTML"
+					>
+						📆 Jour
+					</button>
+					<button
+						class="view-btn"
+						hx-get={ fmt.Sprintf("/planner/week?week=%s", currentDate.Format("2006-01-02")) }
+						hx-target="#planner-view"
+						hx-swap="innerHTML"
+					>
+						📊 Semaine
+					</button>
+					<button
+						class="view-btn"
+						hx-get={ fmt.Sprintf("/planner/month?year=%d&month=%d", currentDate.Year(), currentDate.Month()) }
+						hx-target="#planner-view"
+						hx-swap="innerHTML"
+					>
+						📅 Mois
+					</button>
+				</div>
+			</div>
+			<!-- Vue dynamique (HTMX target) -->
+			<div id="planner-view" class="planner-view">
+				@components.PlannerDayView(currentDate, reviews)
+			</div>
+		</div>
+	}
+}

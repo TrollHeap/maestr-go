@@ -1,0 +1,91 @@
+package pages
+
+import (
+	"fmt"
+	"maestro/internal/domain/session"
+	"maestro/internal/views/layouts"
+)
+
+// SessionBuilder - Page choix énergie
+templ SessionBuilder(configs []session.Config) {
+	@layouts.Base("Nouvelle Session - Maestro") {
+		<link rel="stylesheet" href="/public/css/session-builder.css"/>
+		<div class="scan-line"></div>
+		<div class="terminal-header">
+			<div class="terminal-subtitle">
+				&gt; SESSION INITIALISATION | STATUS: <span class="blink">READY</span>
+			</div>
+		</div>
+		<div class="session-builder-container">
+			<!-- Header -->
+			<div class="builder-header">
+				<h1 class="page-title">⚡ NOUVELLE SESSION</h1>
+				<p class="subtitle">Sélectionne ton niveau d'énergie</p>
+			</div>
+			<!-- Energy Cards -->
+			<div class="energy-cards">
+				for _, config := range configs {
+					@EnergyCard(config)
+				}
+			</div>
+			<!-- Cancel Button -->
+			<div class="builder-actions">
+				<a href="/" class="btn-secondary">← Retour</a>
+			</div>
+		</div>
+	}
+}
+
+// EnergyCard - Card énergie
+templ EnergyCard(config session.Config) {
+	<a
+		href={ templ.URL(fmt.Sprintf("/session/start?energy=%d", config.Level)) }
+		class={ "energy-card", fmt.Sprintf("energy-card--%s", getEnergyClass(int(config.Level))) }
+	>
+		<div class="energy-icon">
+			if config.Level == 1 {
+				🔋
+			} else if config.Level == 2 {
+				⚡
+			} else {
+				🔥
+			}
+		</div>
+		<div class="energy-title">
+			if config.Level == 1 {
+				Faible
+			} else if config.Level == 2 {
+				Moyen
+			} else {
+				Élevé
+			}
+		</div>
+		<div class="energy-desc">
+			{ config.Description }
+		</div>
+		<div class="energy-stats">
+			<div class="stat">
+				<span class="stat-label">Max Exercices</span>
+				<span class="stat-value">{ fmt.Sprintf("%d", config.MaxExercises) }</span>
+			</div>
+			<div class="stat">
+				<span class="stat-label">Durée estimée</span>
+				<span class="stat-value">{ fmt.Sprintf("%d min", int(config.Duration.Minutes())) }</span>
+			</div>
+		</div>
+	</a>
+}
+
+// Helper
+func getEnergyClass(level int) string {
+	switch level {
+	case 1:
+		return "low"
+	case 2:
+		return "medium"
+	case 3:
+		return "high"
+	default:
+		return "medium"
+	}
+}

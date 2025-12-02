@@ -1,0 +1,73 @@
+package pages
+
+import (
+	"fmt"
+	"maestro/internal/models"
+	"maestro/internal/views/layouts"
+)
+
+// NoExercisesToday - Page "Aucun exercice disponible"
+templ NoExercisesToday(report models.SessionReport) {
+	@layouts.Base("Aucun exercice - Maestro") {
+		<link rel="stylesheet" href="/public/css/no-exercises.css"/>
+		<div class="scan-line"></div>
+		<div class="terminal-header">
+			<div class="terminal-subtitle">
+				&gt; SESSION REPORT | STATUS: <span class="blink">COMPLETE</span>
+			</div>
+		</div>
+		<div class="no-exercises-container">
+			<!-- Message principal -->
+			<div class="success-message">
+				<div class="success-icon">🎉</div>
+				<h1 class="success-title">Aucun exercice à réviser !</h1>
+				<p class="success-subtitle">Tu es à jour dans tes révisions. Bien joué !</p>
+			</div>
+			<!-- Stats rapport -->
+			<div class="report-stats">
+				<div class="report-card">
+					<div class="report-label">Dus aujourd'hui</div>
+					<div class="report-value">{ fmt.Sprintf("%d", report.TodayDue) }</div>
+				</div>
+				<div class="report-card">
+					<div class="report-label">Nouveaux</div>
+					<div class="report-value">{ fmt.Sprintf("%d", report.TodayNew) }</div>
+				</div>
+				<div class="report-card">
+					<div class="report-label">Total disponible</div>
+					<div class="report-value">{ fmt.Sprintf("%d", report.TotalAvailable) }</div>
+				</div>
+			</div>
+			<!-- Prochaines révisions -->
+			if len(report.UpcomingReviews) > 0 {
+				<div class="upcoming-section">
+					<h2 class="upcoming-title">📅 Prochaines révisions</h2>
+					<div class="upcoming-list">
+						for _, upcoming := range report.UpcomingReviews {
+							@UpcomingReviewItem(upcoming)
+						}
+					</div>
+				</div>
+			}
+			<!-- Actions -->
+			<div class="actions-section">
+				<a href="/" class="btn-primary">← Retour Dashboard</a>
+				<a href="/exercises" class="btn-secondary">Voir tous les exercices</a>
+			</div>
+		</div>
+	}
+}
+
+// UpcomingReviewItem - Item révision à venir
+templ UpcomingReviewItem(review models.UpcomingReview) {
+	<div class="upcoming-item">
+		<div class="upcoming-date">
+			{ review.Date.Format("02/01/2006") }
+		</div>
+		<div class="upcoming-exercise">
+			<a href={ templ.URL(fmt.Sprintf("/exercise/%d", review.ExerciseID)) }>
+				{ review.ExerciseTitle }
+			</a>
+		</div>
+	</div>
+}
