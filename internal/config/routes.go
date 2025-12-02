@@ -16,7 +16,7 @@ func Routes() *http.ServeMux {
 	mux.HandleFunc("GET /", handlers.HandleDashboard)
 	mux.HandleFunc("GET /exercises", handlers.HandleExercisesPage)
 	mux.HandleFunc("GET /planner", handlers.HandlePlannerPage)
-	mux.HandleFunc("GET /stats", handlers.HandlePico)
+
 	// ============================================
 	// GROUPE 2 : EXERCICES - FRAGMENTS HTMX
 	// ============================================
