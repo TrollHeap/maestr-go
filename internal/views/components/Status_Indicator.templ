@@ -1,0 +1,14 @@
+package components
+
+import "maestro/internal/models"
+
+// StatusIndicator - Badge de status (fragment HTMX)
+templ StatusIndicator(ex models.Exercise) {
+	<span class={ "badge", "badge--status", templ.KV("badge--done", ex.Done), templ.KV("badge--in-progress", !ex.Done) }>
+		if ex.Done {
+			✓ Maîtrisé
+		} else {
+			⊙ En cours
+		}
+	</span>
+}

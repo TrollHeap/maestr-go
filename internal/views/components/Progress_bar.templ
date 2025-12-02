@@ -1,0 +1,28 @@
+package components
+
+import "fmt"
+
+// ProgressBar - Barre de progression
+templ ProgressBar(completed, total int) {
+	<div class="progress-section">
+		<div class="progress-label">PROGRESSION</div>
+		<div class="progress-bar">
+			<div
+				class="progress-bar-fill"
+				id="progress-fill"
+				style={ fmt.Sprintf("width: %d%%", calculatePercent(completed, total)) }
+			></div>
+		</div>
+		<div class="progress-text">
+			{ fmt.Sprintf("%d/%d étapes", completed, total) }
+		</div>
+	</div>
+}
+
+// Helper function
+func calculatePercent(completed, total int) int {
+	if total == 0 {
+		return 0
+	}
+	return (completed * 100) / total
+}

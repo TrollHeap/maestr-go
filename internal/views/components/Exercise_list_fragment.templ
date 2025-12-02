@@ -1,0 +1,83 @@
+package components
+
+import (
+	"fmt"
+	"maestro/internal/models"
+)
+
+// ExerciseListFragment - Fragment liste exercices (HTMX)
+templ ExerciseListFragment(exercises []models.Exercise) {
+	if len(exercises) == 0 {
+		<div class="empty-state">
+			<p>Aucun exercice trouvé pour ce filtre.</p>
+			<a href="/exercises" class="btn-primary">← Voir tous les exercices</a>
+		</div>
+	} else {
+		<div class="exercise-grid">
+			for _, ex := range exercises {
+				@ExerciseCard(ex)
+			}
+		</div>
+	}
+}
+
+// ExerciseCard - Card individuelle exercice
+templ ExerciseCard(ex models.Exercise) {
+	<div class="exercise-card">
+		<div class="exercise-card-header">
+			<h3 class="exercise-card-title">
+				<a href={ templ.URL(fmt.Sprintf("/exercise/%d", ex.ID)) }>
+					{ ex.Title }
+				</a>
+			</h3>
+			<span class={ "badge", "badge--status", templ.KV("badge--done", ex.Done), templ.KV("badge--in-progress", !ex.Done) }>
+				if ex.Done {
+					✓
+				} else {
+					⊙
+				}
+			</span>
+		</div>
+		<div class="exercise-card-meta">
+			<span class={ "badge", fmt.Sprintf("badge--domain-%s", ex.Domain), "badge--sm" }>
+				{ ex.Domain }
+			</span>
+			<span class={ "badge", fmt.Sprintf("badge--difficulty-%d", ex.Difficulty), "badge--sm" }>
+				D{ fmt.Sprintf("%d", ex.Difficulty) }
+			</span>
+		</div>
+		if ex.Description != "" {
+			<p class="exercise-card-description">
+				{ ex.Description }
+			</p>
+		}
+		<div class="exercise-card-footer">
+			<!-- Progress -->
+			<div class="exercise-card-progress">
+				<div class="progress-mini">
+					<div
+						class="progress-mini-fill"
+						style={ fmt.Sprintf("width: %d%%", calculateProgressPercent(len(ex.CompletedSteps), len(ex.Steps))) }
+					></div>
+				</div>
+				<span class="progress-mini-text">
+					{ fmt.Sprintf("%d/%d", len(ex.CompletedSteps), len(ex.Steps)) }
+				</span>
+			</div>
+			<!-- Actions -->
+			<div class="exercise-card-actions">
+				<a href={ templ.URL(fmt.Sprintf("/exercise/%d", ex.ID)) } class="btn-card">
+					Voir →
+				</a>
+			</div>
+		</div>
+	</div>
+}
+
+// Helper function
+func calculateProgressPercent(completed, total int) int {
+	if total == 0 {
+		return 0
+	}
+	return (completed * 100) / total
+}

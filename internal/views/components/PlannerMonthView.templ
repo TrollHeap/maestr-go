@@ -1,0 +1,99 @@
+package components
+
+import (
+	"fmt"
+	"time"
+)
+
+// PlannerMonthView - Vue mois (fragment HTMX)
+templ PlannerMonthView(
+	year int,
+	month time.Month,
+	monthName string,
+	counts map[int]int,
+	firstDay time.Time,
+	daysInMonth int,
+	prevYear int,
+	prevMonth time.Month,
+	nextYear int,
+	nextMonth time.Month,
+) {
+	<div class="month-view">
+		<div class="month-header">
+			<button
+				class="nav-arrow"
+				hx-get={ fmt.Sprintf("/planner/month?year=%d&month=%d", prevYear, prevMonth) }
+				hx-target="#planner-view"
+				hx-swap="innerHTML"
+			>
+				←
+			</button>
+			<h2 class="month-title">
+				{ monthName } { fmt.Sprintf("%d", year) }
+			</h2>
+			<button
+				class="nav-arrow"
+				hx-get={ fmt.Sprintf("/planner/month?year=%d&month=%d", nextYear, nextMonth) }
+				hx-target="#planner-view"
+				hx-swap="innerHTML"
+			>
+				→
+			</button>
+		</div>
+		<!-- Calendrier -->
+		<div class="month-calendar">
+			<!-- Header jours semaine -->
+			<div class="calendar-weekdays">
+				for _, day := range []string{"Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"} {
+					<div class="calendar-weekday">{ day }</div>
+				}
+			</div>
+			<!-- Grille jours -->
+			<div class="calendar-grid">
+				<!-- Jours vides avant le 1er -->
+				for i := 0; i < getEmptyDaysBefore(firstDay); i++ {
+					<div class="calendar-day calendar-day--empty"></div>
+				}
+				<!-- Jours du mois -->
+				for day := 1; day <= daysInMonth; day++ {
+					@MonthDayCell(year, month, day, counts[day])
+				}
+			</div>
+		</div>
+	</div>
+}
+
+// MonthDayCell - Cellule jour mois
+templ MonthDayCell(year int, month time.Month, day int, count int) {
+	<div class={ "calendar-day", templ.KV("calendar-day--has-events", count > 0), templ.KV("calendar-day--today", isDayToday(year, month, day)) }>
+		<div class="calendar-day-number">{ fmt.Sprintf("%d", day) }</div>
+		if count > 0 {
+			<div class="calendar-day-count">
+				{ fmt.Sprintf("%d", count) }
+			</div>
+		}
+	</div>
+}
+
+// ============================================
+// HELPERS GO
+// ============================================
+
+// getEmptyDaysBefore - Calcule nombre de jours vides avant le 1er
+func getEmptyDaysBefore(firstDay time.Time) int {
+	weekday := int(firstDay.Weekday())
+
+	// Dimanche = 0 → 7 (ISO week)
+	if weekday == 0 {
+		weekday = 7
+	}
+
+	// Lundi = 1, donc on veut weekday-1 espaces vides
+	return weekday - 1
+}
+
+// isDayToday - Vérifie si c'est aujourd'hui
+func isDayToday(year int, month time.Month, day int) bool {
+	now := time.Now()
+	return year == now.Year() && month == now.Month() && day == now.Day()
+}

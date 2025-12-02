@@ -1,0 +1,53 @@
+package components
+
+import (
+	"fmt"
+	"maestro/internal/models"
+)
+
+// StepsFragmentWrapper - Container wrapper (pour HTMX swap)
+templ StepsFragmentWrapper(ex models.Exercise) {
+	<div class="steps-sidebar" id="steps-container-wrapper">
+		<h3 class="sidebar-section-title">ÉTAPES</h3>
+		@StepsFragment(ex)
+	</div>
+}
+
+// StepsFragment - Liste des steps (fragment HTMX)
+templ StepsFragment(ex models.Exercise) {
+	<div id="steps-container">
+		for i, step := range ex.Steps {
+			@StepItem(ex, i, step)
+		}
+	</div>
+}
+
+// StepItem - Item individuel step
+templ StepItem(ex models.Exercise, index int, stepText string) {
+	<div class={ "step-item", templ.KV("step-item--completed", isStepCompleted(ex.CompletedSteps, index)) }>
+		<label class="step-label">
+			<input
+				type="checkbox"
+				class="step-checkbox"
+				hx-post={ fmt.Sprintf("/exercise/%d/toggle-step?step=%d", ex.ID, index) }
+				hx-target="#steps-container-wrapper"
+				hx-swap="outerHTML"
+				if isStepCompleted(ex.CompletedSteps, index) {
+					checked
+				}
+			/>
+			<span class="step-number">{ fmt.Sprintf("%d", index+1) }</span>
+			<span class="step-text">{ stepText }</span>
+		</label>
+	</div>
+}
+
+// Helper function
+func isStepCompleted(completedSteps []int, index int) bool {
+	for _, step := range completedSteps {
+		if step == index {
+			return true
+		}
+	}
+	return false
+}

@@ -1,0 +1,80 @@
+package components
+
+import (
+	"fmt"
+	"maestro/internal/models"
+	"time"
+)
+
+// PlannerWeekView - Vue semaine (fragment HTMX)
+templ PlannerWeekView(startDate time.Time, schedule []models.DaySchedule, prevWeek, nextWeek time.Time) {
+	<div class="week-view">
+		<div class="week-header">
+			<button
+				class="nav-arrow"
+				hx-get={ fmt.Sprintf("/planner/week?week=%s", prevWeek.Format("2006-01-02")) }
+				hx-target="#planner-view"
+				hx-swap="innerHTML"
+			>
+				←
+			</button>
+			<h2 class="week-title">
+				Semaine du { startDate.Format("02/01/2006") }
+			</h2>
+			<button
+				class="nav-arrow"
+				hx-get={ fmt.Sprintf("/planner/week?week=%s", nextWeek.Format("2006-01-02")) }
+				hx-target="#planner-view"
+				hx-swap="innerHTML"
+			>
+				→
+			</button>
+		</div>
+		<div class="week-grid">
+			for _, day := range schedule {
+				@WeekDayCard(day)
+			}
+		</div>
+	</div>
+}
+
+// WeekDayCard - Card jour semaine
+templ WeekDayCard(day models.DaySchedule) {
+	<div class={ "week-day-card", templ.KV("week-day-card--today", isToday(day.Date)) }>
+		<div class="week-day-header">
+			<div class="week-day-name">{ day.Date.Format("Mon") }</div>
+			<div class="week-day-date">{ day.Date.Format("02") }</div>
+		</div>
+		<div class="week-day-count">
+			if day.Count > 0 {
+				<span class="count-badge">{ fmt.Sprintf("%d", day.Count) }</span>
+			} else {
+				<span class="count-empty">—</span>
+			}
+		</div>
+		if day.Count > 0 {
+			<div class="week-day-exercises">
+				for _, ex := range day.Exercises {
+					<div class="mini-exercise">
+						<a href={ templ.URL(fmt.Sprintf("/exercise/%d", ex.ID)) }>
+							{ truncate(ex.Title, 20) }
+						</a>
+					</div>
+				}
+			</div>
+		}
+	</div>
+}
+
+// Helpers
+func isToday(date time.Time) bool {
+	now := time.Now()
+	return date.Year() == now.Year() && date.YearDay() == now.YearDay()
+}
+
+func truncate(s string, max int) string {
+	if len(s) <= max {
+		return s
+	}
+	return s[:max] + "..."
+}

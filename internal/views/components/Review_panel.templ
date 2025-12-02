@@ -1,0 +1,47 @@
+package components
+
+import (
+	"fmt"
+	"maestro/internal/models"
+)
+
+// ReviewPanel - Panneau de review SRS
+templ ReviewPanel(ex models.Exercise, fromSession bool, sessionID string) {
+	<div class="review-panel">
+		<div class="review-info">
+			<p><strong>Prochaine révision :</strong> { ex.NextReviewAt.Format("02/01/2006") }</p>
+			<p><strong>Facilité :</strong> { fmt.Sprintf("%.2f", ex.EaseFactor) }</p>
+			<p><strong>Intervalle :</strong> { fmt.Sprintf("%d jours", ex.IntervalDays) }</p>
+			<p><strong>Répétitions :</strong> { fmt.Sprintf("%d", ex.Repetitions) }</p>
+		</div>
+		<div class="review-buttons">
+			<h3>Comment s'est passée cette révision ?</h3>
+			@ReviewButton(ex.ID, 0, "❌ Échec", "Recommencer", fromSession, sessionID)
+			@ReviewButton(ex.ID, 1, "😓 Difficile", "1 jour", fromSession, sessionID)
+			@ReviewButton(ex.ID, 2, "😊 Bien", "3 jours", fromSession, sessionID)
+			@ReviewButton(ex.ID, 3, "🚀 Facile", "7 jours", fromSession, sessionID)
+		</div>
+	</div>
+}
+
+// ReviewButton - Bouton individuel review
+templ ReviewButton(exerciseID, quality int, label, interval string, fromSession bool, sessionID string) {
+	<button
+		class={ "review-btn", fmt.Sprintf("review-btn--q%d", quality) }
+		hx-post={ buildReviewURL(exerciseID, quality, fromSession, sessionID) }
+		hx-target="#exercise-detail"
+		hx-swap="outerHTML"
+	>
+		<span class="review-label">{ label }</span>
+		<span class="review-interval">{ interval }</span>
+	</button>
+}
+
+// Helper function
+func buildReviewURL(exerciseID, quality int, fromSession bool, sessionID string) string {
+	url := fmt.Sprintf("/exercise/%d/review?quality=%d", exerciseID, quality)
+	if fromSession && sessionID != "" {
+		url += fmt.Sprintf("&from=session&session=%s", sessionID)
+	}
+	return url
+}
