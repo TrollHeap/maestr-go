@@ -7,11 +7,15 @@ import (
 	"time"
 
 	"maestro/internal/service"
+	"maestro/internal/views/components"
+	"maestro/internal/views/pages"
 )
 
 // ============================================
 // SERVICE GLOBAL
 // ============================================
+
+var plannerService *service.PlannerService
 
 func init() {
 	plannerService = service.NewPlannerService()
@@ -26,24 +30,21 @@ func HandlePlannerPage(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("🔍 PlannerPage: date=%s", today.Format("2006-01-02"))
 
-	// 1. Récupère données
+	// 1. Récupère données (LOGIQUE IDENTIQUE)
 	reviews := plannerService.GetReviewsForDate(today)
 	upcoming := plannerService.GetUpcomingReviews(10)
 	overdue := plannerService.GetOverdueReviews()
 
-	// 2. Structure données
-	data := map[string]any{
-		"CurrentDate": today,
-		"Reviews":     reviews,
-		"Upcoming":    upcoming,
-		"Overdue":     overdue,
-	}
-
 	log.Printf("✅ Planner data: reviews=%d, upcoming=%d, overdue=%d",
 		len(reviews), len(upcoming), len(overdue))
 
-	// 3. ✅ Render avec helper
-	RenderTemplateOrError(w, "planner.html", data)
+	// 2. ✅ CHANGEMENT : Render avec templ
+	component := pages.PlannerPage(today, reviews, upcoming, overdue)
+
+	if err := component.Render(r.Context(), w); err != nil {
+		log.Printf("❌ Render error: %v", err)
+		http.Error(w, "Erreur affichage", http.StatusInternalServerError)
+	}
 }
 
 // ============================================
@@ -51,7 +52,7 @@ func HandlePlannerPage(w http.ResponseWriter, r *http.Request) {
 // ============================================
 
 func HandlePlannerDay(w http.ResponseWriter, r *http.Request) {
-	// 1. Parse date query param
+	// 1. Parse date query param (LOGIQUE IDENTIQUE)
 	dateStr := r.URL.Query().Get("date")
 	date, err := time.Parse("2006-01-02", dateStr)
 	if err != nil {
@@ -61,20 +62,18 @@ func HandlePlannerDay(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("🔍 PlannerDay: date=%s", date.Format("2006-01-02"))
 
-	// 2. Récupère reviews pour ce jour
+	// 2. Récupère reviews pour ce jour (LOGIQUE IDENTIQUE)
 	reviews := plannerService.GetReviewsForDate(date)
-
-	// 3. Structure données
-	data := map[string]any{
-		"Date":    date,
-		"Reviews": reviews,
-		"Count":   len(reviews),
-	}
 
 	log.Printf("✅ Day view: %d reviews", len(reviews))
 
-	// 4. ✅ Render fragment
-	RenderTemplateOrError(w, "planner-day-view", data)
+	// 3. ✅ CHANGEMENT : Render fragment templ
+	component := components.PlannerDayView(date, reviews)
+
+	if err := component.Render(r.Context(), w); err != nil {
+		log.Printf("❌ Render error: %v", err)
+		http.Error(w, "Erreur affichage", http.StatusInternalServerError)
+	}
 }
 
 // ============================================
@@ -82,7 +81,7 @@ func HandlePlannerDay(w http.ResponseWriter, r *http.Request) {
 // ============================================
 
 func HandlePlannerWeek(w http.ResponseWriter, r *http.Request) {
-	// 1. Parse week query param
+	// 1. Parse week query param (LOGIQUE IDENTIQUE)
 	weekStr := r.URL.Query().Get("week")
 	var startDate time.Time
 
@@ -95,7 +94,7 @@ func HandlePlannerWeek(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 2. Fallback : début de semaine courante (lundi)
+	// 2. Fallback : début de semaine courante (lundi) (LOGIQUE IDENTIQUE)
 	if startDate.IsZero() {
 		now := time.Now()
 		weekday := int(now.Weekday())
@@ -111,25 +110,22 @@ func HandlePlannerWeek(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("🔍 PlannerWeek: startDate=%s", startDate.Format("2006-01-02"))
 
-	// 3. Récupère schedule semaine
+	// 3. Récupère schedule semaine (LOGIQUE IDENTIQUE)
 	schedule := plannerService.GetWeekSchedule(startDate)
 
-	// 4. Calcule prev/next week
+	// 4. Calcule prev/next week (LOGIQUE IDENTIQUE)
 	prevWeek := startDate.AddDate(0, 0, -7)
 	nextWeek := startDate.AddDate(0, 0, 7)
 
-	// 5. Structure données
-	data := map[string]any{
-		"StartDate": startDate,
-		"Schedule":  schedule,
-		"PrevWeek":  prevWeek.Format("2006-01-02"),
-		"NextWeek":  nextWeek.Format("2006-01-02"),
-	}
-
 	log.Printf("✅ Week view: %d days scheduled", len(schedule))
 
-	// 6. ✅ Render fragment
-	RenderTemplateOrError(w, "planner-week-view", data)
+	// 5. ✅ CHANGEMENT : Render fragment templ
+	component := components.PlannerWeekView(startDate, schedule, prevWeek, nextWeek)
+
+	if err := component.Render(r.Context(), w); err != nil {
+		log.Printf("❌ Render error: %v", err)
+		http.Error(w, "Erreur affichage", http.StatusInternalServerError)
+	}
 }
 
 // ============================================
@@ -137,7 +133,7 @@ func HandlePlannerWeek(w http.ResponseWriter, r *http.Request) {
 // ============================================
 
 func HandlePlannerMonth(w http.ResponseWriter, r *http.Request) {
-	// 1. Parse year/month query params
+	// 1. Parse year/month query params (LOGIQUE IDENTIQUE)
 	yearStr := r.URL.Query().Get("year")
 	monthStr := r.URL.Query().Get("month")
 
@@ -154,37 +150,15 @@ func HandlePlannerMonth(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("🔍 PlannerMonth: year=%d, month=%d", year, month)
 
-	// 2. Récupère counts mois
+	// 2. Récupère counts mois (LOGIQUE IDENTIQUE)
 	counts := plannerService.GetMonthSchedule(year, month)
 
-	// 3. Calcule métadonnées mois
+	// 3. Calcule métadonnées mois (LOGIQUE IDENTIQUE)
 	firstDay := time.Date(year, month, 1, 0, 0, 0, 0, time.Local)
 	lastDay := firstDay.AddDate(0, 1, -1)
 	daysInMonth := lastDay.Day()
 
-	// 4. Génère liste jours [1, 2, ..., 31]
-	days := make([]int, daysInMonth)
-	for i := range daysInMonth {
-		days[i] = i + 1
-	}
-
-	// 5. Noms mois en français
-	monthNames := map[time.Month]string{
-		time.January:   "Janvier",
-		time.February:  "Février",
-		time.March:     "Mars",
-		time.April:     "Avril",
-		time.May:       "Mai",
-		time.June:      "Juin",
-		time.July:      "Juillet",
-		time.August:    "Août",
-		time.September: "Septembre",
-		time.October:   "Octobre",
-		time.November:  "Novembre",
-		time.December:  "Décembre",
-	}
-
-	// 6. Calcule prev/next month
+	// 4. Calcule prev/next month (LOGIQUE IDENTIQUE)
 	prevMonth := month - 1
 	prevYear := year
 	if prevMonth < 1 {
@@ -199,23 +173,41 @@ func HandlePlannerMonth(w http.ResponseWriter, r *http.Request) {
 		nextYear++
 	}
 
-	// 7. Structure données
-	data := map[string]any{
-		"Year":      year,
-		"Month":     int(month),
-		"MonthName": monthNames[month],
-		"Counts":    counts,
-		"Days":      days,
-		"PrevYear":  prevYear,
-		"PrevMonth": int(prevMonth),
-		"NextYear":  nextYear,
-		"NextMonth": int(nextMonth),
-		"WeekDays":  []string{"Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"},
-		"FirstDay":  firstDay,
+	monthName := getMonthName(month)
+
+	log.Printf("✅ Month view: %s %d (%d days)", monthName, year, daysInMonth)
+
+	// 5. ✅ CHANGEMENT : Render fragment templ
+	component := components.PlannerMonthView(
+		year, month, monthName,
+		counts, firstDay, daysInMonth,
+		prevYear, prevMonth, nextYear, nextMonth,
+	)
+
+	if err := component.Render(r.Context(), w); err != nil {
+		log.Printf("❌ Render error: %v", err)
+		http.Error(w, "Erreur affichage", http.StatusInternalServerError)
 	}
+}
 
-	log.Printf("✅ Month view: %s %d (%d days)", monthNames[month], year, daysInMonth)
+// ============================================
+// HELPERS
+// ============================================
 
-	// 8. ✅ Render fragment
-	RenderTemplateOrError(w, "planner-month-view", data)
+func getMonthName(month time.Month) string {
+	monthNames := map[time.Month]string{
+		time.January:   "Janvier",
+		time.February:  "Février",
+		time.March:     "Mars",
+		time.April:     "Avril",
+		time.May:       "Mai",
+		time.June:      "Juin",
+		time.July:      "Juillet",
+		time.August:    "Août",
+		time.September: "Septembre",
+		time.October:   "Octobre",
+		time.November:  "Novembre",
+		time.December:  "Décembre",
+	}
+	return monthNames[month]
 }

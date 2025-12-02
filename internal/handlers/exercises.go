@@ -11,16 +11,15 @@ import (
 	"maestro/internal/models"
 	"maestro/internal/service"
 	"maestro/internal/store"
+	"maestro/internal/views/components"
+	"maestro/internal/views/pages"
 )
 
 // ============================================
 // SERVICES GLOBAUX
 // ============================================
 
-var (
-	exerciseService *service.ExerciseService
-	sessionService  *service.SessionService
-)
+var exerciseService *service.ExerciseService
 
 func init() {
 	exerciseService = service.NewExerciseService()
@@ -32,7 +31,7 @@ func init() {
 // ============================================
 
 func HandleExercisesPage(w http.ResponseWriter, r *http.Request) {
-	// 1. Récupère données
+	// 1. Récupère données (LOGIQUE IDENTIQUE)
 	allExercises, err := exerciseService.GetAllExercises()
 	if err != nil {
 		log.Printf("❌ GetAllExercises error: %v", err)
@@ -42,18 +41,20 @@ func HandleExercisesPage(w http.ResponseWriter, r *http.Request) {
 
 	stats := exerciseService.GetExerciseStats()
 
-	// 2. Structure données
-	data := map[string]any{
-		"Exercises":     allExercises,
-		"UrgentCount":   stats["urgent"],
-		"TodayCount":    stats["today"],
-		"UpcomingCount": stats["upcoming"],
-		"ActiveCount":   stats["active"],
-		"NewCount":      stats["new"],
-	}
+	// 2. ✅ CHANGEMENT : Render avec templ (pas map[string]any)
+	component := pages.ExerciseListPage(
+		allExercises,
+		stats["urgent"],
+		stats["today"],
+		stats["upcoming"],
+		stats["active"],
+		stats["new"],
+	)
 
-	// 3. ✅ Render avec helper (gère errors automatiquement)
-	RenderTemplateOrError(w, "exercise-list-page", data)
+	if err := component.Render(r.Context(), w); err != nil {
+		log.Printf("❌ Render error: %v", err)
+		http.Error(w, "Erreur affichage", http.StatusInternalServerError)
+	}
 }
 
 // ============================================
@@ -61,19 +62,19 @@ func HandleExercisesPage(w http.ResponseWriter, r *http.Request) {
 // ============================================
 
 func HandleListExercice(w http.ResponseWriter, r *http.Request) {
-	// 1. Parse query params
+	// 1. Parse query params (LOGIQUE IDENTIQUE)
 	view := r.URL.Query().Get("view")
 	domain := r.URL.Query().Get("domain")
 	difficulty, _ := strconv.Atoi(r.URL.Query().Get("difficulty"))
 
-	// 2. Construit filtre
+	// 2. Construit filtre (LOGIQUE IDENTIQUE)
 	filter := models.ExerciseFilter{
 		View:       view,
 		Domain:     domain,
 		Difficulty: difficulty,
 	}
 
-	// 3. Récupère exercices filtrés
+	// 3. Récupère exercices filtrés (LOGIQUE IDENTIQUE)
 	filteredList, err := exerciseService.GetFilteredExercises(filter)
 	if err != nil {
 		log.Printf("❌ GetFilteredExercises error: %v", err)
@@ -81,8 +82,13 @@ func HandleListExercice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 4. ✅ Render fragment
-	RenderTemplateOrError(w, "exercise-list", filteredList)
+	// 4. ✅ CHANGEMENT : Render fragment templ
+	component := components.ExerciseListFragment(filteredList)
+
+	if err := component.Render(r.Context(), w); err != nil {
+		log.Printf("❌ Render error: %v", err)
+		http.Error(w, "Erreur affichage", http.StatusInternalServerError)
+	}
 }
 
 // ============================================
@@ -90,7 +96,7 @@ func HandleListExercice(w http.ResponseWriter, r *http.Request) {
 // ============================================
 
 func HandleDetailExercice(w http.ResponseWriter, r *http.Request) {
-	// 1. Parse params
+	// 1. Parse params (LOGIQUE IDENTIQUE)
 	id, _ := strconv.Atoi(r.PathValue("id"))
 	fromSession := r.URL.Query().Get("from") == "session"
 	sessionIDStr := r.URL.Query().Get("session")
@@ -98,14 +104,14 @@ func HandleDetailExercice(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔍 DetailExercice: id=%d, fromSession=%v, sessionID=%s",
 		id, fromSession, sessionIDStr)
 
-	// 2. Validation ID
+	// 2. Validation ID (LOGIQUE IDENTIQUE)
 	if err := exercise.ValidateID(id); err != nil {
 		log.Printf("❌ Invalid ID: %v", err)
 		http.Error(w, "ID invalide", http.StatusBadRequest)
 		return
 	}
 
-	// 3. Récupère exercice
+	// 3. Récupère exercice (LOGIQUE IDENTIQUE)
 	ex, err := exerciseService.GetExerciseWithMarkdown(id)
 	if err != nil {
 		log.Printf("❌ Exercice #%d non trouvé: %v", id, err)
@@ -113,19 +119,13 @@ func HandleDetailExercice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 4. Structure données (struct typé)
-	data := struct {
-		Exercise    *models.Exercise
-		FromSession bool
-		SessionID   string
-	}{
-		Exercise:    ex,
-		FromSession: fromSession,
-		SessionID:   sessionIDStr,
-	}
+	// 4. ✅ CHANGEMENT : Render avec templ (params typés)
+	component := pages.ExerciseDetail(*ex, fromSession, sessionIDStr)
 
-	// 5. ✅ Render template
-	RenderTemplateOrError(w, "exercise-detail-page", data)
+	if err := component.Render(r.Context(), w); err != nil {
+		log.Printf("❌ Render error: %v", err)
+		http.Error(w, "Erreur affichage", http.StatusInternalServerError)
+	}
 }
 
 // ============================================
@@ -133,7 +133,7 @@ func HandleDetailExercice(w http.ResponseWriter, r *http.Request) {
 // ============================================
 
 func HandleToggleDone(w http.ResponseWriter, r *http.Request) {
-	// 1. Parse params
+	// 1. Parse params (LOGIQUE IDENTIQUE)
 	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
 	fromSession := r.URL.Query().Get("from") == "session"
 	sessionIDStr := r.URL.Query().Get("session")
@@ -141,14 +141,14 @@ func HandleToggleDone(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔄 ToggleDone: id=%d, fromSession=%v, sessionID=%s",
 		id, fromSession, sessionIDStr)
 
-	// 2. Validation
+	// 2. Validation (LOGIQUE IDENTIQUE)
 	if err := exercise.ValidateID(id); err != nil {
 		log.Printf("❌ Validation ID failed: %v", err)
 		http.Error(w, "ID invalide", http.StatusBadRequest)
 		return
 	}
 
-	// 3. Toggle via service
+	// 3. Toggle via service (LOGIQUE IDENTIQUE)
 	ex, err := exerciseService.ToggleExerciseDone(id)
 	if err != nil {
 		log.Printf("❌ ToggleExerciseDone error: %v", err)
@@ -158,7 +158,7 @@ func HandleToggleDone(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("✅ Exercice #%d toggled: Done=%v", id, ex.Done)
 
-	// 4. MODE SESSION : Gestion flow
+	// 4. MODE SESSION : Gestion flow (LOGIQUE IDENTIQUE)
 	if fromSession && ex.Done && sessionIDStr != "" {
 		sessionID, _ := strconv.ParseInt(sessionIDStr, 10, 64)
 
@@ -195,8 +195,13 @@ func HandleToggleDone(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 5. MODE NORMAL : Render fragment status
-	RenderTemplateOrError(w, "status-indicator", ex)
+	// 5. ✅ CHANGEMENT : Render fragment templ
+	component := components.StatusIndicator(*ex)
+
+	if err := component.Render(r.Context(), w); err != nil {
+		log.Printf("❌ Render error: %v", err)
+		http.Error(w, "Erreur affichage", http.StatusInternalServerError)
+	}
 }
 
 // ============================================
@@ -204,20 +209,20 @@ func HandleToggleDone(w http.ResponseWriter, r *http.Request) {
 // ============================================
 
 func HandleToggleStep(w http.ResponseWriter, r *http.Request) {
-	// 1. Parse params
+	// 1. Parse params (LOGIQUE IDENTIQUE)
 	id, _ := strconv.Atoi(r.PathValue("id"))
 	step, _ := strconv.Atoi(r.URL.Query().Get("step"))
 
 	log.Printf("🔄 ToggleStep: id=%d, step=%d", id, step)
 
-	// 2. Validation ID
+	// 2. Validation ID (LOGIQUE IDENTIQUE)
 	if err := exercise.ValidateID(id); err != nil {
 		log.Printf("❌ Invalid ID: %v", err)
 		http.Error(w, "ID invalide", http.StatusBadRequest)
 		return
 	}
 
-	// 3. Récupère exercice
+	// 3. Récupère exercice (LOGIQUE IDENTIQUE)
 	ex, err := exerciseService.GetExerciseWithMarkdown(id)
 	if err != nil {
 		log.Printf("❌ Exercise #%d not found: %v", id, err)
@@ -225,14 +230,14 @@ func HandleToggleStep(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 4. Validation step
+	// 4. Validation step (LOGIQUE IDENTIQUE)
 	if err := exercise.ValidateStep(step, len(ex.Steps)); err != nil {
 		log.Printf("❌ Invalid step: %v", err)
 		http.Error(w, "Step invalide", http.StatusBadRequest)
 		return
 	}
 
-	// 5. Toggle step
+	// 5. Toggle step (LOGIQUE IDENTIQUE)
 	ex, err = exerciseService.ToggleExerciseStep(id, step)
 	if err != nil {
 		log.Printf("❌ ToggleExerciseStep error: %v", err)
@@ -242,8 +247,13 @@ func HandleToggleStep(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("✅ Step #%d toggled", step)
 
-	// 6. ✅ Render fragment (HTMX swap)
-	RenderTemplateOrError(w, "steps-exo", ex)
+	// 6. ✅ CHANGEMENT : Render fragment templ
+	component := components.StepsFragment(*ex)
+
+	if err := component.Render(r.Context(), w); err != nil {
+		log.Printf("❌ Render error: %v", err)
+		http.Error(w, "Erreur affichage", http.StatusInternalServerError)
+	}
 }
 
 // ============================================
@@ -251,7 +261,7 @@ func HandleToggleStep(w http.ResponseWriter, r *http.Request) {
 // ============================================
 
 func HandleReview(w http.ResponseWriter, r *http.Request) {
-	// 1. Parse params
+	// 1. Parse params (LOGIQUE IDENTIQUE)
 	id, _ := strconv.Atoi(r.PathValue("id"))
 	quality, _ := strconv.Atoi(r.URL.Query().Get("quality"))
 	fromSession := r.URL.Query().Get("from") == "session"
@@ -260,21 +270,21 @@ func HandleReview(w http.ResponseWriter, r *http.Request) {
 	log.Printf("🔍 [Review] id=%d, quality=%d, fromSession=%v, sessionID=%s",
 		id, quality, fromSession, sessionIDStr)
 
-	// 2. Validation ID
+	// 2. Validation ID (LOGIQUE IDENTIQUE)
 	if err := exercise.ValidateID(id); err != nil {
 		log.Printf("❌ Validation ID failed: %v", err)
 		http.Error(w, "ID invalide", http.StatusBadRequest)
 		return
 	}
 
-	// 3. Validation quality (0-5)
+	// 3. Validation quality (LOGIQUE IDENTIQUE)
 	if err := exercise.ValidateQuality(quality); err != nil {
 		log.Printf("❌ Validation Quality failed: %v", err)
 		http.Error(w, "Quality invalide", http.StatusBadRequest)
 		return
 	}
 
-	// 4. Applique algorithme SRS
+	// 4. Applique algorithme SRS (LOGIQUE IDENTIQUE)
 	ex, err := exerciseService.ReviewExercise(id, srs.ReviewQuality(quality))
 	if err != nil {
 		log.Printf("❌ ReviewExercise error: %v", err)
@@ -285,7 +295,7 @@ func HandleReview(w http.ResponseWriter, r *http.Request) {
 	log.Printf("✅ Review applied: ease=%.2f, nextReview=%s",
 		ex.EaseFactor, ex.NextReviewAt.Format("2006-01-02"))
 
-	// 5. Marque DONE si quality >= 1
+	// 5. Marque DONE si quality >= 1 (LOGIQUE IDENTIQUE)
 	if quality >= 1 {
 		ex.Done = true
 		if err := store.SaveExercise(ex); err != nil {
@@ -296,7 +306,7 @@ func HandleReview(w http.ResponseWriter, r *http.Request) {
 		log.Printf("✅ Exercise marked DONE")
 	}
 
-	// 6. MODE SESSION : Flow exercice suivant
+	// 6. MODE SESSION : Flow exercice suivant (LOGIQUE IDENTIQUE)
 	if fromSession && sessionIDStr != "" {
 		sessionID, _ := strconv.ParseInt(sessionIDStr, 10, 64)
 
@@ -338,21 +348,16 @@ func HandleReview(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 7. MODE LIBRE : Recharge détail exercice
+	// 7. MODE LIBRE : Recharge détail exercice (LOGIQUE IDENTIQUE)
 	log.Println("🔄 Free mode, reload detail")
 
-	data := struct {
-		Exercise    *models.Exercise
-		FromSession bool
-		SessionID   string
-	}{
-		Exercise:    ex,
-		FromSession: fromSession,
-		SessionID:   sessionIDStr,
-	}
+	// ✅ CHANGEMENT : Render avec templ
+	component := pages.ExerciseDetail(*ex, fromSession, sessionIDStr)
 
-	// ✅ Render template
-	RenderTemplateOrError(w, "exercise-detail", data)
+	if err := component.Render(r.Context(), w); err != nil {
+		log.Printf("❌ Render error: %v", err)
+		http.Error(w, "Erreur affichage", http.StatusInternalServerError)
+	}
 }
 
 // ============================================
@@ -362,7 +367,7 @@ func HandleReview(w http.ResponseWriter, r *http.Request) {
 func HandleNextExercise(w http.ResponseWriter, r *http.Request) {
 	log.Println("🔍 HandleNextExercise: Free mode")
 
-	// 1. Récupère rapport + exercices disponibles
+	// 1. Récupère rapport + exercices disponibles (LOGIQUE IDENTIQUE)
 	report, exercises, err := store.GetTodayReport()
 	if err != nil {
 		log.Printf("❌ GetTodayReport error: %v", err)
@@ -370,25 +375,21 @@ func HandleNextExercise(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. Aucun exercice disponible → Affiche page "No exercises"
+	// 2. Aucun exercice disponible (LOGIQUE IDENTIQUE)
 	if len(exercises) == 0 {
 		log.Println("ℹ️ No exercises available, showing report")
 
-		data := map[string]any{
-			"Message":         "🎉 Aucun exercice à réviser aujourd'hui !",
-			"Report":          report,
-			"TodayDue":        report.TodayDue,
-			"TodayNew":        report.TodayNew,
-			"NextReviewDate":  report.NextReviewDate,
-			"UpcomingReviews": report.UpcomingReviews,
-		}
+		// ✅ CHANGEMENT : Render avec templ
+		component := pages.NoExercisesToday(report)
 
-		// ✅ Render template
-		RenderTemplateOrError(w, "no-exercises-today", data)
+		if err := component.Render(r.Context(), w); err != nil {
+			log.Printf("❌ Render error: %v", err)
+			http.Error(w, "Erreur affichage", http.StatusInternalServerError)
+		}
 		return
 	}
 
-	// 3. Exercice(s) disponible(s) → Redirige vers le plus urgent
+	// 3. Exercice(s) disponible(s) (LOGIQUE IDENTIQUE)
 	nextExercise := exercises[0]
 	redirectURL := fmt.Sprintf("/exercise/%d", nextExercise.ID)
 

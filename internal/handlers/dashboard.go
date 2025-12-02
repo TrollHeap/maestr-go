@@ -9,10 +9,7 @@ import (
 	"maestro/internal/views/pages"
 )
 
-var (
-	dashboardService *service.DashboardService
-	plannerService   *service.PlannerService
-)
+var dashboardService *service.DashboardService
 
 func init() {
 	dashboardService = service.NewDashboardService()
