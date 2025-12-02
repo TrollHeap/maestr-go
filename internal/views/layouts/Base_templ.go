@@ -42,14 +42,14 @@ func BaseLayout(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " - Maestro</title><!-- CSS --><link rel=\"stylesheet\" href=\"/public/css/list-exercice.css\"><!-- HTMX --><script src=\"https://unpkg.com/htmx.org@1.9.10\"></script></head><body class=\"bg-gray-50\"><div class=\"scan-line\"></div><nav class=\"terminal-nav\"><div class=\"nav-container\"><a href=\"/\" class=\"nav-link\">[DASHBOARD]</a> <a href=\"/exercises\" class=\"nav-link\">[EXERCICES]</a> <a href=\"/planner\" class=\"nav-link\">[PLANNER]</a> <a href=\"/session/builder\" class=\"nav-link\">[SESSION]</a></div></nav><div class=\"terminal-header\"><div class=\"terminal-title\">╔═══════════════════════════════════════════╗<br>║ ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " - Maestro</title><link rel=\"stylesheet\" href=\"/public/css/style.css\"><script src=\"https://unpkg.com/htmx.org@1.9.10\"></script></head><body class=\"bg-gray-50\"><div class=\"scan-line\"></div><nav class=\"terminal-nav\"><div class=\"nav-container\"><a href=\"/\" class=\"nav-link\">[DASHBOARD]</a> <a href=\"/exercises\" class=\"nav-link\">[EXERCICES]</a> <a href=\"/planner\" class=\"nav-link\">[PLANNER]</a> <a href=\"/session/builder\" class=\"nav-link\">[SESSION]</a></div></nav><div class=\"terminal-header\"><div class=\"terminal-title\">╔═══════════════════════════════════════════╗<br>║ ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/layouts/Base.templ`, Line: 32, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/layouts/Base.templ`, Line: 27, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {

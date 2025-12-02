@@ -8,7 +8,7 @@ set -e
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BIN_DIR="$PROJECT_ROOT/bin"
-TAILWIND_VERSION="v4.0.0-alpha.32" # Ou latest stable
+TAILWIND_VERSION="v4.1.17" # ✅ Dernière stable v4
 TAILWIND_BIN="$BIN_DIR/tailwindcss"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -44,9 +44,6 @@ case "$ARCH" in
     aarch64 | arm64)
         ARCHITECTURE="arm64"
         ;;
-    armv7l)
-        ARCHITECTURE="armv7"
-        ;;
     *)
         echo "❌ Architecture non supportée: $ARCH"
         exit 1
@@ -54,11 +51,9 @@ case "$ARCH" in
 esac
 
 # ============================================
-# 2. CONSTRUCTION URL DE TÉLÉCHARGEMENT
+# 2. URL TÉLÉCHARGEMENT
 # ============================================
 
-# Tailwind Standalone binary URLs
-# https://github.com/tailwindlabs/tailwindcss/releases
 DOWNLOAD_URL="https://github.com/tailwindlabs/tailwindcss/releases/download/${TAILWIND_VERSION}/tailwindcss-${PLATFORM}-${ARCHITECTURE}"
 
 echo "📦 URL téléchargement:"
@@ -70,12 +65,13 @@ echo "   $DOWNLOAD_URL"
 
 mkdir -p "$BIN_DIR"
 mkdir -p "$PROJECT_ROOT/public/css"
+mkdir -p "$PROJECT_ROOT/assets/css"
 
 # ============================================
 # 4. TÉLÉCHARGEMENT
 # ============================================
 
-echo "⬇️  Téléchargement Tailwind CSS..."
+echo "⬇️  Téléchargement Tailwind CSS v4.1.17..."
 
 if command -v curl &>/dev/null; then
     curl -sL "$DOWNLOAD_URL" -o "$TAILWIND_BIN"
@@ -87,7 +83,7 @@ else
 fi
 
 # ============================================
-# 5. PERMISSIONS EXÉCUTION
+# 5. PERMISSIONS
 # ============================================
 
 chmod +x "$TAILWIND_BIN"
@@ -99,7 +95,7 @@ echo "✅ Tailwind CSS installé: $TAILWIND_BIN"
 # ============================================
 
 if [ -f "$TAILWIND_BIN" ]; then
-    VERSION=$("$TAILWIND_BIN" --help | head -n 1 || echo "tailwindcss")
+    VERSION=$("$TAILWIND_BIN" --help 2>&1 | head -n 1 || echo "tailwindcss v4")
     echo "✅ Version: $VERSION"
 else
     echo "❌ Installation échouée"
@@ -107,47 +103,69 @@ else
 fi
 
 # ============================================
-# 7. CRÉATION FICHIERS CONFIG
+# 7. INPUT CSS (V4 SYNTAX)
 # ============================================
 
-# Créer input.css si n'existe pas
 INPUT_CSS="$PROJECT_ROOT/assets/css/input.css"
-mkdir -p "$(dirname "$INPUT_CSS")"
 
 if [ ! -f "$INPUT_CSS" ]; then
     cat >"$INPUT_CSS" <<'EOF'
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* === CUSTOM STYLES === */
+/* === TERMINAL THEME === */
+@theme {
+  --color-terminal-bg: #0a0a0a;
+  --color-terminal-text: #00ff00;
+  --color-terminal-border: #00ff0044;
+}
+
+/* === CUSTOM UTILITIES === */
 @layer components {
+  .terminal-nav {
+    @apply bg-black border-b-2 border-green-500/30 px-4 py-3;
+  }
+  
+  .nav-link {
+    @apply px-4 py-2 text-green-400 hover:bg-green-500/10 
+           transition-colors border border-green-500/30 rounded;
+  }
+  
+  .terminal-header {
+    @apply bg-black border-b-2 border-green-500/30 px-6 py-4;
+  }
+  
   .btn {
-    @apply px-4 py-2 rounded font-medium transition-colors;
+    @apply px-4 py-2 rounded font-medium transition-all
+           border-2 border-green-500/50 hover:border-green-500
+           hover:shadow-[0_0_10px_rgba(0,255,0,0.5)];
   }
-  
-  .btn-primary {
-    @apply bg-blue-600 text-white hover:bg-blue-700;
-  }
-  
-  .btn-secondary {
-    @apply bg-gray-600 text-white hover:bg-gray-700;
-  }
+}
+
+/* === ANIMATIONS === */
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+.scan-line {
+  animation: scan 8s linear infinite;
 }
 EOF
     echo "✅ Créé: assets/css/input.css"
 fi
 
-# Créer tailwind.config.js si n'existe pas
+# ============================================
+# 8. TAILWIND CONFIG (V4)
+# ============================================
+
 TAILWIND_CONFIG="$PROJECT_ROOT/tailwind.config.js"
 
 if [ ! -f "$TAILWIND_CONFIG" ]; then
     cat >"$TAILWIND_CONFIG" <<'EOF'
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: [
-    "./internal/views/**/*.templ",
-    "./internal/views/**/*.go",
+    "./internal/views/**/*.{templ,go}",
     "./templates/**/*.html",
   ],
   theme: {
@@ -159,22 +177,17 @@ module.exports = {
           border: '#00ff0044',
         }
       },
-      fontFamily: {
-        mono: ['JetBrains Mono', 'Courier New', 'monospace'],
-      }
     },
   },
-  plugins: [],
 }
 EOF
     echo "✅ Créé: tailwind.config.js"
 fi
 
 # ============================================
-# 8. CRÉATION SCRIPTS HELPER
+# 9. SCRIPTS HELPER
 # ============================================
 
-# Script build CSS
 BUILD_SCRIPT="$PROJECT_ROOT/scripts/build-css.sh"
 cat >"$BUILD_SCRIPT" <<'EOF'
 #!/usr/bin/env bash
@@ -197,7 +210,6 @@ EOF
 chmod +x "$BUILD_SCRIPT"
 echo "✅ Créé: scripts/build-css.sh"
 
-# Script watch CSS
 WATCH_SCRIPT="$PROJECT_ROOT/scripts/watch-css.sh"
 cat >"$WATCH_SCRIPT" <<'EOF'
 #!/usr/bin/env bash
@@ -214,16 +226,13 @@ if [ ! -f "$TAILWIND_BIN" ]; then
 fi
 
 echo "👀 Watching CSS changes..."
-echo "   Input:  $INPUT_CSS"
-echo "   Output: $OUTPUT_CSS"
-echo ""
 "$TAILWIND_BIN" -i "$INPUT_CSS" -o "$OUTPUT_CSS" --watch
 EOF
 chmod +x "$WATCH_SCRIPT"
 echo "✅ Créé: scripts/watch-css.sh"
 
 # ============================================
-# 9. PREMIÈRE BUILD
+# 10. BUILD INITIAL
 # ============================================
 
 echo ""
@@ -243,5 +252,4 @@ echo "📁 Fichiers:"
 echo "   Binary:     $TAILWIND_BIN"
 echo "   Input:      $INPUT_CSS"
 echo "   Output:     $PROJECT_ROOT/public/css/style.css"
-echo "   Config:     $TAILWIND_CONFIG"
 echo ""
