@@ -65,7 +65,6 @@ echo "   $DOWNLOAD_URL"
 
 mkdir -p "$BIN_DIR"
 mkdir -p "$PROJECT_ROOT/public/css"
-mkdir -p "$PROJECT_ROOT/assets/css"
 
 # ============================================
 # 4. TÉLÉCHARGEMENT
@@ -106,7 +105,7 @@ fi
 # 7. INPUT CSS (V4 SYNTAX)
 # ============================================
 
-INPUT_CSS="$PROJECT_ROOT/assets/css/input.css"
+INPUT_CSS="$PROJECT_ROOT/public/css/input.css"
 
 if [ ! -f "$INPUT_CSS" ]; then
     cat >"$INPUT_CSS" <<'EOF'
@@ -151,7 +150,7 @@ if [ ! -f "$INPUT_CSS" ]; then
   animation: scan 8s linear infinite;
 }
 EOF
-    echo "✅ Créé: assets/css/input.css"
+    echo "✅ Créé: public/css/input.css"
 fi
 
 # ============================================
@@ -195,8 +194,10 @@ set -e
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TAILWIND_BIN="$PROJECT_ROOT/bin/tailwindcss"
-INPUT_CSS="$PROJECT_ROOT/assets/css/input.css"
-OUTPUT_CSS="$PROJECT_ROOT/public/css/style.css"
+CSS_ROOT="$PROJECT_ROOT/public/css"
+INPUT_CSS="$CSS_ROOT/input.css"
+OUTPUT_CSS="$CSS_ROOT/style.css"
+
 
 if [ ! -f "$TAILWIND_BIN" ]; then
     echo "❌ Tailwind CSS non installé. Run: ./scripts/install-tailwind.sh"
@@ -217,8 +218,9 @@ set -e
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TAILWIND_BIN="$PROJECT_ROOT/bin/tailwindcss"
-INPUT_CSS="$PROJECT_ROOT/assets/css/input.css"
-OUTPUT_CSS="$PROJECT_ROOT/public/css/style.css"
+CSS_ROOT="$PROJECT_ROOT/public/css"
+INPUT_CSS="$CSS_ROOT/input.css"
+OUTPUT_CSS="$CSS_ROOT/style.css"
 
 if [ ! -f "$TAILWIND_BIN" ]; then
     echo "❌ Tailwind CSS non installé. Run: ./scripts/install-tailwind.sh"
