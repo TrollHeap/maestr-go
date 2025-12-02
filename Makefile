@@ -19,7 +19,7 @@ dev:
 	@echo "🚀 Starting dev mode..."
 	@trap 'kill 0' EXIT; \
 	./scripts/watch-css.sh & \
-	templ generate --watch --proxy="http://localhost:8080" --cmd="go run cmd/templ/main.go"
+	templ generate --watch --proxy="http://localhost:8080" --cmd="go run cmd/app/main.go"
 
 # === CSS ===
 css:
