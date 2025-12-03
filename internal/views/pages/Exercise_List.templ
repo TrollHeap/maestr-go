@@ -2,7 +2,6 @@
 package pages
 
 import (
-	"fmt"
 	"maestro/internal/models"
 	"maestro/internal/views/components"
 	"maestro/internal/views/layouts"
@@ -34,11 +33,11 @@ templ ExerciseListPage(
 					</h1>
 					<!-- Stats Cards -->
 					<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 mb-6">
-						@StatCard("🔥 En retard", urgentCount, "urgent")
-						@StatCard("📅 Aujourd'hui", todayCount, "today")
-						@StatCard("⏰ À venir", upcomingCount, "upcoming")
-						@StatCard("⚡ Actifs", activeCount, "active")
-						@StatCard("🆕 Nouveaux", newCount, "new")
+						@components.StatCard("🔥 En retard", urgentCount, "urgent")
+						@components.StatCard("📅 Aujourd'hui", todayCount, "today")
+						@components.StatCard("⏰ À venir", upcomingCount, "upcoming")
+						@components.StatCard("⚡ Actifs", activeCount, "active")
+						@components.StatCard("🆕 Nouveaux", newCount, "new")
 					</div>
 					<!-- Filtres -->
 					<div class="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/80 p-1 flex-wrap">
@@ -86,65 +85,9 @@ templ ExerciseListPage(
 				</header>
 				<!-- Liste exercices (HTMX target) -->
 				<section id="exercise-list">
-					@components.ExerciseListFragment(exercises)
+					@components.ExerciseList(exercises)
 				</section>
 			</div>
 		</div>
-	}
-}
-
-// StatCard - Card statistique
-templ StatCard(label string, count int, cssClass string) {
-	<div
-		class={
-			"stat-card rounded-xl border bg-slate-900/60 backdrop-blur-sm px-4 py-3 text-center transition-all hover:border-sky-500/60 hover:bg-slate-900",
-			getStatCardBorderClass(cssClass),
-		}
-	>
-		<div class="stat-label text-[0.65rem] font-medium uppercase tracking-widest text-slate-400 mb-1">
-			{ label }
-		</div>
-		<div
-			class={
-				"stat-value text-xl font-bold",
-				getStatCardTextClass(cssClass),
-			}
-		>
-			{ fmt.Sprintf("%d", count) }
-		</div>
-	</div>
-}
-
-func getStatCardBorderClass(cssClass string) string {
-	switch cssClass {
-	case "urgent":
-		return "border-rose-500/40"
-	case "today":
-		return "border-sky-500/40"
-	case "upcoming":
-		return "border-amber-500/40"
-	case "active":
-		return "border-emerald-500/40"
-	case "new":
-		return "border-purple-500/40"
-	default:
-		return "border-slate-700"
-	}
-}
-
-func getStatCardTextClass(cssClass string) string {
-	switch cssClass {
-	case "urgent":
-		return "text-rose-400"
-	case "today":
-		return "text-sky-400"
-	case "upcoming":
-		return "text-amber-400"
-	case "active":
-		return "text-emerald-400"
-	case "new":
-		return "text-purple-400"
-	default:
-		return "text-slate-300"
 	}
 }

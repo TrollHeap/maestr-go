@@ -4,6 +4,7 @@ package pages
 import (
 	"fmt"
 	"maestro/internal/views/layouts"
+	"maestro/internal/views/utils"
 	"time"
 )
 
@@ -64,7 +65,7 @@ templ SessionComplete(sessionID int64, completedCount int, duration time.Duratio
 								Durée totale
 							</div>
 							<div class="stat-value text-2xl font-bold text-sky-300">
-								{ formatDuration(duration) }
+								{ utils.FormatDuration(duration) }
 							</div>
 						</div>
 						<div class="stat-card rounded-2xl border border-purple-600/40 bg-purple-950/20 backdrop-blur-xl p-5 text-center space-y-2">
@@ -147,74 +148,4 @@ templ SessionComplete(sessionID int64, completedCount int, duration time.Duratio
 			</div>
 		</div>
 	}
-}
-
-// SessionCompleteEmpty - Page session vide (fallback)
-templ SessionCompleteEmpty() {
-	@layouts.Base("Session - Maestro") {
-		<div class="relative min-h-[calc(100vh-4rem)] bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50">
-			<!-- Scan / overlay -->
-			<div class="pointer-events-none absolute inset-0 overflow-hidden">
-				<div class="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent top-20 animate-[pulse_2s_ease-in-out_infinite]"></div>
-				<div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.12),_transparent_55%)]"></div>
-			</div>
-			<!-- Terminal header -->
-			<div class="relative z-10 border-b border-slate-800 bg-slate-950/90 backdrop-blur-md">
-				<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-					<div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-400/40 text-xs font-mono text-amber-300 tracking-widest">
-						<span class="inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
-						<span>&gt; SESSION RESULT</span>
-						<span class="opacity-60">|</span>
-						<span>STATUS: <span class="animate-pulse">EMPTY</span></span>
-					</div>
-				</div>
-			</div>
-			<div class="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-				<div class="space-y-10">
-					<!-- Empty State -->
-					<div class="empty-state text-center space-y-6">
-						<div class="empty-icon inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-amber-500/20 to-amber-600/20 border-4 border-amber-500/40">
-							<span class="text-5xl">⚠️</span>
-						</div>
-						<div class="space-y-3">
-							<h1 class="empty-title text-3xl sm:text-4xl font-extrabold text-slate-50">
-								Aucune session trouvée
-							</h1>
-							<p class="empty-subtitle text-lg text-amber-300">
-								Impossible de charger les résultats
-							</p>
-						</div>
-					</div>
-					<!-- Actions -->
-					<div class="complete-actions flex flex-col gap-3 sm:flex-row sm:justify-center">
-						<a
-							href="/session/builder"
-							class="btn-primary inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 shadow-lg hover:shadow-xl transition-all"
-							hx-boost="true"
-						>
-							<span>⚡</span>
-							<span>Nouvelle Session</span>
-						</a>
-						<a
-							href="/"
-							class="btn-secondary inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-slate-200 border border-slate-700 bg-slate-900/60 hover:bg-slate-800 transition-all"
-							hx-boost="true"
-						>
-							← Dashboard
-						</a>
-					</div>
-				</div>
-			</div>
-		</div>
-	}
-}
-
-// Helper
-func formatDuration(d time.Duration) string {
-	minutes := int(d.Minutes())
-	seconds := int(d.Seconds()) % 60
-	if minutes > 0 {
-		return fmt.Sprintf("%d min %d s", minutes, seconds)
-	}
-	return fmt.Sprintf("%d s", seconds)
 }

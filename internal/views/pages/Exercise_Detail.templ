@@ -5,6 +5,7 @@ import (
 	"maestro/internal/models"
 	"maestro/internal/views/components"
 	"maestro/internal/views/layouts"
+	"maestro/internal/views/utils"
 )
 
 // ExerciseDetail - Page complète exercice (avec layout HTML)
@@ -49,7 +50,7 @@ templ ExerciseDetailContent(ex models.Exercise, fromSession bool, sessionID stri
 						<span
 							class={
 								"badge inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold",
-								getStatusBadgeClasses(ex.Done),
+								utils.GetStatusBadgeClassesGlow(ex.Done),
 							}
 						>
 							if ex.Done {
@@ -64,7 +65,7 @@ templ ExerciseDetailContent(ex models.Exercise, fromSession bool, sessionID stri
 						<span
 							class={
 								"badge inline-flex items-center rounded-lg px-2 py-1 text-[0.65rem] font-medium",
-								getDomainBadgeClasses(ex.Domain),
+								utils.GetDomainBadgeClass(ex.Domain),
 							}
 						>
 							{ ex.Domain }
@@ -72,7 +73,7 @@ templ ExerciseDetailContent(ex models.Exercise, fromSession bool, sessionID stri
 						<span
 							class={
 								"badge inline-flex items-center rounded-lg px-2 py-1 text-[0.65rem] font-mono tracking-widest uppercase",
-								getDifficultyBadgeClasses(ex.Difficulty),
+								utils.GetDifficultyBadgeClass(ex.Difficulty),
 							}
 						>
 							D{ fmt.Sprintf("%d", ex.Difficulty) }
@@ -125,16 +126,16 @@ templ ExerciseDetailContent(ex models.Exercise, fromSession bool, sessionID stri
 						<span>📖</span>
 						<span>Contenu</span>
 					</button>
-					if fromSession {
-						<button
-							class="tab-btn inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-mono text-slate-300 hover:bg-slate-800 transition-all"
-							data-tab="review"
-							onclick="switchTab('review')"
-						>
-							<span>⚡</span>
-							<span>Review</span>
-						</button>
-					}
+					<!-- if fromSession { -->
+					<!-- 	<button -->
+					<!-- 		class="tab-btn inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-mono text-slate-300 hover:bg-slate-800 transition-all" -->
+					<!-- 		data-tab="review" -->
+					<!-- 		onclick="switchTab('review')" -->
+					<!-- 	> -->
+					<!-- 		<span>⚡</span> -->
+					<!-- 		<span>Review</span> -->
+					<!-- 	</button> -->
+					<!-- } -->
 				</div>
 				<!-- Tab Content -->
 				<div class="tab-content-wrapper rounded-2xl border border-slate-800 bg-slate-950/70 backdrop-blur-xl p-6">
@@ -247,29 +248,4 @@ templ TabScript() {
 			}
 		}
 	</script>
-}
-
-func getStatusBadgeClasses(done bool) string {
-	if done {
-		return "border border-emerald-500/60 text-emerald-300 bg-emerald-500/10"
-	}
-	return "border border-amber-500/60 text-amber-300 bg-amber-500/10"
-}
-
-func getDomainBadgeClasses(domain string) string {
-	// Tu peux spécialiser par domaine si besoin
-	return "border border-slate-600 text-slate-200 bg-slate-900/80"
-}
-
-func getDifficultyBadgeClasses(difficulty int) string {
-	base := "border text-xs"
-
-	switch difficulty {
-	case 1, 2:
-		return base + " border-emerald-500/60 text-emerald-300 bg-emerald-500/10"
-	case 3:
-		return base + " border-amber-500/70 text-amber-300 bg-amber-500/10"
-	default:
-		return base + " border-rose-500/70 text-rose-300 bg-rose-500/10"
-	}
 }
