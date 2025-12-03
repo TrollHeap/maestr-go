@@ -157,6 +157,13 @@ templ VisualisationTab(ex models.Exercise) {
 				<strong class="text-sky-300">Description :</strong> { ex.Description }
 			</div>
 		}
+		if ex.Mnemonic != "" {
+			<div class="mnemonic-box rounded-xl border border-purple-600/40 bg-purple-950/20 p-4 text-sm">
+				<span class="text-2xl mr-2">🧠</span>
+				<strong class="text-purple-300">Mnémotechnique :</strong>
+				<span class="text-slate-200">{ ex.Mnemonic }</span>
+			</div>
+		}
 		if len(ex.ConceptualVisuals) > 0 {
 			<div class="visual-section space-y-4">
 				for _, visual := range ex.ConceptualVisuals {
@@ -171,13 +178,6 @@ templ VisualisationTab(ex models.Exercise) {
 						}
 					</div>
 				}
-			</div>
-		}
-		if ex.Mnemonic != "" {
-			<div class="mnemonic-box rounded-xl border border-purple-600/40 bg-purple-950/20 p-4 text-sm">
-				<span class="text-2xl mr-2">🧠</span>
-				<strong class="text-purple-300">Mnémotechnique :</strong>
-				<span class="text-slate-200">{ ex.Mnemonic }</span>
 			</div>
 		}
 		if ex.Description == "" && len(ex.ConceptualVisuals) == 0 && ex.Mnemonic == "" {

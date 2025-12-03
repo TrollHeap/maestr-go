@@ -2,6 +2,8 @@ build-css.sh
 watch-css.sh
 /public/css/style.css
 
+data/maestro.db-*
+
 /bin/
 /cmd/*/*.exe
 *.exe
