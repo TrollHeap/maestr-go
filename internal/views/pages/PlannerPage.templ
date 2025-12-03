@@ -1,3 +1,4 @@
+// internal/views/pages/planner.templ
 package pages
 
 import (
@@ -11,63 +12,98 @@ import (
 // PlannerPage - Page principale Planner
 templ PlannerPage(currentDate time.Time, reviews, upcoming, overdue []models.Exercise) {
 	@layouts.Base("Planner - Maestro Terminal") {
-		<link rel="stylesheet" href="/public/css/planner.css"/>
-		<div class="scan-line"></div>
-		<div class="terminal-header">
-			<div class="terminal-subtitle">
-				&gt; PLANNING SYSTÈME | DATE: { currentDate.Format("2006-01-02") } | STATUS: <span class="blink">ONLINE</span>
+		<div class="relative min-h-[calc(100vh-4rem)] bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50">
+			<!-- Scan / overlay -->
+			<div class="pointer-events-none absolute inset-0 overflow-hidden">
+				<div class="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent top-20 animate-[pulse_2s_ease-in-out_infinite]"></div>
+				<div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.15),_transparent_55%)]"></div>
 			</div>
-		</div>
-		<div class="planner-container">
-			<!-- Header -->
-			<div class="planner-header">
-				<h1 class="page-title">📅 PLANIFICATEUR</h1>
-				<!-- Stats rapides -->
-				<div class="planner-stats">
-					<div class="stat-box stat-box--today">
-						<div class="stat-label">Aujourd'hui</div>
-						<div class="stat-value">{ fmt.Sprintf("%d", len(reviews)) }</div>
+			<div class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+				<!-- Header -->
+				<header class="mb-8">
+					<div class="mb-4 inline-flex items-center gap-3 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-400/40 text-xs font-mono text-emerald-300 tracking-widest">
+						<span class="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+						<span>&gt; PLANNING SYSTÈME</span>
+						<span class="opacity-60">|</span>
+						<span>DATE: { currentDate.Format("2006-01-02") }</span>
+						<span class="opacity-60">|</span>
+						<span>STATUS: <span class="animate-pulse">ONLINE</span></span>
 					</div>
-					<div class="stat-box stat-box--upcoming">
-						<div class="stat-label">À venir</div>
-						<div class="stat-value">{ fmt.Sprintf("%d", len(upcoming)) }</div>
+					<div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+						<div>
+							<h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-50">
+								📅 Planificateur
+							</h1>
+							<p class="text-slate-400">
+								Visualise tes révisions du jour, de la semaine ou du mois.
+							</p>
+						</div>
+						<!-- Stats rapides -->
+						<div class="grid grid-cols-3 gap-3 text-center text-xs font-mono">
+							<div class="rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2">
+								<div class="text-slate-400 uppercase tracking-widest text-[0.65rem]">
+									Aujourd'hui
+								</div>
+								<div class="mt-1 text-lg font-semibold text-emerald-400">
+									{ fmt.Sprintf("%d", len(reviews)) }
+								</div>
+							</div>
+							<div class="rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2">
+								<div class="text-slate-400 uppercase tracking-widest text-[0.65rem]">
+									À venir
+								</div>
+								<div class="mt-1 text-lg font-semibold text-sky-400">
+									{ fmt.Sprintf("%d", len(upcoming)) }
+								</div>
+							</div>
+							<div class="rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2">
+								<div class="text-slate-400 uppercase tracking-widest text-[0.65rem]">
+									En retard
+								</div>
+								<div class="mt-1 text-lg font-semibold text-rose-400">
+									{ fmt.Sprintf("%d", len(overdue)) }
+								</div>
+							</div>
+						</div>
 					</div>
-					<div class="stat-box stat-box--overdue">
-						<div class="stat-label">En retard</div>
-						<div class="stat-value">{ fmt.Sprintf("%d", len(overdue)) }</div>
+					<!-- Navigation vues -->
+					<div class="mt-6 inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/80 p-1">
+						<button
+							class="view-btn active inline-flex items-center gap-2 rounded-full bg-slate-800 px-4 py-1.5 text-xs font-mono text-emerald-300 tracking-widest uppercase"
+							hx-get={ fmt.Sprintf("/planner/day?date=%s", currentDate.Format("2006-01-02")) }
+							hx-target="#planner-view"
+							hx-swap="innerHTML"
+						>
+							<span>📆</span>
+							<span>Jour</span>
+						</button>
+						<button
+							class="view-btn inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-mono text-slate-300 hover:bg-slate-800 transition-colors"
+							hx-get={ fmt.Sprintf("/planner/week?week=%s", currentDate.Format("2006-01-02")) }
+							hx-target="#planner-view"
+							hx-swap="innerHTML"
+						>
+							<span>📊</span>
+							<span>Semaine</span>
+						</button>
+						<button
+							class="view-btn inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-mono text-slate-300 hover:bg-slate-800 transition-colors"
+							hx-get={ fmt.Sprintf("/planner/month?year=%d&month=%d", currentDate.Year(), currentDate.Month()) }
+							hx-target="#planner-view"
+							hx-swap="innerHTML"
+						>
+							<span>🗓️</span>
+							<span>Mois</span>
+						</button>
 					</div>
-				</div>
-				<!-- Navigation vues -->
-				<div class="view-nav">
-					<button
-						class="view-btn active"
-						hx-get={ fmt.Sprintf("/planner/day?date=%s", currentDate.Format("2006-01-02")) }
-						hx-target="#planner-view"
-						hx-swap="innerHTML"
-					>
-						📆 Jour
-					</button>
-					<button
-						class="view-btn"
-						hx-get={ fmt.Sprintf("/planner/week?week=%s", currentDate.Format("2006-01-02")) }
-						hx-target="#planner-view"
-						hx-swap="innerHTML"
-					>
-						📊 Semaine
-					</button>
-					<button
-						class="view-btn"
-						hx-get={ fmt.Sprintf("/planner/month?year=%d&month=%d", currentDate.Year(), currentDate.Month()) }
-						hx-target="#planner-view"
-						hx-swap="innerHTML"
-					>
-						📅 Mois
-					</button>
-				</div>
-			</div>
-			<!-- Vue dynamique (HTMX target) -->
-			<div id="planner-view" class="planner-view">
-				@components.PlannerDayView(currentDate, reviews)
+				</header>
+				<!-- Vue dynamique (HTMX target) -->
+				<section
+					id="planner-view"
+					class="rounded-2xl border border-slate-800 bg-slate-950/70 backdrop-blur-xl shadow-xl shadow-slate-900/50 p-5"
+				>
+					@components.PlannerDayView(currentDate, reviews)
+				</section>
 			</div>
 		</div>
 	}

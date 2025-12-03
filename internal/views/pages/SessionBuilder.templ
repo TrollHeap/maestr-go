@@ -1,7 +1,9 @@
+// internal/views/pages/session_builder.templ
 package pages
 
 import (
 	"fmt"
+
 	"maestro/internal/domain/session"
 	"maestro/internal/views/layouts"
 )
@@ -9,28 +11,46 @@ import (
 // SessionBuilder - Page choix énergie
 templ SessionBuilder(configs []session.Config) {
 	@layouts.Base("Nouvelle Session - Maestro") {
-		<link rel="stylesheet" href="/public/css/session-builder.css"/>
-		<div class="scan-line"></div>
-		<div class="terminal-header">
-			<div class="terminal-subtitle">
-				&gt; SESSION INITIALISATION | STATUS: <span class="blink">READY</span>
+		<!-- Background terminal + overlay scan -->
+		<div class="relative min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50">
+			<!-- Scan line -->
+			<div class="pointer-events-none absolute inset-0 overflow-hidden">
+				<div class="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent animate-[pulse_2s_ease-in-out_infinite] top-1/3"></div>
+				<div class="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(15,23,42,0)_0%,rgba(15,23,42,0.9)_100%)]"></div>
 			</div>
-		</div>
-		<div class="session-builder-container">
-			<!-- Header -->
-			<div class="builder-header">
-				<h1 class="page-title">⚡ NOUVELLE SESSION</h1>
-				<p class="subtitle">Sélectionne ton niveau d'énergie</p>
-			</div>
-			<!-- Energy Cards -->
-			<div class="energy-cards">
-				for _, config := range configs {
-					@EnergyCard(config)
-				}
-			</div>
-			<!-- Cancel Button -->
-			<div class="builder-actions">
-				<a href="/" class="btn-secondary">← Retour</a>
+			<div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+				<!-- Header -->
+				<div class="mb-10">
+					<div class="mb-4 inline-flex items-center gap-3 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-400/40 text-xs font-mono text-emerald-300 tracking-widest">
+						<span class="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+						<span>&gt; SESSION INITIALISATION</span>
+						<span class="opacity-60">|</span>
+						<span>STATUS: <span class="animate-pulse">READY</span></span>
+					</div>
+					<h1 class="text-3xl sm:text-4xl font-extrabold text-slate-50 mb-2 tracking-tight">
+						⚡ Nouvelle session
+					</h1>
+					<p class="text-slate-400">
+						Sélectionne ton niveau d'énergie pour adapter l'intensité de la session.
+					</p>
+				</div>
+				<!-- Energy Cards -->
+				<div class="grid gap-6 md:grid-cols-3 mb-10">
+					for _, config := range configs {
+						@EnergyCard(config)
+					}
+				</div>
+				<!-- Cancel Button -->
+				<div class="flex justify-start">
+					<a
+						href="/"
+						class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-200 border border-slate-600/70 bg-slate-900/60 hover:bg-slate-800 hover:border-slate-500 transition-all"
+						hx-boost="true"
+					>
+						<span class="text-lg">←</span>
+						<span>Retour</span>
+					</a>
+				</div>
 			</div>
 		</div>
 	}
@@ -40,52 +60,82 @@ templ SessionBuilder(configs []session.Config) {
 templ EnergyCard(config session.Config) {
 	<a
 		href={ templ.URL(fmt.Sprintf("/session/start?energy=%d", config.Level)) }
-		class={ "energy-card", fmt.Sprintf("energy-card--%s", getEnergyClass(int(config.Level))) }
+		class={ getEnergyCardClasses(int(config.Level)) }
+		hx-boost="true"
 	>
-		<div class="energy-icon">
-			if config.Level == 1 {
-				🔋
-			} else if config.Level == 2 {
-				⚡
-			} else {
-				🔥
-			}
-		</div>
-		<div class="energy-title">
-			if config.Level == 1 {
-				Faible
-			} else if config.Level == 2 {
-				Moyen
-			} else {
-				Élevé
-			}
-		</div>
-		<div class="energy-desc">
-			{ config.Description }
-		</div>
-		<div class="energy-stats">
-			<div class="stat">
-				<span class="stat-label">Max Exercices</span>
-				<span class="stat-value">{ fmt.Sprintf("%d", config.MaxExercises) }</span>
+		<div class="flex flex-col gap-4 h-full">
+			<!-- Icon + label -->
+			<div class="flex items-center justify-between gap-3">
+				<div class="text-3xl">
+					if config.Level == 1 {
+						🔋
+					} else if config.Level == 2 {
+						⚡
+					} else {
+						🔥
+					}
+				</div>
+				<div class="text-right">
+					<div class="text-xs font-mono tracking-widest uppercase text-slate-400">
+						Énergie
+					</div>
+					<div class="text-lg font-semibold text-slate-50">
+						if config.Level == 1 {
+							Faible
+						} else if config.Level == 2 {
+							Moyen
+						} else {
+							Élevé
+						}
+					</div>
+				</div>
 			</div>
-			<div class="stat">
-				<span class="stat-label">Durée estimée</span>
-				<span class="stat-value">{ fmt.Sprintf("%d min", int(config.Duration.Minutes())) }</span>
+			<!-- Description -->
+			<p class="text-sm text-slate-300 flex-1">
+				{ config.Description }
+			</p>
+			<!-- Stats -->
+			<div class="mt-2 grid grid-cols-2 gap-3 text-xs font-mono text-slate-300">
+				<div class="space-y-1">
+					<div class="uppercase tracking-wide text-slate-500">
+						Max exercices
+					</div>
+					<div class="text-base font-semibold text-slate-100">
+						{ fmt.Sprintf("%d", config.MaxExercises) }
+					</div>
+				</div>
+				<div class="space-y-1">
+					<div class="uppercase tracking-wide text-slate-500">
+						Durée estimée
+					</div>
+					<div class="text-base font-semibold text-slate-100">
+						{ fmt.Sprintf("%d min", int(config.Duration.Minutes())) }
+					</div>
+				</div>
 			</div>
 		</div>
 	</a>
 }
 
-// Helper
-func getEnergyClass(level int) string {
+func getEnergyCardClasses(level int) string {
+	base := "group relative rounded-2xl border bg-slate-900/70 backdrop-blur-xl " +
+		"p-5 shadow-lg shadow-slate-900/40 cursor-pointer " +
+		"transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl"
+
 	switch level {
 	case 1:
-		return "low"
+		// Faible : bleu/teal doux
+		return base + " border-emerald-500/30 hover:border-emerald-400 " +
+			"hover:bg-gradient-to-br hover:from-slate-900 hover:to-emerald-900/40"
 	case 2:
-		return "medium"
+		// Moyen : ambre/orange
+		return base + " border-amber-500/30 hover:border-amber-400 " +
+			"hover:bg-gradient-to-br hover:from-slate-900 hover:to-amber-900/40"
 	case 3:
-		return "high"
+		// Élevé : rouge
+		return base + " border-rose-500/30 hover:border-rose-400 " +
+			"hover:bg-gradient-to-br hover:from-slate-900 hover:to-rose-900/40"
 	default:
-		return "medium"
+		return base + " border-slate-700 hover:border-slate-500"
 	}
 }
