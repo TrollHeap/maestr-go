@@ -218,16 +218,25 @@ set -e
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TAILWIND_BIN="$PROJECT_ROOT/bin/tailwindcss"
-CSS_ROOT="$PROJECT_ROOT/public/css"
-INPUT_CSS="$CSS_ROOT/input.css"
-OUTPUT_CSS="$CSS_ROOT/style.css"
+INPUT_CSS="$PROJECT_ROOT/public/css/input.css"
+OUTPUT_CSS="$PROJECT_ROOT/public/css/style.css"
 
 if [ ! -f "$TAILWIND_BIN" ]; then
-    echo "❌ Tailwind CSS non installé. Run: ./scripts/install-tailwind.sh"
+    echo "❌ Tailwind CSS non installé. Run: make install"
+    exit 1
+fi
+
+if [ ! -f "$INPUT_CSS" ]; then
+    echo "❌ Fichier input.css manquant: $INPUT_CSS"
     exit 1
 fi
 
 echo "👀 Watching CSS changes..."
+echo "   Input:  $INPUT_CSS"
+echo "   Output: $OUTPUT_CSS"
+echo ""
+
+# ✅ FIX: Arguments dans le bon ordre
 "$TAILWIND_BIN" -i "$INPUT_CSS" -o "$OUTPUT_CSS" --watch
 EOF
 chmod +x "$WATCH_SCRIPT"
