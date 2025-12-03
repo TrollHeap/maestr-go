@@ -38,13 +38,6 @@ templ Base(title string) {
 						<!-- Navigation Links (Desktop) -->
 						<div class="hidden md:flex items-center gap-1">
 							<a
-								href="/"
-								class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary-600 dark:hover:text-primary-400 transition-all"
-								hx-boost="true"
-							>
-								Dashboard
-							</a>
-							<a
 								href="/exercises"
 								class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary-600 dark:hover:text-primary-400 transition-all"
 								hx-boost="true"
@@ -79,7 +72,6 @@ templ Base(title string) {
 					</div>
 					<!-- Mobile Menu -->
 					<div id="mobileMenu" class="hidden md:hidden pb-4 space-y-2">
-						<a href="/" class="block px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800" hx-boost="true">Dashboard</a>
 						<a href="/exercises" class="block px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800" hx-boost="true">Exercices</a>
 						<a href="/planner" class="block px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800" hx-boost="true">Planner</a>
 						<a href="/session/builder" class="block px-5 py-3 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 text-center" hx-boost="true">Nouvelle Session</a>

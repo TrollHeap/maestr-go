@@ -72,7 +72,7 @@ templ ReviewButton(exerciseID, quality int, label, interval string, fromSession 
 			getReviewButtonClassesGradient(quality),
 		}
 		hx-post={ buildReviewURL(exerciseID, quality, fromSession, sessionID) }
-		hx-target="#exercise-detail"
+		hx-target="#review-panel"
 		hx-swap="outerHTML"
 	>
 		<div class="flex items-center justify-between gap-3">
