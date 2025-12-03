@@ -1,3 +1,4 @@
+// internal/views/components/planner_month.templ
 package components
 
 import (
@@ -18,21 +19,22 @@ templ PlannerMonthView(
 	nextYear int,
 	nextMonth time.Month,
 ) {
-	<div class="month-view">
-		<div class="month-header">
+	<div class="space-y-6">
+		<!-- Header mois -->
+		<div class="flex items-center justify-between gap-4">
 			<button
-				class="nav-arrow"
+				class="nav-arrow inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-900/70 text-slate-300 hover:border-slate-500 hover:text-emerald-300 transition-colors"
 				hx-get={ fmt.Sprintf("/planner/month?year=%d&month=%d", prevYear, prevMonth) }
 				hx-target="#planner-view"
 				hx-swap="innerHTML"
 			>
 				←
 			</button>
-			<h2 class="month-title">
+			<h2 class="month-title text-lg sm:text-xl font-semibold text-slate-50">
 				{ monthName } { fmt.Sprintf("%d", year) }
 			</h2>
 			<button
-				class="nav-arrow"
+				class="nav-arrow inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-900/70 text-slate-300 hover:border-slate-500 hover:text-emerald-300 transition-colors"
 				hx-get={ fmt.Sprintf("/planner/month?year=%d&month=%d", nextYear, nextMonth) }
 				hx-target="#planner-view"
 				hx-swap="innerHTML"
@@ -41,18 +43,20 @@ templ PlannerMonthView(
 			</button>
 		</div>
 		<!-- Calendrier -->
-		<div class="month-calendar">
+		<div class="month-calendar space-y-3">
 			<!-- Header jours semaine -->
-			<div class="calendar-weekdays">
+			<div class="grid grid-cols-7 text-center text-[0.7rem] font-mono text-slate-400 uppercase tracking-widest">
 				for _, day := range []string{"Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"} {
-					<div class="calendar-weekday">{ day }</div>
+					<div class="py-1">
+						{ day }
+					</div>
 				}
 			</div>
 			<!-- Grille jours -->
-			<div class="calendar-grid">
+			<div class="grid grid-cols-7 gap-1 text-xs">
 				<!-- Jours vides avant le 1er -->
 				for i := 0; i < getEmptyDaysBefore(firstDay); i++ {
-					<div class="calendar-day calendar-day--empty"></div>
+					<div class="h-16 rounded-xl bg-slate-900/40 border border-dashed border-slate-800"></div>
 				}
 				<!-- Jours du mois -->
 				for day := 1; day <= daysInMonth; day++ {
@@ -65,21 +69,25 @@ templ PlannerMonthView(
 
 // MonthDayCell - Cellule jour mois
 templ MonthDayCell(year int, month time.Month, day int, count int) {
-	<div class={ "calendar-day", templ.KV("calendar-day--has-events", count > 0), templ.KV("calendar-day--today", isDayToday(year, month, day)) }>
-		<div class="calendar-day-number">{ fmt.Sprintf("%d", day) }</div>
-		if count > 0 {
-			<div class="calendar-day-count">
-				{ fmt.Sprintf("%d", count) }
-			</div>
+	<div
+		class={
+			"h-16 rounded-xl border text-xs flex flex-col justify-between p-1.5",
+			getMonthDayClasses(year, month, day, count),
 		}
+	>
+		<div class="flex items-center justify-between">
+			<span class="text-[0.7rem] font-mono text-slate-400">
+				{ fmt.Sprintf("%d", day) }
+			</span>
+			if count > 0 {
+				<span class="inline-flex items-center justify-center rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[0.6rem] font-mono text-emerald-200">
+					{ fmt.Sprintf("%d", count) }
+				</span>
+			}
+		</div>
 	</div>
 }
 
-// ============================================
-// HELPERS GO
-// ============================================
-
-// getEmptyDaysBefore - Calcule nombre de jours vides avant le 1er
 func getEmptyDaysBefore(firstDay time.Time) int {
 	weekday := int(firstDay.Weekday())
 
@@ -92,8 +100,21 @@ func getEmptyDaysBefore(firstDay time.Time) int {
 	return weekday - 1
 }
 
-// isDayToday - Vérifie si c'est aujourd'hui
+// isDayToday - Vérifie si c'est aujourd'hui (pour MonthDayCell)
 func isDayToday(year int, month time.Month, day int) bool {
 	now := time.Now()
 	return year == now.Year() && month == now.Month() && day == now.Day()
+}
+
+// getMonthDayClasses – déjà utilisé dans le template, on le laisse ici
+func getMonthDayClasses(year int, month time.Month, day int, count int) string {
+	base := "border-slate-800 bg-slate-900/60"
+
+	if isDayToday(year, month, day) {
+		base += " border-emerald-500/80 bg-emerald-950/40 shadow-[0_0_0_1px_rgba(16,185,129,0.4)]"
+	} else if count > 0 {
+		base += " border-emerald-600/40 bg-emerald-950/20"
+	}
+
+	return base
 }

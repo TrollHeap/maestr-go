@@ -7,37 +7,88 @@ import (
 
 // StepsFragmentWrapper - Container wrapper (pour HTMX swap)
 templ StepsFragmentWrapper(ex models.Exercise) {
-	<div class="steps-sidebar" id="steps-container-wrapper">
-		<h3 class="sidebar-section-title">ÉTAPES</h3>
+	<div
+		class="steps-sidebar rounded-2xl border border-slate-800 bg-slate-950/70 backdrop-blur-xl p-5 space-y-4"
+		id="steps-container-wrapper"
+	>
+		<h3 class="sidebar-section-title text-sm font-semibold uppercase tracking-widest text-slate-400 border-b border-slate-800 pb-2">
+			📋 Étapes
+		</h3>
 		@StepsFragment(ex)
 	</div>
 }
 
 // StepsFragment - Liste des steps (fragment HTMX)
 templ StepsFragment(ex models.Exercise) {
-	<div id="steps-container">
-		for i, step := range ex.Steps {
-			@StepItem(ex, i, step)
+	<div id="steps-container" class="space-y-2">
+		if len(ex.Steps) == 0 {
+			<p class="text-xs text-slate-500 italic text-center py-4">
+				Aucune étape définie
+			</p>
+		} else {
+			for i, step := range ex.Steps {
+				@StepItem(ex, i, step)
+			}
 		}
 	</div>
 }
 
 // StepItem - Item individuel step
 templ StepItem(ex models.Exercise, index int, stepText string) {
-	<div class={ "step-item", templ.KV("step-item--completed", isStepCompleted(ex.CompletedSteps, index)) }>
-		<label class="step-label">
-			<input
-				type="checkbox"
-				class="step-checkbox"
-				hx-post={ fmt.Sprintf("/exercise/%d/toggle-step?step=%d", ex.ID, index) }
-				hx-target="#steps-container-wrapper"
-				hx-swap="outerHTML"
-				if isStepCompleted(ex.CompletedSteps, index) {
-					checked
-				}
-			/>
-			<span class="step-number">{ fmt.Sprintf("%d", index+1) }</span>
-			<span class="step-text">{ stepText }</span>
+	<div
+		class={
+			"step-item group rounded-xl border px-3 py-2.5 transition-all hover:shadow-md",
+			getStepItemClasses(ex.CompletedSteps, index),
+		}
+	>
+		<label
+			class="step-label flex items-start gap-3 cursor-pointer w-full"
+			hx-post={ fmt.Sprintf("/exercise/%d/toggle-step?step=%d", ex.ID, index) }
+			hx-target="#steps-container-wrapper"
+			hx-swap="outerHTML"
+		>
+			<!-- Checkbox custom -->
+			<div class="relative flex-shrink-0">
+				<input
+					type="checkbox"
+					class="step-checkbox peer sr-only"
+					if isStepCompleted(ex.CompletedSteps, index) {
+						checked
+					}
+				/>
+				<div
+					class={
+						"flex h-5 w-5 items-center justify-center rounded border-2 transition-all",
+						getCheckboxClasses(ex.CompletedSteps, index),
+					}
+				>
+					if isStepCompleted(ex.CompletedSteps, index) {
+						<svg class="h-3 w-3 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+						</svg>
+					}
+				</div>
+			</div>
+			<div class="flex-1 min-w-0">
+				<div class="flex items-baseline gap-2">
+					<span
+						class={
+							"step-number text-xs font-mono tracking-wider",
+							getStepNumberClasses(ex.CompletedSteps, index),
+						}
+					>
+						{ fmt.Sprintf("#%d", index+1) }
+					</span>
+					<span
+						class={
+							"step-text text-sm",
+							getStepTextClasses(ex.CompletedSteps, index),
+						}
+					>
+						{ stepText }
+					</span>
+				</div>
+			</div>
 		</label>
 	</div>
 }
@@ -50,4 +101,32 @@ func isStepCompleted(completedSteps []int, index int) bool {
 		}
 	}
 	return false
+}
+
+func getStepItemClasses(completedSteps []int, index int) string {
+	if isStepCompleted(completedSteps, index) {
+		return "border-emerald-600/40 bg-emerald-950/20 hover:border-emerald-500/60"
+	}
+	return "border-slate-700 bg-slate-900/40 hover:border-slate-600"
+}
+
+func getCheckboxClasses(completedSteps []int, index int) string {
+	if isStepCompleted(completedSteps, index) {
+		return "border-emerald-500 bg-emerald-500/20"
+	}
+	return "border-slate-600 bg-slate-900/60 peer-hover:border-emerald-400/60"
+}
+
+func getStepNumberClasses(completedSteps []int, index int) string {
+	if isStepCompleted(completedSteps, index) {
+		return "text-emerald-400"
+	}
+	return "text-slate-500"
+}
+
+func getStepTextClasses(completedSteps []int, index int) string {
+	if isStepCompleted(completedSteps, index) {
+		return "text-emerald-200 line-through decoration-emerald-400/50"
+	}
+	return "text-slate-200"
 }

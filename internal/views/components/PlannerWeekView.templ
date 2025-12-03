@@ -1,3 +1,4 @@
+// internal/views/components/planner_week.templ
 package components
 
 import (
@@ -8,21 +9,22 @@ import (
 
 // PlannerWeekView - Vue semaine (fragment HTMX)
 templ PlannerWeekView(startDate time.Time, schedule []models.DaySchedule, prevWeek, nextWeek time.Time) {
-	<div class="week-view">
-		<div class="week-header">
+	<div class="space-y-6">
+		<!-- Header semaine -->
+		<div class="flex items-center justify-between gap-4">
 			<button
-				class="nav-arrow"
+				class="nav-arrow inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-900/70 text-slate-300 hover:border-slate-500 hover:text-emerald-300 transition-colors"
 				hx-get={ fmt.Sprintf("/planner/week?week=%s", prevWeek.Format("2006-01-02")) }
 				hx-target="#planner-view"
 				hx-swap="innerHTML"
 			>
 				←
 			</button>
-			<h2 class="week-title">
+			<h2 class="week-title text-lg sm:text-xl font-semibold text-slate-50">
 				Semaine du { startDate.Format("02/01/2006") }
 			</h2>
 			<button
-				class="nav-arrow"
+				class="nav-arrow inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-900/70 text-slate-300 hover:border-slate-500 hover:text-emerald-300 transition-colors"
 				hx-get={ fmt.Sprintf("/planner/week?week=%s", nextWeek.Format("2006-01-02")) }
 				hx-target="#planner-view"
 				hx-swap="innerHTML"
@@ -30,7 +32,7 @@ templ PlannerWeekView(startDate time.Time, schedule []models.DaySchedule, prevWe
 				→
 			</button>
 		</div>
-		<div class="week-grid">
+		<div class="week-grid grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-7">
 			for _, day := range schedule {
 				@WeekDayCard(day)
 			}
@@ -40,24 +42,35 @@ templ PlannerWeekView(startDate time.Time, schedule []models.DaySchedule, prevWe
 
 // WeekDayCard - Card jour semaine
 templ WeekDayCard(day models.DaySchedule) {
-	<div class={ "week-day-card", templ.KV("week-day-card--today", isToday(day.Date)) }>
-		<div class="week-day-header">
-			<div class="week-day-name">{ day.Date.Format("Mon") }</div>
-			<div class="week-day-date">{ day.Date.Format("02") }</div>
+	<div
+		class={
+			"week-day-card rounded-2xl border bg-slate-900/70 p-4 flex flex-col gap-3",
+			getWeekDayCardClasses(day.Date, day.Count),
+		}
+	>
+		<div class="week-day-header flex items-center justify-between">
+			<div class="week-day-name text-sm font-semibold text-slate-200">
+				{ day.Date.Format("Mon") }
+			</div>
+			<div class="week-day-date text-xs font-mono text-slate-400">
+				{ day.Date.Format("02") }
+			</div>
 		</div>
-		<div class="week-day-count">
+		<div class="week-day-count text-center">
 			if day.Count > 0 {
-				<span class="count-badge">{ fmt.Sprintf("%d", day.Count) }</span>
+				<span class="count-badge inline-flex items-center justify-center rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-mono text-emerald-300">
+					{ fmt.Sprintf("%d", day.Count) } exos
+				</span>
 			} else {
-				<span class="count-empty">—</span>
+				<span class="count-empty text-xs text-slate-500">—</span>
 			}
 		</div>
 		if day.Count > 0 {
-			<div class="week-day-exercises">
+			<div class="week-day-exercises mt-2 space-y-1.5 text-[0.7rem]">
 				for _, ex := range day.Exercises {
-					<div class="mini-exercise">
-						<a href={ templ.URL(fmt.Sprintf("/exercise/%d", ex.ID)) }>
-							{ truncate(ex.Title, 20) }
+					<div class="mini-exercise truncate text-emerald-200 hover:text-emerald-100">
+						<a href={ templ.URL(fmt.Sprintf("/exercise/%d", ex.ID)) } class="hover:underline" hx-boost="true">
+							{ truncate(ex.Title, 22) }
 						</a>
 					</div>
 				}
@@ -66,15 +79,32 @@ templ WeekDayCard(day models.DaySchedule) {
 	</div>
 }
 
-// Helpers
+// isToday - utilisé par WeekDayCard
 func isToday(date time.Time) bool {
 	now := time.Now()
 	return date.Year() == now.Year() && date.YearDay() == now.YearDay()
 }
 
+// truncate - utilisé pour les titres des exos
 func truncate(s string, max int) string {
 	if len(s) <= max {
 		return s
 	}
-	return s[:max] + "..."
+	if max <= 3 {
+		return s[:max]
+	}
+	return s[:max-3] + "..."
+}
+
+// getWeekDayCardClasses – déjà utilisé dans le template
+func getWeekDayCardClasses(date time.Time, count int) string {
+	base := "border-slate-800"
+
+	if isToday(date) {
+		base += " border-emerald-500/80 shadow-[0_0_0_1px_rgba(16,185,129,0.4)]"
+	} else if count > 0 {
+		base += " border-emerald-600/40"
+	}
+
+	return base
 }
