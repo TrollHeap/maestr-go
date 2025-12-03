@@ -2,43 +2,130 @@ package layouts
 
 templ Base(title string) {
 	<!DOCTYPE html>
-	<html lang="fr">
+	<html lang="fr" class="h-full">
 		<head>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-			<title>{ title } - Maestro</title>
+			<meta name="description" content="CodeGrunt - Apprentissage par la pratique brute"/>
+			<title>{ title } | CodeGrunt</title>
+			<!-- CSS Compilé -->
 			<link rel="stylesheet" href="/public/css/style.css"/>
-			<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+			<!-- HTMX -->
+			<script src="/public/js/htmx.min.js" defer></script>
+			<!-- Fonts Preconnect (Performance) -->
+			<link rel="preconnect" href="https://fonts.googleapis.com"/>
+			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 		</head>
-		<body class="bg-gray-50">
-			<div class="scan-line"></div>
-			<nav class="terminal-nav">
-				<div class="nav-container">
-					<a href="/" class="nav-link">[DASHBOARD]</a>
-					<a href="/exercises" class="nav-link">[EXERCICES]</a>
-					<a href="/planner" class="nav-link">[PLANNER]</a>
-					<a href="/session/builder" class="nav-link">[SESSION]</a>
+		<body class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-900 dark:via-slate-900 dark:to-slate-800 font-sans antialiased">
+			<!-- Navigation -->
+			<nav class="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-800 shadow-sm">
+				<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+					<div class="flex items-center justify-between h-16">
+						<!-- Logo -->
+						<a href="/" class="flex items-center gap-3 group" hx-boost="true">
+							<!-- Image avec toutes les contraintes -->
+							<img
+								src="/public/assets/icon-orc.svg"
+								alt="Codegrunt"
+								width="44"
+								height="44"
+								class="w-10 h-10 flex-shrink-0 object-contain transition-all duration-300 group-hover:scale-110 group-hover:rotate-6 drop-shadow-lg"
+							/>
+							<span class="text-xl font-bold text-gradient">
+								Codegrunt
+							</span>
+						</a>
+						<!-- Navigation Links (Desktop) -->
+						<div class="hidden md:flex items-center gap-1">
+							<a
+								href="/"
+								class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary-600 dark:hover:text-primary-400 transition-all"
+								hx-boost="true"
+							>
+								Dashboard
+							</a>
+							<a
+								href="/exercises"
+								class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary-600 dark:hover:text-primary-400 transition-all"
+								hx-boost="true"
+							>
+								Exercices
+							</a>
+							<a
+								href="/planner"
+								class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-primary-600 dark:hover:text-primary-400 transition-all"
+								hx-boost="true"
+							>
+								Planner
+							</a>
+							<a
+								href="/session/builder"
+								class="ml-3 px-5 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 shadow-md hover:shadow-xl transition-all transform hover:scale-105"
+								hx-boost="true"
+							>
+								Nouvelle Session
+							</a>
+						</div>
+						<!-- Mobile Menu Button -->
+						<button
+							class="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+							onclick="toggleMobileMenu()"
+							aria-label="Toggle menu"
+						>
+							<svg class="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+							</svg>
+						</button>
+					</div>
+					<!-- Mobile Menu -->
+					<div id="mobileMenu" class="hidden md:hidden pb-4 space-y-2">
+						<a href="/" class="block px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800" hx-boost="true">Dashboard</a>
+						<a href="/exercises" class="block px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800" hx-boost="true">Exercices</a>
+						<a href="/planner" class="block px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800" hx-boost="true">Planner</a>
+						<a href="/session/builder" class="block px-5 py-3 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 text-center" hx-boost="true">Nouvelle Session</a>
+					</div>
 				</div>
 			</nav>
-			<div class="terminal-header">
-				<div class="terminal-title">
-					╔═══════════════════════════════════════════╗
-					<br/>
-					║ { title } ║
-					<br/>
-					╚═══════════════════════════════════════════╝
-				</div>
-			</div>
-			<main class="container">
+			<!-- Main Content -->
+			<main class="flex-1">
 				{ children... }
 			</main>
-			<footer class="terminal-footer">
-				┌───────────────────────────────────────────────────────┐
-				<br/>
-				│ © 2025 MAESTRO v2.0 | SRS COCKPIT | STAY LEARNING 🚀 │
-				<br/>
-				└───────────────────────────────────────────────────────┘
+			<!-- Footer -->
+			<footer class="mt-auto border-t border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
+				<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+					<div class="flex flex-col md:flex-row items-center justify-between gap-4">
+						<p class="text-sm text-gray-600 dark:text-gray-400">
+							© 2025 CodeGrunt · Apprentissage par la pratique brute
+						</p>
+						<div class="flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
+							<a href="#" class="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">À propos</a>
+							<a href="#" class="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Documentation</a>
+							<a href="#" class="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Support</a>
+						</div>
+					</div>
+				</div>
 			</footer>
+			<!-- Scripts -->
+			<script>
+				// Mobile Menu Toggle
+				function toggleMobileMenu() {
+					const menu = document.getElementById('mobileMenu');
+					menu.classList.toggle('hidden');
+				}
+				
+				// HTMX: Scroll to top après navigation
+				document.body.addEventListener('htmx:afterSwap', function(evt) {
+					window.scrollTo({ top: 0, behavior: 'smooth' });
+				});
+				
+				// Close mobile menu on navigation
+				document.body.addEventListener('htmx:beforeRequest', function(evt) {
+					const menu = document.getElementById('mobileMenu');
+					if (!menu.classList.contains('hidden')) {
+						menu.classList.add('hidden');
+					}
+				});
+			</script>
 		</body>
 	</html>
 }
