@@ -22,7 +22,7 @@ func Routes() *http.ServeMux {
 	// ============================================
 	mux.HandleFunc("GET /exercises/list", handlers.HandleListExercice)  // Liste filtrée
 	mux.HandleFunc("GET /exercise/{id}", handlers.HandleDetailExercice) // Détail
-	mux.HandleFunc("GET /exercise/next", handlers.HandleNextExercise)   // Prochain à réviser
+	// mux.HandleFunc("GET /exercise/next", handlers.HandleNextExercise)   // Prochain à réviser
 
 	// Actions exercices (POST)
 	mux.HandleFunc("POST /exercise/{id}/toggle-step", handlers.HandleToggleStep)
