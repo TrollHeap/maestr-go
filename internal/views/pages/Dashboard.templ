@@ -1,82 +1,242 @@
+// internal/views/pages/Dashboard.templ
 package pages
 
 import (
 	"fmt"
-	"maestro/internal/models" // ✅ Import models, pas service
+	"maestro/internal/models"
 	"maestro/internal/service"
 	"maestro/internal/views/layouts"
 )
 
-// ✅ Component dashboard avec models.Exercise
 templ Dashboard(
 	stats service.DashboardStats,
 	todayCount int,
 	overdueCount int,
 	upcomingCount int,
-	overdue []models.Exercise, // ✅ models.Exercise
-	upcoming []models.Exercise, // ✅ models.Exercise
+	overdue []models.Exercise,
+	upcoming []models.Exercise,
 ) {
 	@layouts.Base("Dashboard") {
-		<div class="container mx-auto px-4 py-8">
-			<!-- Stats Cards -->
-			<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-				@StatsCard("Révisions Aujourd'hui", todayCount, "blue")
-				@StatsCard("En Retard", overdueCount, "red")
-				@StatsCard("À Venir", upcomingCount, "green")
+		<!-- Hero Section with Gradient Background -->
+		<div class="bg-gradient-to-r from-primary-600 to-blue-600 text-white shadow-xl">
+			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+				<h1 class="text-4xl sm:text-5xl font-extrabold mb-4 drop-shadow-lg">
+					Tableau de bord
+				</h1>
+				<p class="text-primary-100 text-lg sm:text-xl max-w-2xl">
+					Suivez votre progression et gérez vos révisions intelligemment
+				</p>
 			</div>
-			<!-- Overdue Reviews -->
-			if len(overdue) > 0 {
-				<div class="mb-8">
-					<h2 class="text-2xl font-bold mb-4">Révisions en retard</h2>
-					@ReviewList(overdue, true)
+		</div>
+		<!-- Stats Cards Grid (Floating Cards) -->
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 mb-16">
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+				<!-- Card Aujourd'hui -->
+				<div class="card-hover bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
+					<div class="flex items-center gap-4 mb-4">
+						<div class="p-3 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30">
+							<svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+							</svg>
+						</div>
+						<div class="flex-1">
+							<p class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+								Aujourd'hui
+							</p>
+						</div>
+					</div>
+					<h3 class="text-5xl font-extrabold text-gray-900 dark:text-white mb-2">
+						{ fmt.Sprintf("%d", todayCount) }
+					</h3>
+					<p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+						Révisions à faire
+					</p>
+					if todayCount > 0 {
+						<a
+							href="/session/builder"
+							class="block w-full text-center px-5 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-xl transition-all transform hover:scale-105"
+							hx-boost="true"
+						>
+							Commencer →
+						</a>
+					} else {
+						<div class="text-center py-3 text-sm text-green-600 dark:text-green-400 font-medium">
+							✨ Aucune révision aujourd'hui
+						</div>
+					}
 				</div>
-			}
-			<!-- Upcoming Reviews -->
-			if len(upcoming) > 0 {
-				<div>
-					<h2 class="text-2xl font-bold mb-4">Prochaines révisions</h2>
-					@ReviewList(upcoming, false)
+				<!-- Card En Retard -->
+				<div class="card-hover bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
+					<div class="flex items-center gap-4 mb-4">
+						<div class="p-3 rounded-xl bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/30 dark:to-red-800/30">
+							<svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+							</svg>
+						</div>
+						<div class="flex-1">
+							<p class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+								En retard
+							</p>
+						</div>
+					</div>
+					<h3 class="text-5xl font-extrabold text-red-600 dark:text-red-400 mb-2">
+						{ fmt.Sprintf("%d", overdueCount) }
+					</h3>
+					<p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+						Exercices urgents
+					</p>
+					if overdueCount > 0 {
+						<div class="px-4 py-3 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg">
+							<p class="text-xs text-red-700 dark:text-red-300 font-semibold text-center">
+								⚠️ Action requise
+							</p>
+						</div>
+					} else {
+						<div class="text-center py-3 text-sm text-green-600 dark:text-green-400 font-medium">
+							✓ Tout est à jour
+						</div>
+					}
+				</div>
+				<!-- Card À Venir -->
+				<div class="card-hover bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
+					<div class="flex items-center gap-4 mb-4">
+						<div class="p-3 rounded-xl bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30">
+							<svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+							</svg>
+						</div>
+						<div class="flex-1">
+							<p class="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+								À venir
+							</p>
+						</div>
+					</div>
+					<h3 class="text-5xl font-extrabold text-green-600 dark:text-green-400 mb-2">
+						{ fmt.Sprintf("%d", upcomingCount) }
+					</h3>
+					<p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+						Prochaines révisions
+					</p>
+					<a
+						href="/planner"
+						class="block w-full text-center px-5 py-3 border-2 border-green-600 dark:border-green-500 text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 text-sm font-semibold rounded-lg transition-all"
+						hx-boost="true"
+					>
+						Voir le planning
+					</a>
+				</div>
+			</div>
+		</div>
+		<!-- Content Grid -->
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+				<!-- Exercices en Retard -->
+				if len(overdue) > 0 {
+					<section>
+						<div class="flex items-center justify-between mb-6">
+							<h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+								Exercices en retard
+							</h2>
+							<span class="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-sm font-bold rounded-full shadow-sm">
+								{ fmt.Sprintf("%d", len(overdue)) }
+							</span>
+						</div>
+						<div class="space-y-4">
+							for _, ex := range overdue {
+								@ExerciseCard(ex, true)
+							}
+						</div>
+					</section>
+				}
+				<!-- Prochaines Révisions -->
+				if len(upcoming) > 0 {
+					<section>
+						<div class="flex items-center justify-between mb-6">
+							<h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+								Prochaines révisions
+							</h2>
+							<span class="px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-bold rounded-full shadow-sm">
+								{ fmt.Sprintf("%d", len(upcoming)) }
+							</span>
+						</div>
+						<div class="space-y-4">
+							for _, ex := range upcoming {
+								@ExerciseCard(ex, false)
+							}
+						</div>
+					</section>
+				}
+			</div>
+			<!-- Empty State -->
+			if len(overdue) == 0 && len(upcoming) == 0 {
+				<div class="text-center py-20">
+					<div class="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-primary-100 to-blue-100 dark:from-primary-900/30 dark:to-blue-900/30 rounded-full mb-6 shadow-lg">
+						<svg class="w-12 h-12 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+						</svg>
+					</div>
+					<h3 class="text-3xl font-bold text-gray-900 dark:text-white mb-3">
+						Tout est à jour ! 🎉
+					</h3>
+					<p class="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto text-lg">
+						Aucune révision en attente. Continuez votre excellent travail !
+					</p>
+					<a
+						href="/exercises"
+						class="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-700 hover:to-blue-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+						hx-boost="true"
+					>
+						Parcourir les exercices
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+						</svg>
+					</a>
 				</div>
 			}
 		</div>
 	}
 }
 
-// ✅ Component Stats Card réutilisable
-templ StatsCard(title string, count int, color string) {
-	<div class={ "rounded-lg shadow p-6 border-l-4 border-" + color + "-500" }>
-		<h3 class="text-gray-600 text-sm font-medium">{ title }</h3>
-		<p class={ "text-3xl font-bold mt-2 text-" + color + "-600" }>
-			{ fmt.Sprintf("%d", count) }
-		</p>
-	</div>
-}
-
-// ✅ Component Review List avec models.Exercise
-templ ReviewList(reviews []models.Exercise, showOverdue bool) {
-	<div class="space-y-3">
-		for _, review := range reviews {
-			<div class="bg-white rounded-lg shadow p-4 flex justify-between items-center">
-				<div>
-					<h4 class="font-semibold">{ review.Title }</h4>
-					<p class="text-sm text-gray-600">
-						{ review.Domain } | Difficulté: { fmt.Sprintf("%d", review.Difficulty) }
-					</p>
-					if !review.NextReviewAt.IsZero() {
-						<p class="text-xs text-gray-500">
-							Prochaine révision: { review.NextReviewAt.Format("02/01/2006 15:04") }
-						</p>
-					}
-				</div>
-				<div class="flex gap-2">
-					<a
-						href={ templ.URL(fmt.Sprintf("/exercise/%d", review.ID)) }
-						class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-					>
-						Réviser
-					</a>
+// ExerciseCard Component (Redesigné)
+templ ExerciseCard(ex models.Exercise, isOverdue bool) {
+	<div class="card-hover bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+		<div class="flex items-start justify-between mb-4">
+			<div class="flex-1">
+				<h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">
+					{ ex.Title }
+				</h3>
+				<div class="flex items-center gap-3 text-xs">
+					<span class="px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg font-semibold">
+						{ ex.Domain }
+					</span>
+					<span class="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+						<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+							<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+						</svg>
+						<span class="font-medium">{ fmt.Sprintf("%d/5", ex.Difficulty) }</span>
+					</span>
 				</div>
 			</div>
+			if isOverdue {
+				<span class="flex-shrink-0 px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-xs font-bold rounded-full">
+					Urgent
+				</span>
+			}
+		</div>
+		if !ex.NextReviewAt.IsZero() {
+			<div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
+				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+				</svg>
+				<span class="font-medium">{ ex.NextReviewAt.Format("02 Jan 2006") }</span>
+			</div>
 		}
+		<a
+			href={ templ.URL(fmt.Sprintf("/exercise/%d", ex.ID)) }
+			class="block w-full text-center px-5 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-xl transition-all transform hover:scale-105"
+			hx-boost="true"
+		>
+			Réviser maintenant →
+		</a>
 	</div>
 }
