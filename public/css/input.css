@@ -1,56 +1,225 @@
-/* public/css/input.css */
+/* ============================================================================
+   MAESTR - COLOR SYSTEM
+   Tailwind v4 - Tokens uniquement, composants dans Templ
+   ========================================================================= */
+
 @import "tailwindcss";
 
 /* Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* ============================================
+/* ============================================================================
+   DESIGN TOKENS - Couleurs et variables CSS
+   ========================================================================= */
+:root {
+  /* === Color Palette (RGB pour rgb() syntax) === */
+  
+  /* Semantic States */
+  --color-success: 16 185 129;      /* Emerald-500 - Maîtrisé */
+  --color-warning: 245 158 11;      /* Amber-500 - En cours */
+  --color-danger: 239 68 68;        /* Rose-500 - Difficile */
+  --color-info: 59 130 246;         /* Sky-500 - Info */
+  --color-accent: 168 85 247;       /* Purple-500 - Accent principal */
+  
+  /* Surface & Backgrounds */
+  --color-bg-primary: 2 6 23;       /* Slate-950 - Fond principal */
+  --color-bg-secondary: 15 23 42;   /* Slate-900 - Fond secondaire */
+  --color-bg-tertiary: 30 41 59;    /* Slate-800 - Cartes, panels */
+  
+  /* Borders */
+  --color-border-default: 30 41 59; /* Slate-800 */
+  --color-border-light: 51 65 85;   /* Slate-700 */
+  
+  /* Text */
+  --color-text-primary: 248 250 252;   /* Slate-50 */
+  --color-text-secondary: 226 232 240; /* Slate-200 */
+  --color-text-muted: 148 163 184;     /* Slate-400 */
+  
+  /* === Opacity Scales === */
+  --opacity-bg-subtle: 0.1;         /* 10% - badges, léger */
+  --opacity-bg-light: 0.2;          /* 20% - boutons */
+  --opacity-bg-medium: 0.4;         /* 40% - hover */
+  --opacity-bg-strong: 0.7;         /* 70% - surfaces */
+  --opacity-bg-full: 0.9;           /* 90% - quasi-opaque */
+  
+  --opacity-border-light: 0.4;      /* 40% - bordures subtiles */
+  --opacity-border-default: 0.6;    /* 60% - bordures standards */
+  --opacity-border-strong: 0.7;     /* 70% - bordures accentuées */
+  
+  /* === Glows & Shadows === */
+  --glow-success: 0 0 12px rgb(var(--color-success) / 0.3);
+  --glow-warning: 0 0 12px rgb(var(--color-warning) / 0.3);
+  --glow-danger: 0 0 12px rgb(var(--color-danger) / 0.3);
+  --glow-accent: 0 0 16px rgb(var(--color-accent) / 0.4);
+  
+  --shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-card-hover: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --shadow-card-strong: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  
+  /* === Gradients === */
+  --gradient-bg-radial: radial-gradient(circle at top, rgba(168,85,247,0.12), transparent 55%);
+  --gradient-success: linear-gradient(to right, rgb(var(--color-success) / 1), #14b8a6);
+  --gradient-info: linear-gradient(to right, rgb(var(--color-info) / 1), #06b6d4);
+  --gradient-warning: linear-gradient(to right, rgb(var(--color-warning) / 1), #eab308);
+  --gradient-accent: linear-gradient(to right, #8b5cf6, #6366f1);
+  
+  /* === Review Buttons Gradients (SRS) === */
+  --gradient-review-fail-from: 136 19 55;      /* Rose-950 */
+  --gradient-review-fail-to: 2 6 23;           /* Slate-950 */
+  --gradient-review-fail-hover-from: 159 18 57; /* Rose-900 */
+  --gradient-review-fail-hover-to: 15 23 42;    /* Slate-900 */
+  
+  --gradient-review-hard-from: 154 52 18;      /* Orange-950 */
+  --gradient-review-hard-to: 2 6 23;
+  --gradient-review-hard-hover-from: 194 65 12; /* Orange-800 */
+  --gradient-review-hard-hover-to: 15 23 42;
+  
+  --gradient-review-good-from: 133 77 14;      /* Amber-950 */
+  --gradient-review-good-to: 2 6 23;
+  --gradient-review-good-hover-from: 161 98 7; /* Amber-800 */
+  --gradient-review-good-hover-to: 15 23 42;
+  
+  --gradient-review-easy-from: 5 46 22;        /* Emerald-950 */
+  --gradient-review-easy-to: 2 6 23;
+  --gradient-review-easy-hover-from: 6 78 59;  /* Emerald-900 */
+  --gradient-review-easy-hover-to: 15 23 42;
+  
+  /* === Transitions === */
+  --transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  
+  /* === Border Radius === */
+  --radius-sm: 0.5rem;   /* 8px */
+  --radius-md: 0.75rem;  /* 12px */
+  --radius-lg: 1rem;     /* 16px */
+  --radius-xl: 1.5rem;   /* 24px */
+  --radius-full: 9999px;
+  
+  /* === Spacing === */
+  --space-badge-x: 0.5rem;
+  --space-badge-y: 0.25rem;
+}
+
+/* ============================================================================
    BASE STYLES
-   ============================================ */
-@layer base {
-  * {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+   ========================================================================= */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ============================================================================
+   HTMX STATES (minimal)
+   ========================================================================= */
+[hx-boost],
+[hx-get],
+[hx-post] {
+  transition: all var(--transition-fast);
+}
+
+.htmx-request {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* ============================================================================
+   UTILITY CLASSES (optionnel - si besoin)
+   ========================================================================= */
+
+/* Text gradient */
+.text-gradient {
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Glow effects réutilisables */
+.glow-success {
+  box-shadow: var(--glow-success);
+}
+
+.glow-warning {
+  box-shadow: var(--glow-warning);
+}
+
+.glow-danger {
+  box-shadow: var(--glow-danger);
+}
+
+.glow-accent {
+  box-shadow: var(--glow-accent);
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Backdrop blur utilities (si non natifs) */
+.backdrop-blur-custom {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+
+/* ============================================================================
+   CARD HOVER SYSTEM (commun à toutes les cards)
+   ========================================================================= */
+.card-elevated {
+  border-radius: 1rem;
+  border: 1px solid rgb(var(--color-border-default, 30 41 59) / 0.8);
+  background: rgb(var(--color-bg-primary) / 0.7);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-card);
+  transition: all var(--transition-normal);
+}
+
+.card-elevated:hover {
+  border-color: rgb(56 189 248 / 0.6);                  /* sky-400/60 */
+  background: rgb(var(--color-bg-secondary) / 0.9);      /* fond un peu plus clair */
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-0.25rem);
+}
+
+/* Variante “dark-solid” si tu veux une base plus opaque */
+.card-elevated--solid {
+  background: rgb(var(--color-bg-secondary) / 0.9);
+}
+
+
+/* ============================================================================
+   CARD SURFACE - Variante inspirée du design clair/foncé
+   ========================================================================= */
+.card-surface {
+  border-radius: 0.75rem; /* ~ rounded-xl */
+  padding: 1.5rem;        /* p-6 */
+  border: 1px solid rgb(226 232 240 / 1);        /* slate-200 */
+  background-color: rgb(255 255 255 / 1);        /* white */
+  box-shadow: 0 10px 15px -3px rgb(15 23 42 / 0.12); /* proche shadow-lg */
+  transition: all var(--transition-normal);
+}
+
+/* Variante dark via media (pour matcher ton exemple) */
+@media (prefers-color-scheme: dark) {
+  .card-surface {
+    border-color: rgb(51 65 85 / 1);             /* slate-700 */
+    background-color: rgb(30 41 59 / 1);         /* slate-800 */
+    color: rgb(248 250 252 / 1);                 /* slate-50 */
   }
 }
 
-/* ============================================
-   COMPONENTS (CSS pur, pas @apply)
-   ============================================ */
-@layer components {
-  /* HTMX transitions */
-  [hx-boost],
-  [hx-get],
-  [hx-post] {
-    transition: all 0.15s ease-in-out;
-  }
-  
-  /* Loading states */
-  .htmx-request {
-    opacity: 0.6;
-    pointer-events: none;
-  }
-  
-  /* Card hover - ✅ CSS natif au lieu de @apply */
-  .card-hover {
-    transition: all 0.2s ease;
-  }
-  
-  .card-hover:hover {
-    transform: translateY(-0.25rem);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  }
-}
-
-/* ============================================
-   UTILITIES
-   ============================================ */
-@layer utilities {
-  /* Text gradient (utilise les couleurs de config.js) */
-  .text-gradient {
-    background: linear-gradient(to right, #0d9488, #2563eb);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
+.card-surface:hover {
+  box-shadow: 0 20px 25px -5px rgb(15 23 42 / 0.25); /* hover:shadow-2xl */
+  transform: translateY(-0.15rem);
 }

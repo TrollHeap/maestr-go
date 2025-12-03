@@ -81,7 +81,7 @@ func HandleListExercice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 4. ✅ CHANGEMENT : Render fragment templ
-	component := components.ExerciseListFragment(filteredList)
+	component := components.ExerciseList(filteredList)
 
 	if err := component.Render(r.Context(), w); err != nil {
 		log.Printf("❌ Render error: %v", err)
