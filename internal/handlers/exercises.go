@@ -248,7 +248,7 @@ func HandleToggleStep(w http.ResponseWriter, r *http.Request) {
 	log.Printf("✅ Step #%d toggled", step)
 
 	// 6. ✅ CHANGEMENT : Render fragment templ
-	component := components.StepsFragment(*ex)
+	component := components.StepsFragmentWrapper(*ex)
 
 	if err := component.Render(r.Context(), w); err != nil {
 		log.Printf("❌ Render error: %v", err)
