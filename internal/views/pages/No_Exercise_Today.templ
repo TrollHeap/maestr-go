@@ -1,3 +1,4 @@
+// internal/views/pages/no_exercises_today.templ
 package pages
 
 import (
@@ -9,50 +10,95 @@ import (
 // NoExercisesToday - Page "Aucun exercice disponible"
 templ NoExercisesToday(report models.SessionReport) {
 	@layouts.Base("Aucun exercice - Maestro") {
-		<link rel="stylesheet" href="/public/css/no-exercises.css"/>
-		<div class="scan-line"></div>
-		<div class="terminal-header">
-			<div class="terminal-subtitle">
-				&gt; SESSION REPORT | STATUS: <span class="blink">COMPLETE</span>
+		<div class="relative min-h-[calc(100vh-4rem)] bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50">
+			<!-- Scan / overlay -->
+			<div class="pointer-events-none absolute inset-0 overflow-hidden">
+				<div class="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent top-20 animate-[pulse_2s_ease-in-out_infinite]"></div>
+				<div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.15),_transparent_55%)]"></div>
 			</div>
-		</div>
-		<div class="no-exercises-container">
-			<!-- Message principal -->
-			<div class="success-message">
-				<div class="success-icon">🎉</div>
-				<h1 class="success-title">Aucun exercice à réviser !</h1>
-				<p class="success-subtitle">Tu es à jour dans tes révisions. Bien joué !</p>
-			</div>
-			<!-- Stats rapport -->
-			<div class="report-stats">
-				<div class="report-card">
-					<div class="report-label">Dus aujourd'hui</div>
-					<div class="report-value">{ fmt.Sprintf("%d", report.TodayDue) }</div>
-				</div>
-				<div class="report-card">
-					<div class="report-label">Nouveaux</div>
-					<div class="report-value">{ fmt.Sprintf("%d", report.TodayNew) }</div>
-				</div>
-				<div class="report-card">
-					<div class="report-label">Total disponible</div>
-					<div class="report-value">{ fmt.Sprintf("%d", report.TotalAvailable) }</div>
-				</div>
-			</div>
-			<!-- Prochaines révisions -->
-			if len(report.UpcomingReviews) > 0 {
-				<div class="upcoming-section">
-					<h2 class="upcoming-title">📅 Prochaines révisions</h2>
-					<div class="upcoming-list">
-						for _, upcoming := range report.UpcomingReviews {
-							@UpcomingReviewItem(upcoming)
-						}
+			<!-- Terminal header -->
+			<div class="relative z-10 border-b border-slate-800 bg-slate-950/90 backdrop-blur-md">
+				<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+					<div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-400/40 text-xs font-mono text-emerald-300 tracking-widest">
+						<span class="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+						<span>&gt; SESSION REPORT</span>
+						<span class="opacity-60">|</span>
+						<span>STATUS: <span class="animate-pulse">COMPLETE</span></span>
 					</div>
 				</div>
-			}
-			<!-- Actions -->
-			<div class="actions-section">
-				<a href="/" class="btn-primary">← Retour Dashboard</a>
-				<a href="/exercises" class="btn-secondary">Voir tous les exercices</a>
+			</div>
+			<div class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+				<div class="space-y-10">
+					<!-- Message principal -->
+					<div class="success-message text-center space-y-4">
+						<div class="success-icon text-8xl animate-bounce">
+							🎉
+						</div>
+						<h1 class="success-title text-3xl sm:text-4xl font-extrabold text-slate-50">
+							Aucun exercice à réviser !
+						</h1>
+						<p class="success-subtitle text-lg text-emerald-300">
+							Tu es à jour dans tes révisions. Bien joué !
+						</p>
+					</div>
+					<!-- Stats rapport -->
+					<div class="report-stats grid grid-cols-1 gap-4 sm:grid-cols-3">
+						<div class="report-card rounded-2xl border border-emerald-600/40 bg-emerald-950/20 backdrop-blur-xl p-5 text-center">
+							<div class="report-label text-xs font-medium uppercase tracking-widest text-emerald-400 mb-2">
+								Dus aujourd'hui
+							</div>
+							<div class="report-value text-3xl font-bold text-emerald-300">
+								{ fmt.Sprintf("%d", report.TodayDue) }
+							</div>
+						</div>
+						<div class="report-card rounded-2xl border border-sky-600/40 bg-sky-950/20 backdrop-blur-xl p-5 text-center">
+							<div class="report-label text-xs font-medium uppercase tracking-widest text-sky-400 mb-2">
+								Nouveaux
+							</div>
+							<div class="report-value text-3xl font-bold text-sky-300">
+								{ fmt.Sprintf("%d", report.TodayNew) }
+							</div>
+						</div>
+						<div class="report-card rounded-2xl border border-purple-600/40 bg-purple-950/20 backdrop-blur-xl p-5 text-center">
+							<div class="report-label text-xs font-medium uppercase tracking-widest text-purple-400 mb-2">
+								Total disponible
+							</div>
+							<div class="report-value text-3xl font-bold text-purple-300">
+								{ fmt.Sprintf("%d", report.TotalAvailable) }
+							</div>
+						</div>
+					</div>
+					<!-- Prochaines révisions -->
+					if len(report.UpcomingReviews) > 0 {
+						<div class="upcoming-section rounded-2xl border border-slate-800 bg-slate-950/70 backdrop-blur-xl p-6 space-y-4">
+							<h2 class="upcoming-title text-xl font-bold text-slate-50 border-b border-slate-800 pb-3">
+								📅 Prochaines révisions
+							</h2>
+							<div class="upcoming-list space-y-2">
+								for _, upcoming := range report.UpcomingReviews {
+									@UpcomingReviewItem(upcoming)
+								}
+							</div>
+						</div>
+					}
+					<!-- Actions -->
+					<div class="actions-section flex flex-col gap-3 sm:flex-row sm:justify-center">
+						<a
+							href="/"
+							class="btn-primary inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg hover:shadow-xl transition-all"
+							hx-boost="true"
+						>
+							← Retour Dashboard
+						</a>
+						<a
+							href="/exercises"
+							class="btn-secondary inline-flex items-center justify-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-slate-200 border border-slate-700 bg-slate-900/60 hover:bg-slate-800 transition-all"
+							hx-boost="true"
+						>
+							Voir tous les exercices
+						</a>
+					</div>
+				</div>
 			</div>
 		</div>
 	}
@@ -60,14 +106,28 @@ templ NoExercisesToday(report models.SessionReport) {
 
 // UpcomingReviewItem - Item révision à venir
 templ UpcomingReviewItem(review models.UpcomingReview) {
-	<div class="upcoming-item">
-		<div class="upcoming-date">
-			{ review.Date.Format("02/01/2006") }
+	<div class="upcoming-item group rounded-xl border border-slate-700 bg-slate-900/40 p-4 flex items-center justify-between gap-4 hover:border-emerald-500/60 hover:bg-slate-900 transition-all">
+		<div class="upcoming-date flex-shrink-0 rounded-lg border border-emerald-600/40 bg-emerald-950/20 px-3 py-2 text-center">
+			<div class="text-xs font-mono text-emerald-400">
+				{ review.Date.Format("02/01") }
+			</div>
+			<div class="text-[0.65rem] font-mono text-emerald-300/60">
+				{ review.Date.Format("2006") }
+			</div>
 		</div>
-		<div class="upcoming-exercise">
-			<a href={ templ.URL(fmt.Sprintf("/exercise/%d", review.ExerciseID)) }>
+		<div class="upcoming-exercise flex-1 min-w-0">
+			<a
+				href={ templ.URL(fmt.Sprintf("/exercise/%d", review.ExerciseID)) }
+				class="text-sm font-medium text-slate-200 hover:text-emerald-300 transition-colors truncate block"
+				hx-boost="true"
+			>
 				{ review.ExerciseTitle }
 			</a>
+		</div>
+		<div class="flex-shrink-0">
+			<svg class="w-5 h-5 text-slate-600 group-hover:text-emerald-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+			</svg>
 		</div>
 	</div>
 }

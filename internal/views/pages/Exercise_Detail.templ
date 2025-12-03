@@ -10,120 +10,182 @@ import (
 // ExerciseDetail - Page complète exercice (avec layout HTML)
 templ ExerciseDetail(ex models.Exercise, fromSession bool, sessionID string) {
 	@layouts.Base(ex.Title + " - Terminal v2") {
-		<link rel="stylesheet" href="/public/css/exercice-detail.css"/>
-		<link rel="stylesheet" href="/public/css/review-panel.css"/>
-		<div class="scan-line"></div>
-		<div class="terminal-header">
-			<div class="terminal-subtitle">
-				&gt; { ex.Title } #{ fmt.Sprintf("%03d", ex.ID) } | STATUS: <span class="blink">ONLINE</span>
+		<div class="relative min-h-[calc(100vh-4rem)] bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50">
+			<!-- Scan / overlay -->
+			<div class="pointer-events-none absolute inset-0 overflow-hidden">
+				<div class="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-purple-400/40 to-transparent top-20 animate-[pulse_2s_ease-in-out_infinite]"></div>
+				<div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(168,85,247,0.12),_transparent_55%)]"></div>
+			</div>
+			<!-- Terminal header -->
+			<div class="relative z-10 border-b border-slate-800 bg-slate-950/90 backdrop-blur-md">
+				<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+					<div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-400/40 text-xs font-mono text-purple-300 tracking-widest">
+						<span class="inline-block h-2 w-2 rounded-full bg-purple-400 animate-pulse"></span>
+						<span>&gt; { ex.Title } #{ fmt.Sprintf("%03d", ex.ID) }</span>
+						<span class="opacity-60">|</span>
+						<span>STATUS: <span class="animate-pulse">ONLINE</span></span>
+					</div>
+				</div>
+			</div>
+			<div class="relative z-10">
+				@ExerciseDetailContent(ex, fromSession, sessionID)
 			</div>
 		</div>
-		@ExerciseDetailContent(ex, fromSession, sessionID)
 	}
 }
 
 // ExerciseDetailContent - Contenu principal (sans layout)
 templ ExerciseDetailContent(ex models.Exercise, fromSession bool, sessionID string) {
-	<div id="exercise-detail" class="exercise-detail-layout">
-		<!-- Sidebar Sticky -->
-		<aside class="exercise-sidebar">
-			<!-- Header Info -->
-			<div class="exercise-header-compact">
-				<h2 class="exercise-title-compact">{ ex.Title }</h2>
-				<span class={ "badge", "badge--status", templ.KV("badge--done", ex.Done), templ.KV("badge--in-progress", !ex.Done) }>
-					if ex.Done {
-						✓ Maîtrisé
-					} else {
-						⊙ En cours
-					}
-				</span>
-			</div>
-			<!-- Badges -->
-			<div class="exercise-badges-compact">
-				<span class={ "badge", fmt.Sprintf("badge--domain-%s", ex.Domain), "badge--sm" }>
-					{ ex.Domain }
-				</span>
-				<span class={ "badge", fmt.Sprintf("badge--difficulty-%d", ex.Difficulty), "badge--sm" }>
-					D{ fmt.Sprintf("%d", ex.Difficulty) }
-				</span>
-			</div>
-			<hr class="sidebar-divider"/>
-			<!-- Progress Bar -->
-			@components.ProgressBar(len(ex.CompletedSteps), len(ex.Steps))
-			<hr class="sidebar-divider"/>
-			<!-- Steps List -->
-			@components.StepsFragmentWrapper(ex)
-			<hr class="sidebar-divider"/>
-			<!-- Quick Actions -->
-			<div class="quick-actions">
-				<h3 class="sidebar-section-title">ACTIONS</h3>
-				<button class="action-btn" onclick="switchTab('review')">
-					⚡ Review Now
-				</button>
-				<a href="/exercises" class="action-btn action-btn--secondary">
-					← Retour Liste
-				</a>
-			</div>
-		</aside>
-		<!-- Main Content with Tabs -->
-		<main class="exercise-main">
-			<!-- Tab Navigation -->
-			<div class="tab-navigation">
-				<button class="tab-btn active" data-tab="visual" onclick="switchTab('visual')">
-					🎨 Visualisation
-				</button>
-				<button class="tab-btn" data-tab="content" onclick="switchTab('content')">
-					📖 Contenu
-				</button>
-				<button class="tab-btn" data-tab="review" onclick="switchTab('review')">
-					⚡ Review
-				</button>
-			</div>
-			<!-- Tab Content -->
-			<div class="tab-content-wrapper">
-				<!-- Tab 1: Visualisation -->
-				@VisualisationTab(ex)
-				<!-- Tab 2: Contenu -->
-				@ContentTab(ex)
-				<!-- Tab 3: Review -->
-				@ReviewTab(ex, fromSession, sessionID)
-			</div>
-		</main>
+	<div id="exercise-detail" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+		<div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+			<!-- Sidebar Sticky -->
+			<aside class="exercise-sidebar lg:col-span-4 space-y-5">
+				<!-- Header Info -->
+				<div class="rounded-2xl border border-slate-800 bg-slate-950/70 backdrop-blur-xl p-5 space-y-3">
+					<div class="flex items-start justify-between gap-3">
+						<h2 class="exercise-title-compact text-lg font-bold text-slate-50 flex-1">
+							{ ex.Title }
+						</h2>
+						<span
+							class={
+								"badge inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold",
+								getStatusBadgeClasses(ex.Done),
+							}
+						>
+							if ex.Done {
+								✓ Maîtrisé
+							} else {
+								⊙ En cours
+							}
+						</span>
+					</div>
+					<!-- Badges -->
+					<div class="exercise-badges-compact flex items-center gap-2">
+						<span
+							class={
+								"badge inline-flex items-center rounded-lg px-2 py-1 text-[0.65rem] font-medium",
+								getDomainBadgeClasses(ex.Domain),
+							}
+						>
+							{ ex.Domain }
+						</span>
+						<span
+							class={
+								"badge inline-flex items-center rounded-lg px-2 py-1 text-[0.65rem] font-mono tracking-widest uppercase",
+								getDifficultyBadgeClasses(ex.Difficulty),
+							}
+						>
+							D{ fmt.Sprintf("%d", ex.Difficulty) }
+						</span>
+					</div>
+				</div>
+				<!-- Progress Bar -->
+				@components.ProgressBar(len(ex.CompletedSteps), len(ex.Steps))
+				<!-- Steps List -->
+				@components.StepsFragmentWrapper(ex)
+				<!-- Quick Actions -->
+				<div class="quick-actions rounded-2xl border border-slate-800 bg-slate-950/70 backdrop-blur-xl p-5 space-y-3">
+					<h3 class="sidebar-section-title text-sm font-semibold uppercase tracking-widest text-slate-400">
+						⚡ Actions
+					</h3>
+					<div class="space-y-2">
+						<button
+							class="action-btn w-full rounded-lg border border-purple-600/40 bg-purple-900/20 px-4 py-2.5 text-sm font-semibold text-purple-200 hover:bg-purple-900/40 transition-all"
+							onclick="switchTab('review')"
+						>
+							⚡ Review Now
+						</button>
+						<a
+							href="/exercises"
+							class="action-btn action-btn--secondary block w-full text-center rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2.5 text-sm font-medium text-slate-200 hover:bg-slate-800 transition-all"
+							hx-boost="true"
+						>
+							← Retour Liste
+						</a>
+					</div>
+				</div>
+			</aside>
+			<!-- Main Content with Tabs -->
+			<main class="exercise-main lg:col-span-8 space-y-5">
+				<!-- Tab Navigation -->
+				<div class="tab-navigation inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/80 p-1">
+					<button
+						class="tab-btn active inline-flex items-center gap-2 rounded-full bg-slate-800 px-4 py-1.5 text-xs font-mono text-purple-300 tracking-widest uppercase transition-all"
+						data-tab="visual"
+						onclick="switchTab('visual')"
+					>
+						<span>🎨</span>
+						<span>Visualisation</span>
+					</button>
+					<button
+						class="tab-btn inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-mono text-slate-300 hover:bg-slate-800 transition-all"
+						data-tab="content"
+						onclick="switchTab('content')"
+					>
+						<span>📖</span>
+						<span>Contenu</span>
+					</button>
+					<button
+						class="tab-btn inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-mono text-slate-300 hover:bg-slate-800 transition-all"
+						data-tab="review"
+						onclick="switchTab('review')"
+					>
+						<span>⚡</span>
+						<span>Review</span>
+					</button>
+				</div>
+				<!-- Tab Content -->
+				<div class="tab-content-wrapper rounded-2xl border border-slate-800 bg-slate-950/70 backdrop-blur-xl p-6">
+					@VisualisationTab(ex)
+					@ContentTab(ex)
+					@ReviewTab(ex, fromSession, sessionID)
+				</div>
+			</main>
+		</div>
 	</div>
-	<!-- JavaScript pour les tabs -->
 	@TabScript()
 }
 
 // VisualisationTab - Tab Visualisation
 templ VisualisationTab(ex models.Exercise) {
-	<div id="tab-visual" class="tab-pane active">
-		<h2 class="tab-title">Visualisation & Mnémotechniques</h2>
+	<div id="tab-visual" class="tab-pane active space-y-5">
+		<h2 class="tab-title text-xl font-bold text-slate-50 border-b border-slate-800 pb-3">
+			Visualisation & Mnémotechniques
+		</h2>
 		if ex.Description != "" {
-			<div class="description-box">
-				<strong>Description :</strong> { ex.Description }
+			<div class="description-box rounded-xl border border-sky-600/40 bg-sky-950/20 p-4 text-sm text-slate-200">
+				<strong class="text-sky-300">Description :</strong> { ex.Description }
 			</div>
 		}
 		if len(ex.ConceptualVisuals) > 0 {
-			<div class="visual-section">
+			<div class="visual-section space-y-4">
 				for _, visual := range ex.ConceptualVisuals {
-					<div class="visual-item">
+					<div class="visual-item rounded-xl border border-slate-700 bg-slate-900/40 p-4">
 						if visual.Type == "ascii" {
-							<pre class="ascii-diagram">{ visual.Content }</pre>
+							<pre class="ascii-diagram overflow-x-auto rounded-lg bg-slate-950/80 p-4 text-xs font-mono text-emerald-300">{ visual.Content }</pre>
 						}
 						if visual.Caption != "" {
-							<div class="visual-caption">💡 { visual.Caption }</div>
+							<div class="visual-caption mt-3 text-xs text-slate-400 italic">
+								💡 { visual.Caption }
+							</div>
 						}
 					</div>
 				}
 			</div>
 		}
 		if ex.Mnemonic != "" {
-			<div class="mnemonic-box">
-				🧠 <strong>Mnémotechnique :</strong> { ex.Mnemonic }
+			<div class="mnemonic-box rounded-xl border border-purple-600/40 bg-purple-950/20 p-4 text-sm">
+				<span class="text-2xl mr-2">🧠</span>
+				<strong class="text-purple-300">Mnémotechnique :</strong>
+				<span class="text-slate-200">{ ex.Mnemonic }</span>
 			</div>
-		} else {
-			<div class="empty-state">
-				<p>Aucune visualisation disponible pour cet exercice.</p>
+		}
+		if ex.Description == "" && len(ex.ConceptualVisuals) == 0 && ex.Mnemonic == "" {
+			<div class="empty-state flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-700 bg-slate-900/40 py-12">
+				<p class="text-3xl">🎨</p>
+				<p class="text-sm text-slate-400">
+					Aucune visualisation disponible pour cet exercice.
+				</p>
 			</div>
 		}
 	</div>
@@ -131,9 +193,11 @@ templ VisualisationTab(ex models.Exercise) {
 
 // ContentTab - Tab Contenu
 templ ContentTab(ex models.Exercise) {
-	<div id="tab-content" class="tab-pane">
-		<h2 class="tab-title">Contenu de l'Exercice</h2>
-		<div class="content-scrollable">
+	<div id="tab-content" class="tab-pane hidden space-y-5">
+		<h2 class="tab-title text-xl font-bold text-slate-50 border-b border-slate-800 pb-3">
+			Contenu de l'Exercice
+		</h2>
+		<div class="content-scrollable prose prose-invert prose-sm max-w-none rounded-xl border border-slate-700 bg-slate-900/40 p-5">
 			@templ.Raw(ex.Content)
 		</div>
 	</div>
@@ -141,8 +205,10 @@ templ ContentTab(ex models.Exercise) {
 
 // ReviewTab - Tab Review
 templ ReviewTab(ex models.Exercise, fromSession bool, sessionID string) {
-	<div id="tab-review" class="tab-pane">
-		<h2 class="tab-title">Révision SRS</h2>
+	<div id="tab-review" class="tab-pane hidden space-y-5">
+		<h2 class="tab-title text-xl font-bold text-slate-50 border-b border-slate-800 pb-3">
+			Révision SRS
+		</h2>
 		@components.ReviewPanel(ex, fromSession, sessionID)
 	</div>
 }
@@ -153,25 +219,54 @@ templ TabScript() {
 		function switchTab(tabName) {
 			// Hide all tabs
 			document.querySelectorAll('.tab-pane').forEach(pane => {
+				pane.classList.add('hidden');
 				pane.classList.remove('active');
 			});
 
 			// Remove active from all buttons
 			document.querySelectorAll('.tab-btn').forEach(btn => {
-				btn.classList.remove('active');
+				btn.classList.remove('active', 'bg-slate-800', 'text-purple-300');
+				btn.classList.add('text-slate-300');
 			});
 
 			// Show target tab
 			const targetPane = document.getElementById('tab-' + tabName);
 			if (targetPane) {
+				targetPane.classList.remove('hidden');
 				targetPane.classList.add('active');
 			}
 
 			// Activate button
 			const targetBtn = document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
 			if (targetBtn) {
-				targetBtn.classList.add('active');
+				targetBtn.classList.add('active', 'bg-slate-800', 'text-purple-300');
+				targetBtn.classList.remove('text-slate-300');
 			}
 		}
 	</script>
+}
+
+func getStatusBadgeClasses(done bool) string {
+	if done {
+		return "border border-emerald-500/60 text-emerald-300 bg-emerald-500/10"
+	}
+	return "border border-amber-500/60 text-amber-300 bg-amber-500/10"
+}
+
+func getDomainBadgeClasses(domain string) string {
+	// Tu peux spécialiser par domaine si besoin
+	return "border border-slate-600 text-slate-200 bg-slate-900/80"
+}
+
+func getDifficultyBadgeClasses(difficulty int) string {
+	base := "border text-xs"
+
+	switch difficulty {
+	case 1, 2:
+		return base + " border-emerald-500/60 text-emerald-300 bg-emerald-500/10"
+	case 3:
+		return base + " border-amber-500/70 text-amber-300 bg-amber-500/10"
+	default:
+		return base + " border-rose-500/70 text-rose-300 bg-rose-500/10"
+	}
 }
