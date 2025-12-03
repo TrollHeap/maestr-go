@@ -1,4 +1,4 @@
-.PHONY: run build clean dev css css-watch test
+.PHONY: run build clean dev css css-watch test migrate
 
 # === DEV MODE (Recommandé) ===
 dev:
@@ -47,3 +47,8 @@ css-size:
 	@ls -lh public/css/style.css | awk '{print $$5}'
 	@echo "📊 Gzip Size:"
 	@gzip -c public/css/style.css | wc -c | numfmt --to=iec-i --suffix=B
+
+
+migrate:
+	rm -rf data/maestro.db && rm -rf data/maestro.db-shm && rm -rf data/maestro.db-wal
+	go run cmd/migrate/main.go

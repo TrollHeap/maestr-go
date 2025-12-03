@@ -207,14 +207,12 @@ templ ContentTab(ex models.Exercise) {
 
 templ ReviewTab(ex models.Exercise, fromSession bool, sessionID string) {
 	<div id="tab-review" class="tab-pane hidden space-y-5">
-		<h2 class="tab-title ...">Révision SRS</h2>
-		if fromSession {
+		<h2 class="tab-title ...">
+			Révision SRS
+		</h2>
+		<div id="review-panel">
 			@components.ReviewPanel(ex, fromSession, sessionID)
-		} else {
-			<div class="rounded-xl border border-dashed border-slate-700 bg-slate-900/40 p-6 text-sm text-slate-300 text-center">
-				Cet exercice est révisé uniquement dans une session planifiée (Planner ou Session).
-			</div>
-		}
+		</div>
 	</div>
 }
 
