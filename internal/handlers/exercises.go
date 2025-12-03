@@ -348,12 +348,22 @@ func HandleReview(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 7. MODE LIBRE : Recharge détail exercice (LOGIQUE IDENTIQUE)
+	// 7. MODE LIBRE : soit fragment HTMX, soit full page
 	log.Println("🔄 Free mode, reload detail")
 
-	// ✅ CHANGEMENT : Render avec templ
-	component := pages.ExerciseDetail(*ex, fromSession, sessionIDStr)
+	// Requête HTMX ? (clic sur bouton Review avec hx-post)
+	if r.Header.Get("HX-Request") == "true" {
+		// On renvoie uniquement le panneau Review
+		component := components.ReviewPanel(*ex, fromSession, sessionIDStr)
+		if err := component.Render(r.Context(), w); err != nil {
+			log.Printf("❌ Render error: %v", err)
+			http.Error(w, "Erreur affichage", http.StatusInternalServerError)
+		}
+		return
+	}
 
+	// Sinon, navigation classique → full page
+	component := pages.ExerciseDetail(*ex, fromSession, sessionIDStr)
 	if err := component.Render(r.Context(), w); err != nil {
 		log.Printf("❌ Render error: %v", err)
 		http.Error(w, "Erreur affichage", http.StatusInternalServerError)
