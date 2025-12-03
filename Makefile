@@ -1,52 +1,49 @@
-.PHONY: run build clean dev css test migrate
+.PHONY: run build clean dev css css-watch test
 
-# === RUN ===
+# === DEV MODE (Recommandé) ===
+dev:
+	@echo "🚀 Mode développement..."
+	@make css
+	@trap 'kill 0' EXIT; \
+	./scripts/watch-css.sh & \
+	templ generate --watch --proxy="http://localhost:7331" --cmd="go run cmd/app/main.go"
+
+# === CSS BUILD ===
+css:
+	@echo "🎨 Building CSS..."
+	@./bin/tailwindcss -i ./public/css/input.css -o ./public/css/style.css --minify
+	@echo "✅ CSS compilé: $(shell pwd)/public/css/style.css"
+
+# === CSS WATCH (debug) ===
+css-watch:
+	@echo "👀 Watching CSS..."
+	@./bin/tailwindcss -i ./public/css/input.css -o ./public/css/style.css --watch
+
+# === RUN (sans watch) ===
 run:
-	@echo "Running the application..."
+	@echo "🚀 Running..."
+	@make css
 	@templ generate
 	@go run cmd/app/main.go
 
-# === BUILD ===
+# === BUILD PROD ===
 build:
-	@echo "Building application..."
+	@echo "🔨 Building for production..."
 	@templ generate
-	@./scripts/build-css.sh
-	@go build -o bin/maestro cmd/app/main.go
+	@./bin/tailwindcss -i ./public/css/input.css -o ./public/css/style.css --minify
+	@go build -ldflags="-s -w" -o bin/maestro cmd/app/main.go
 	@echo "✅ Build complete: bin/maestro"
-
-# === DEV MODE ===
-dev:
-	@echo "🚀 Starting dev mode..."
-	@trap 'kill 0' EXIT; \
-	./scripts/watch-css.sh & \
-	templ generate --watch --proxy="http://localhost:8080" --cmd="go run cmd/app/main.go"
-
-# === CSS ===
-css:
-	@./scripts/build-css.sh
-
-css-watch:
-	@./scripts/watch-css.sh
-
-# === MIGRATION ===
-migrate:
-	@echo "Running migration..."
-	@go run cmd/migrate/main.go
-
-# === TEST ===
-test:
-	@go test ./...
 
 # === CLEAN ===
 clean:
 	@rm -rf bin/
-	@rm -rf public/css/
+	@rm -f public/css/style.css
+	@find . -name "*_templ.go" -delete
 	@echo "✅ Clean complete"
 
-# === INSTALL DEPS ===
-install:
-	@echo "Installing dependencies..."
-	@go mod download
-	@templ generate
-	@./scripts/install-tailwind.sh
-	@echo "✅ Installation complete"
+# === TEST CSS SIZE ===
+css-size:
+	@echo "📊 CSS Size:"
+	@ls -lh public/css/style.css | awk '{print $$5}'
+	@echo "📊 Gzip Size:"
+	@gzip -c public/css/style.css | wc -c | numfmt --to=iec-i --suffix=B
