@@ -4,6 +4,7 @@ package components
 import (
 	"fmt"
 	"maestro/internal/models"
+	"maestro/internal/views/utils"
 	"time"
 )
 
@@ -65,7 +66,7 @@ templ DayReviewItem(ex models.Exercise) {
 			<span
 				class={
 					"inline-flex items-center rounded-full px-2 py-0.5 text-[0.65rem] font-mono tracking-widest uppercase",
-					getDifficultyBadgeClasses(ex.Difficulty),
+					utils.GetDifficultyBadgeClass(ex.Difficulty),
 				}
 			>
 				D{ fmt.Sprintf("%d", ex.Difficulty) }
@@ -75,7 +76,7 @@ templ DayReviewItem(ex models.Exercise) {
 			<span
 				class={
 					"inline-flex items-center rounded-full px-2 py-0.5 font-medium",
-					getDomainBadgeClasses(ex.Domain),
+					utils.GetDomainBadgeClasses(ex.Domain),
 				}
 			>
 				{ ex.Domain }
@@ -85,25 +86,4 @@ templ DayReviewItem(ex models.Exercise) {
 			</span>
 		</div>
 	</div>
-}
-
-// difficulty badge → couleur Tailwind
-func getDifficultyBadgeClasses(d int) string {
-	base := "border text-xs"
-
-	switch d {
-	case 1, 2:
-		return base + " border-emerald-500/60 text-emerald-300 bg-emerald-500/10"
-	case 3:
-		return base + " border-amber-500/70 text-amber-300 bg-amber-500/10"
-	default:
-		return base + " border-rose-500/70 text-rose-300 bg-rose-500/10"
-	}
-}
-
-func getDomainBadgeClasses(domain string) string {
-	base := "text-xs border bg-slate-900/80 border-slate-600 text-slate-200"
-
-	// Tu peux spécialiser par domaine plus tard si besoin
-	return base
 }

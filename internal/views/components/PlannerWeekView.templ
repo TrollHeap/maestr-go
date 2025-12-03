@@ -4,6 +4,7 @@ package components
 import (
 	"fmt"
 	"maestro/internal/models"
+	"maestro/internal/views/utils"
 	"time"
 )
 
@@ -45,7 +46,7 @@ templ WeekDayCard(day models.DaySchedule) {
 	<div
 		class={
 			"week-day-card rounded-2xl border bg-slate-900/70 p-4 flex flex-col gap-3",
-			getWeekDayCardClasses(day.Date, day.Count),
+			utils.GetWeekDayCardClasses(day.Date, day.Count),
 		}
 	>
 		<div class="week-day-header flex items-center justify-between">
@@ -70,41 +71,11 @@ templ WeekDayCard(day models.DaySchedule) {
 				for _, ex := range day.Exercises {
 					<div class="mini-exercise truncate text-emerald-200 hover:text-emerald-100">
 						<a href={ templ.URL(fmt.Sprintf("/exercise/%d", ex.ID)) } class="hover:underline" hx-boost="true">
-							{ truncate(ex.Title, 22) }
+							{ utils.Truncate(ex.Title, 22) }
 						</a>
 					</div>
 				}
 			</div>
 		}
 	</div>
-}
-
-// isToday - utilisé par WeekDayCard
-func isToday(date time.Time) bool {
-	now := time.Now()
-	return date.Year() == now.Year() && date.YearDay() == now.YearDay()
-}
-
-// truncate - utilisé pour les titres des exos
-func truncate(s string, max int) string {
-	if len(s) <= max {
-		return s
-	}
-	if max <= 3 {
-		return s[:max]
-	}
-	return s[:max-3] + "..."
-}
-
-// getWeekDayCardClasses – déjà utilisé dans le template
-func getWeekDayCardClasses(date time.Time, count int) string {
-	base := "border-slate-800"
-
-	if isToday(date) {
-		base += " border-emerald-500/80 shadow-[0_0_0_1px_rgba(16,185,129,0.4)]"
-	} else if count > 0 {
-		base += " border-emerald-600/40"
-	}
-
-	return base
 }

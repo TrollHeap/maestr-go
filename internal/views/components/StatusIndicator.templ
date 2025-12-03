@@ -1,0 +1,21 @@
+package components
+
+import (
+	"maestro/internal/models"
+	"maestro/internal/views/utils"
+)
+
+templ StatusIndicator(ex models.Exercise) {
+	<span
+		class={
+			"inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold transition-all",
+			utils.GetStatusBadgeClassesGlow(ex.Done),
+		}
+	>
+		if ex.Done {
+			✓
+		} else {
+			⊙
+		}
+	</span>
+}

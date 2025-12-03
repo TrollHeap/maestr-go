@@ -1,0 +1,30 @@
+package components
+
+import "maestro/internal/views/utils"
+
+// ReviewButton - Version avec gradient
+templ ReviewButton(exerciseID, quality int, label, interval string, fromSession bool, sessionID string) {
+	<button
+		class={
+			"review-btn group relative rounded-2xl border px-5 py-4 text-left transition-all hover:shadow-2xl hover:-translate-y-1",
+			utils.GetReviewButtonClassesGradient(quality),
+		}
+		hx-post={ utils.BuildReviewURL(exerciseID, quality, fromSession, sessionID) }
+		hx-target="#review-panel"
+		hx-swap="outerHTML"
+	>
+		<div class="flex items-center justify-between gap-3">
+			<span class="review-label text-base font-semibold drop-shadow-lg">
+				{ label }
+			</span>
+			<span
+				class={
+					"review-interval text-xs font-mono tracking-wider uppercase px-2 py-1 rounded-lg",
+					utils.GetIntervalBadgeClasses(quality),
+				}
+			>
+				{ interval }
+			</span>
+		</div>
+	</button>
+}

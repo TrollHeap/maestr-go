@@ -1,35 +1,10 @@
-// internal/views/components/exercise_list.templ
 package components
 
 import (
 	"fmt"
 	"maestro/internal/models"
+	"maestro/internal/views/utils"
 )
-
-// ExerciseListFragment - Fragment liste exercices (HTMX)
-templ ExerciseListFragment(exercises []models.Exercise) {
-	if len(exercises) == 0 {
-		<div class="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-slate-700 bg-slate-900/40 py-16">
-			<p class="text-3xl">📭</p>
-			<p class="text-sm text-slate-300">
-				Aucun exercice trouvé pour ce filtre.
-			</p>
-			<a
-				href="/exercises"
-				class="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 transition-all"
-				hx-boost="true"
-			>
-				← Voir tous les exercices
-			</a>
-		</div>
-	} else {
-		<div class="exercise-grid grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-			for _, ex := range exercises {
-				@ExerciseCard(ex)
-			}
-		</div>
-	}
-}
 
 // ExerciseCard - Card individuelle exercice
 templ ExerciseCard(ex models.Exercise) {
@@ -48,7 +23,7 @@ templ ExerciseCard(ex models.Exercise) {
 			<span
 				class={
 					"badge inline-flex items-center justify-center rounded-full px-2 py-1 text-xs font-bold",
-					getExerciseStatusBadgeClass(ex.Done),
+					utils.GetExerciseStatusBadgeClass(ex.Done),
 				}
 			>
 				if ex.Done {
@@ -63,7 +38,7 @@ templ ExerciseCard(ex models.Exercise) {
 			<span
 				class={
 					"badge inline-flex items-center rounded-lg px-2 py-1 text-[0.65rem] font-medium",
-					getDomainBadgeClass(ex.Domain),
+					utils.GetDomainBadgeClass(ex.Domain),
 				}
 			>
 				{ ex.Domain }
@@ -71,7 +46,7 @@ templ ExerciseCard(ex models.Exercise) {
 			<span
 				class={
 					"badge inline-flex items-center rounded-lg px-2 py-1 text-[0.65rem] font-mono tracking-widest uppercase",
-					getDifficultyBadgeClass(ex.Difficulty),
+					utils.GetDifficultyBadgeClass(ex.Difficulty),
 				}
 			>
 				D{ fmt.Sprintf("%d", ex.Difficulty) }
@@ -90,7 +65,7 @@ templ ExerciseCard(ex models.Exercise) {
 				<div class="progress-mini relative h-2 flex-1 rounded-full bg-slate-800 overflow-hidden">
 					<div
 						class="progress-mini-fill absolute inset-y-0 left-0 bg-gradient-to-r from-sky-500 to-emerald-500 transition-all"
-						style={ fmt.Sprintf("width: %d%%", calculateProgressPercent(len(ex.CompletedSteps), len(ex.Steps))) }
+						style={ fmt.Sprintf("width: %d%%", utils.CalculateProgressPercent(len(ex.CompletedSteps), len(ex.Steps))) }
 					></div>
 				</div>
 				<span class="progress-mini-text text-[0.65rem] font-mono text-slate-400">
@@ -109,37 +84,4 @@ templ ExerciseCard(ex models.Exercise) {
 			</div>
 		</div>
 	</div>
-}
-
-// Helper function
-func calculateProgressPercent(completed, total int) int {
-	if total == 0 {
-		return 0
-	}
-	return (completed * 100) / total
-}
-
-func getExerciseStatusBadgeClass(done bool) string {
-	if done {
-		return "border border-emerald-500/60 text-emerald-300 bg-emerald-500/10"
-	}
-	return "border border-amber-500/60 text-amber-300 bg-amber-500/10"
-}
-
-func getDomainBadgeClass(domain string) string {
-	// Tu peux spécialiser par domaine si besoin
-	return "border border-slate-600 text-slate-200 bg-slate-900/80"
-}
-
-func getDifficultyBadgeClass(difficulty int) string {
-	base := "border text-xs"
-
-	switch difficulty {
-	case 1, 2:
-		return base + " border-emerald-500/60 text-emerald-300 bg-emerald-500/10"
-	case 3:
-		return base + " border-amber-500/70 text-amber-300 bg-amber-500/10"
-	default:
-		return base + " border-rose-500/70 text-rose-300 bg-rose-500/10"
-	}
 }
