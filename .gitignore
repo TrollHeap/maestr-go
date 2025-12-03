@@ -1,3 +1,10 @@
-tailwindcss
 build-css.sh
 watch-css.sh
+/public/css/style.css
+
+/bin/
+/cmd/*/*.exe
+*.exe
+*.out
+*_templ.go
+internal/views/**/*_templ.go
