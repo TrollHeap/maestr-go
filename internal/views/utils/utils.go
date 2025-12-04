@@ -2,8 +2,13 @@ package utils
 
 import (
 	"fmt"
+	"net/url"
 	"slices"
+	"strconv"
+	"strings"
 	"time"
+
+	"maestro/internal/models"
 )
 
 func GetDomainBadgeClasses(domain string) string {
@@ -229,4 +234,124 @@ func FormatDuration(d time.Duration) string {
 		return fmt.Sprintf("%d min %d s", minutes, seconds)
 	}
 	return fmt.Sprintf("%d s", seconds)
+}
+
+func GetFormTitle(ex *models.Exercise) string {
+	if ex == nil {
+		return "Nouvel exercice"
+	}
+	return "Éditer exercice"
+}
+
+func GetFormAction(ex *models.Exercise) string {
+	if ex == nil {
+		return "/exercises/create"
+	}
+	return "/exercise/" + strconv.Itoa(ex.ID) + "/update"
+}
+
+func GetStringValue(ex *models.Exercise, field string) string {
+	if ex == nil {
+		return ""
+	}
+
+	switch field {
+	case "title":
+		return ex.Title
+	case "description":
+		return ex.Description
+	case "content":
+		return ex.Content
+	case "mnemonic":
+		return ex.Mnemonic
+	default:
+		return ""
+	}
+}
+
+func GetStepsValue(ex *models.Exercise) string {
+	if ex == nil || len(ex.Steps) == 0 {
+		return ""
+	}
+	return strings.Join(ex.Steps, "\n")
+}
+
+func GetVisualsValue(ex *models.Exercise) string {
+	if ex == nil || len(ex.ConceptualVisuals) == 0 {
+		return ""
+	}
+
+	var result []string
+	for _, visual := range ex.ConceptualVisuals {
+		visualText := visual.Content
+		if visual.Caption != "" {
+			visualText += "\nCaption: " + visual.Caption
+		}
+		result = append(result, visualText)
+	}
+
+	return strings.Join(result, "\n---\n")
+}
+
+func IsDomainSelected(ex *models.Exercise, domain string) bool {
+	return ex != nil && ex.Domain == domain
+}
+
+func IsDifficultySelected(ex *models.Exercise, difficulty int) bool {
+	return ex != nil && ex.Difficulty == difficulty
+}
+
+func GetCancelURL(ex *models.Exercise) string {
+	if ex == nil {
+		return "/exercises"
+	}
+	return "/exercise/" + strconv.Itoa(ex.ID)
+}
+
+// GetFilterPillClass retourne les classes Tailwind pour un filtre "pill".
+func GetFilterPillClass(active bool) string {
+	base := "inline-flex items-center gap-2 rounded-full px-4 py-1.5 " +
+		"text-[0.65rem] font-mono tracking-widest uppercase transition-colors"
+
+	if active {
+		return base + " bg-slate-800 text-sky-300 border border-sky-500/60"
+	}
+
+	return base + " text-slate-300 border border-slate-700 hover:bg-slate-800"
+}
+
+// GetFilterDropdownSelectClass : style du <select> pour les filtres.
+func GetFilterDropdownSelectClass() string {
+	return "rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1.5 " +
+		"text-[0.7rem] font-mono tracking-widest uppercase text-slate-200 " +
+		"hover:bg-slate-800 focus:outline-none focus:border-sky-500 " +
+		"focus:ring-1 focus:ring-sky-500/40"
+}
+
+func BuildFilterURL(basePath, param, value, q, status, domain, difficulty, sort string) string {
+	v := url.Values{}
+	if q != "" {
+		v.Set("q", q)
+	}
+	if status != "" {
+		v.Set("status", status)
+	}
+	if difficulty != "" {
+		v.Set("difficulty", difficulty)
+	}
+	if sort != "" {
+		v.Set("sort", sort)
+	}
+	// domaine géré via param/value
+	if param != "domain" && domain != "" {
+		v.Set("domain", domain)
+	}
+	if value != "" {
+		v.Set(param, value)
+	}
+	u := basePath
+	if encoded := v.Encode(); encoded != "" {
+		u += "?" + encoded
+	}
+	return u
 }
