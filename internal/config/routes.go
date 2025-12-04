@@ -18,6 +18,18 @@ func Routes() *http.ServeMux {
 	mux.HandleFunc("GET /planner", handlers.HandlePlannerPage)
 
 	// ============================================
+	// GROUPE 2.5 : EXERCICES - CRÉATION/ÉDITION
+	// ============================================
+
+	// Création
+	mux.HandleFunc("GET /exercises/new", handlers.HandleExerciseCreate)
+	mux.HandleFunc("POST /exercises/create", handlers.HandleExerciseSubmit)
+
+	// Édition
+	mux.HandleFunc("GET /exercise/{id}/edit", handlers.HandleExerciseEdit)
+	mux.HandleFunc("POST /exercise/{id}/update", handlers.HandleExerciseUpdate)
+	mux.HandleFunc("POST /exercise/{id}/delete", handlers.HandleExerciseDelete)
+	// ============================================
 	// GROUPE 2 : EXERCICES - FRAGMENTS HTMX
 	// ============================================
 	mux.HandleFunc("GET /exercises/list", handlers.HandleListExercice)  // Liste filtrée
