@@ -24,6 +24,38 @@ func init() {
 // ============================================
 // 1️⃣ PAGE PRINCIPALE PLANNER
 // ============================================
+//
+
+// func HandlePlannerPage(w http.ResponseWriter, r *http.Request) {
+// 	view := r.URL.Query().Get("view") // "urgent", "today", "upcoming", "new", "all"
+//
+// 	if view == "" {
+// 		view = "all"
+// 	}
+//
+// 	// Récupère via service Planner
+// 	exercises, err := exerciseService.GetPlannerExercises(view)
+// 	if err != nil {
+// 		log.Printf("❌ GetPlannerExercises error: %v", err)
+// 		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
+// 		return
+// 	}
+//
+// 	// Stats temps
+// 	stats := map[string]int{
+// 		"urgent":   store.CountPlannerView("urgent"),
+// 		"today":    store.CountPlannerView("today"),
+// 		"upcoming": store.CountPlannerView("upcoming"),
+// 		"new":      store.CountPlannerView("new"),
+// 	}
+//
+// 	component := pages.PlannerPage(exercises, stats, view)
+//
+// 	if err := component.Render(r.Context(), w); err != nil {
+// 		log.Printf("❌ Render error: %v", err)
+// 		http.Error(w, "Erreur affichage", http.StatusInternalServerError)
+// 	}
+// }
 
 func HandlePlannerPage(w http.ResponseWriter, r *http.Request) {
 	today := time.Now()

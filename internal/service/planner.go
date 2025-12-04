@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -66,4 +67,12 @@ func (s *PlannerService) GetMonthSchedule(year int, month time.Month) map[int]in
 		}
 	}
 	return counts
+}
+
+func (s *ExerciseService) GetPlannerExercises(view string) ([]models.Exercise, error) {
+	exercises, err := store.GetPlannerExercises(view)
+	if err != nil {
+		return nil, fmt.Errorf("get planner exercises: %w", err)
+	}
+	return exercises, nil
 }
