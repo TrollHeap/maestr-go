@@ -3,24 +3,23 @@ package components
 
 import "maestro/internal/models"
 
-// ExerciseListFragment - Fragment liste exercices (HTMX)
 templ ExerciseList(exercises []models.Exercise) {
 	if len(exercises) == 0 {
-		<div class="flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-slate-700 bg-slate-900/40 py-16">
+		<div class="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-700 bg-slate-900/40 py-16">
 			<p class="text-3xl">📭</p>
 			<p class="text-sm text-slate-300">
 				Aucun exercice trouvé pour ce filtre.
 			</p>
 			<a
-				href="/exercises"
-				class="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 transition-all"
+				href="/exercises/new"
 				hx-boost="true"
+				class="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 transition-all"
 			>
-				← Voir tous les exercices
+				➕ Créer un exercice
 			</a>
 		</div>
 	} else {
-		<div class="exercise-grid grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 			for _, ex := range exercises {
 				@ExerciseCard(ex)
 			}
