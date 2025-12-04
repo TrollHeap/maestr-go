@@ -1,0 +1,58 @@
+package components
+
+import (
+	"fmt"
+	"maestro/internal/views/utils"
+)
+
+templ FilterPill(label, param, kind string, active bool) {
+	<button
+		class={ utils.GetFilterPillClass(active) }
+		hx-get={ "/exercises/list?" + kind + "=" + param }
+		hx-target="#exercise-list"
+		hx-swap="innerHTML"
+	>
+		{ label }
+	</button>
+}
+
+templ FilterDropdown(
+	label, param, current string,
+	options map[string]string,
+	q, status, domain string,
+	difficulty int,
+	sort string,
+) {
+	<div class="inline-flex items-center gap-2">
+		<span class="text-[0.7rem] font-mono uppercase tracking-widest text-slate-400">
+			{ label }:
+		</span>
+		<select
+			name={ param }
+			class={ utils.GetFilterDropdownSelectClass() }
+			hx-get="/exercises/list"
+			hx-target="#exercise-list"
+			hx-include="closest form"
+			hx-trigger="change"
+		>
+			for value, text := range options {
+				<option
+					value={ value }
+					selected={ value == current }
+					data-url={ utils.BuildFilterURL(
+							"/exercises",
+							param,
+							value,
+							q,
+							status,
+							domain,
+							fmt.Sprintf("%d", difficulty),
+							sort,
+						) }
+				>
+					{ text }
+				</option>
+			}
+		</select>
+	</div>
+}
