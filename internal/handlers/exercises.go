@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"maestro/internal/domain/exercise"
 	"maestro/internal/models"
@@ -24,30 +25,43 @@ func init() {
 	sessionService = service.NewSessionService()
 }
 
-// ============================================
-// 1️⃣ PAGE PRINCIPALE EXERCICES
-// ============================================
-
 func HandleExercisesPage(w http.ResponseWriter, r *http.Request) {
-	// 1. Récupère données (LOGIQUE IDENTIQUE)
+	// 1. Parse filtres contenu
+	q := r.URL.Query().Get("q")
+	status := r.URL.Query().Get("status")                          // "in_progress", "mastered", ""
+	domain := r.URL.Query().Get("domain")                          // "Go", "Algorithms", ""
+	difficulty, _ := strconv.Atoi(r.URL.Query().Get("difficulty")) // 1-4, 0
+	sort := r.URL.Query().
+		Get("sort")
+		// "", "title", "difficulty", "domain"
+
+	filter := models.ExerciseFilter{
+		Status:     status,
+		Domain:     domain,
+		Difficulty: difficulty,
+		Query:      q,
+		Sort:       sort,
+	}
+
+	// 2. Récupère exercices filtrés
+	exercises, err := exerciseService.GetFilteredExercises(filter)
+	if err != nil {
+		log.Printf("❌ GetFilteredExercises error: %v", err)
+		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
+		return
+	}
+
+	// 3. Compte total (sans filtre) pour l’info "X / Y"
 	allExercises, err := exerciseService.GetAllExercises()
 	if err != nil {
 		log.Printf("❌ GetAllExercises error: %v", err)
 		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
 		return
 	}
+	total := len(allExercises)
 
-	stats := exerciseService.GetExerciseStats()
-
-	// 2. ✅ CHANGEMENT : Render avec templ (pas map[string]any)
-	component := pages.ExerciseListPage(
-		allExercises,
-		stats["urgent"],
-		stats["today"],
-		stats["upcoming"],
-		stats["active"],
-		stats["new"],
-	)
+	// 4. Render page complète
+	component := pages.ExerciseListPage(exercises, filter, total)
 
 	if err := component.Render(r.Context(), w); err != nil {
 		log.Printf("❌ Render error: %v", err)
@@ -55,24 +69,22 @@ func HandleExercisesPage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ============================================
-// 2️⃣ FRAGMENT HTMX : Liste filtrée
-// ============================================
-
 func HandleListExercice(w http.ResponseWriter, r *http.Request) {
-	// 1. Parse query params (LOGIQUE IDENTIQUE)
-	view := r.URL.Query().Get("view")
+	// Même parsing que pour la page, mais ne renvoie que le fragment liste
+	q := r.URL.Query().Get("q")
+	status := r.URL.Query().Get("status")
 	domain := r.URL.Query().Get("domain")
 	difficulty, _ := strconv.Atoi(r.URL.Query().Get("difficulty"))
+	sort := r.URL.Query().Get("sort")
 
-	// 2. Construit filtre (LOGIQUE IDENTIQUE)
 	filter := models.ExerciseFilter{
-		View:       view,
+		Status:     status,
 		Domain:     domain,
 		Difficulty: difficulty,
+		Query:      q,
+		Sort:       sort,
 	}
 
-	// 3. Récupère exercices filtrés (LOGIQUE IDENTIQUE)
 	filteredList, err := exerciseService.GetFilteredExercises(filter)
 	if err != nil {
 		log.Printf("❌ GetFilteredExercises error: %v", err)
@@ -80,7 +92,6 @@ func HandleListExercice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 4. ✅ CHANGEMENT : Render fragment templ
 	component := components.ExerciseList(filteredList)
 
 	if err := component.Render(r.Context(), w); err != nil {
@@ -88,6 +99,250 @@ func HandleListExercice(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Erreur affichage", http.StatusInternalServerError)
 	}
 }
+
+// ============================================
+// 6️⃣ CRÉATION : Formulaire nouveau
+// ============================================
+
+func HandleExerciseCreate(w http.ResponseWriter, r *http.Request) {
+	log.Println("📝 ExerciseCreate: render form")
+
+	// Render formulaire vide (mode création)
+	component := pages.ExerciseForm(nil) // nil = nouveau
+
+	if err := component.Render(r.Context(), w); err != nil {
+		log.Printf("❌ Render error: %v", err)
+		http.Error(w, "Erreur affichage", http.StatusInternalServerError)
+	}
+}
+
+// ============================================
+// 7️⃣ CRÉATION : Soumission formulaire
+// ============================================
+
+func HandleExerciseSubmit(w http.ResponseWriter, r *http.Request) {
+	log.Println("📝 ExerciseSubmit: processing form")
+
+	// 1. Parse form
+	if err := r.ParseForm(); err != nil {
+		log.Printf("❌ Parse form error: %v", err)
+		http.Error(w, "Erreur formulaire", http.StatusBadRequest)
+		return
+	}
+
+	// 2. Parse difficulty
+	difficulty, err := strconv.Atoi(r.FormValue("difficulty"))
+	if err != nil {
+		log.Printf("❌ Invalid difficulty: %v", err)
+		http.Error(w, "Difficulté invalide", http.StatusBadRequest)
+		return
+	}
+
+	// 3. Parse steps (textarea → slice)
+	stepsText := r.FormValue("steps")
+	steps := parseSteps(stepsText)
+
+	// ✅ 4. Parse conceptual_visuals (NOUVEAU)
+	visualsText := r.FormValue("conceptual_visuals")
+	visuals := parseConceptualVisuals(visualsText)
+
+	// 5. Build exercise model
+	ex := &models.Exercise{
+		Title:             r.FormValue("title"),
+		Description:       r.FormValue("description"),
+		Domain:            r.FormValue("domain"),
+		Difficulty:        difficulty,
+		Content:           r.FormValue("content"),
+		Mnemonic:          r.FormValue("mnemonic"),
+		Steps:             steps,
+		ConceptualVisuals: visuals, // ✅ AJOUTÉ
+	}
+
+	// 6. Create via service
+	if err := exerciseService.CreateExercise(ex); err != nil {
+		log.Printf("❌ CreateExercise error: %v", err)
+
+		component := components.FormError(err.Error())
+		if renderErr := component.Render(r.Context(), w); renderErr != nil {
+			http.Error(w, "Erreur création", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	log.Printf("✅ Exercise #%d created: %s", ex.ID, ex.Title)
+
+	// 7. Redirect vers détail (HTMX)
+	w.Header().Set("HX-Redirect", fmt.Sprintf("/exercise/%d", ex.ID))
+	w.WriteHeader(http.StatusOK)
+}
+
+// DeleteExercise : soft delete via POST
+func HandleExerciseDelete(w http.ResponseWriter, r *http.Request) {
+	// 1. Parse ID (depuis path /exercise/{id}/delete par ex.)
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		log.Printf("❌ Invalid ID: %v", err)
+		http.Error(w, "ID invalide", http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("🗑️ ExerciseDelete: id=%d", id)
+
+	// 2. Validation domaine
+	if err := exercise.ValidateID(id); err != nil {
+		log.Printf("❌ Validation error: %v", err)
+		http.Error(w, "ID invalide", http.StatusBadRequest)
+		return
+	}
+
+	// 3. Delete via service
+	if err := exerciseService.DeleteExercise(id); err != nil {
+		log.Printf("❌ DeleteExercise error: %v", err)
+		component := components.FormError(err.Error())
+		if renderErr := component.Render(r.Context(), w); renderErr != nil {
+			http.Error(w, "Erreur suppression", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	log.Printf("✅ Exercise #%d deleted", id)
+
+	// 4. Redirect vers liste (HTMX friendly)
+	w.Header().Set("HX-Redirect", "/exercises")
+	w.WriteHeader(http.StatusOK)
+}
+
+// ============================================
+// 8️⃣ ÉDITION : Formulaire éditer
+// ============================================
+
+func HandleExerciseEdit(w http.ResponseWriter, r *http.Request) {
+	// 1. Parse ID
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		log.Printf("❌ Invalid ID: %v", err)
+		http.Error(w, "ID invalide", http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("✏️ ExerciseEdit: id=%d", id)
+
+	// 2. Validation ID
+	if err := exercise.ValidateID(id); err != nil {
+		log.Printf("❌ Validation error: %v", err)
+		http.Error(w, "ID invalide", http.StatusBadRequest)
+		return
+	}
+
+	// 3. Récupère exercice existant
+	ex, err := exerciseService.GetExerciseWithMarkdown(id)
+	if err != nil {
+		log.Printf("❌ Exercise #%d not found: %v", id, err)
+		http.NotFound(w, r)
+		return
+	}
+
+	// 4. Render formulaire pré-rempli (mode édition)
+	component := pages.ExerciseForm(ex) // ex != nil = édition
+
+	if err := component.Render(r.Context(), w); err != nil {
+		log.Printf("❌ Render error: %v", err)
+		http.Error(w, "Erreur affichage", http.StatusInternalServerError)
+	}
+}
+
+// ============================================
+// 9️⃣ ÉDITION : Mise à jour
+// ============================================
+
+func HandleExerciseUpdate(w http.ResponseWriter, r *http.Request) {
+	// 1-3. Parse ID, form, difficulty (INCHANGÉ)
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		log.Printf("❌ Invalid ID: %v", err)
+		http.Error(w, "ID invalide", http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("✏️ ExerciseUpdate: id=%d", id)
+
+	if err := r.ParseForm(); err != nil {
+		log.Printf("❌ Parse form error: %v", err)
+		http.Error(w, "Erreur formulaire", http.StatusBadRequest)
+		return
+	}
+
+	difficulty, err := strconv.Atoi(r.FormValue("difficulty"))
+	if err != nil {
+		log.Printf("❌ Invalid difficulty: %v", err)
+		http.Error(w, "Difficulté invalide", http.StatusBadRequest)
+		return
+	}
+
+	// 4. Parse steps
+	stepsText := r.FormValue("steps")
+	steps := parseSteps(stepsText)
+
+	// ✅ 5. Parse conceptual_visuals (NOUVEAU)
+	visualsText := r.FormValue("conceptual_visuals")
+	visuals := parseConceptualVisuals(visualsText)
+
+	// 6. Build exercise model (avec ID)
+	ex := &models.Exercise{
+		ID:                id,
+		Title:             r.FormValue("title"),
+		Description:       r.FormValue("description"),
+		Domain:            r.FormValue("domain"),
+		Difficulty:        difficulty,
+		Content:           r.FormValue("content"),
+		Mnemonic:          r.FormValue("mnemonic"),
+		Steps:             steps,
+		ConceptualVisuals: visuals, // ✅ AJOUTÉ
+	}
+
+	// 7. Update via service
+	if err := exerciseService.UpdateExercise(ex); err != nil {
+		log.Printf("❌ UpdateExercise error: %v", err)
+
+		component := components.FormError(err.Error())
+		if renderErr := component.Render(r.Context(), w); renderErr != nil {
+			http.Error(w, "Erreur mise à jour", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	log.Printf("✅ Exercise #%d updated: %s", ex.ID, ex.Title)
+
+	w.Header().Set("HX-Redirect", fmt.Sprintf("/exercise/%d", ex.ID))
+	w.WriteHeader(http.StatusOK)
+}
+
+// ============================================
+// 🔧 HELPER : Parse steps textarea
+// ============================================
+
+// parseSteps : Convertit textarea multi-lignes en slice
+func parseSteps(text string) []string {
+	if text == "" {
+		return []string{}
+	}
+
+	lines := strings.Split(text, "\n")
+	steps := make([]string, 0, len(lines))
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			steps = append(steps, line)
+		}
+	}
+
+	return steps
+}
+
+// ============================================
+// 1️⃣ PAGE PRINCIPALE EXERCICES
+// ============================================
 
 // ============================================
 // 3️⃣ PAGE DÉTAIL EXERCICE
@@ -254,43 +509,39 @@ func HandleToggleStep(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ============================================
-// 6️⃣ ACTION : Review (SRS)
-// ============================================
+// parseConceptualVisuals : Convertit textarea en []models.VisualAid
+func parseConceptualVisuals(text string) []models.VisualAid {
+	if text == "" {
+		return []models.VisualAid{}
+	}
 
-// // ============================================
-// // 7️⃣ ACTION : Prochain exercice (Mode libre)
-// // ============================================
-//
-// func HandleNextExercise(w http.ResponseWriter, r *http.Request) {
-// 	log.Println("🔍 HandleNextExercise: Free mode")
-//
-// 	// 1. Récupère rapport + exercices disponibles (LOGIQUE IDENTIQUE)
-// 	report, exercises, err := store.GetTodayReport()
-// 	if err != nil {
-// 		log.Printf("❌ GetTodayReport error: %v", err)
-// 		http.Error(w, "Erreur serveur", http.StatusInternalServerError)
-// 		return
-// 	}
-//
-// 	// 2. Aucun exercice disponible (LOGIQUE IDENTIQUE)
-// 	if len(exercises) == 0 {
-// 		log.Println("ℹ️ No exercises available, showing report")
-//
-// 		// ✅ CHANGEMENT : Render avec templ
-// 		component := pages.NoExercisesToday(report)
-//
-// 		if err := component.Render(r.Context(), w); err != nil {
-// 			log.Printf("❌ Render error: %v", err)
-// 			http.Error(w, "Erreur affichage", http.StatusInternalServerError)
-// 		}
-// 		return
-// 	}
-//
-// 	// 3. Exercice(s) disponible(s) (LOGIQUE IDENTIQUE)
-// 	nextExercise := exercises[0]
-// 	redirectURL := fmt.Sprintf("/exercise/%d", nextExercise.ID)
-//
-// 	log.Printf("➡️ Redirect to exercise #%d: %s", nextExercise.ID, nextExercise.Title)
-// 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
-// }
+	blocks := strings.Split(text, "---")
+	visuals := make([]models.VisualAid, 0, len(blocks))
+
+	for _, block := range blocks {
+		block = strings.TrimSpace(block)
+		if block == "" {
+			continue
+		}
+
+		var content, caption string
+
+		lowerBlock := strings.ToLower(block)
+		if idx := strings.Index(lowerBlock, "\ncaption:"); idx != -1 {
+			content = strings.TrimSpace(block[:idx])
+			caption = strings.TrimSpace(block[idx+9:]) // +9 = len("\nCaption:")
+		} else {
+			content = block
+		}
+
+		if content != "" {
+			visuals = append(visuals, models.VisualAid{
+				Type:    "ascii",
+				Content: content,
+				Caption: caption,
+			})
+		}
+	}
+
+	return visuals
+}

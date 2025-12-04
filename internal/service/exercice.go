@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"maestro/internal/domain/exercise"
@@ -14,6 +15,100 @@ type ExerciseService struct{}
 
 func NewExerciseService() *ExerciseService {
 	return &ExerciseService{}
+}
+
+// ============================================
+// CREATE & UPDATE (User Management)
+// ============================================
+
+// CreateExercise : Crée un nouvel exercice
+func (s *ExerciseService) CreateExercise(ex *models.Exercise) error {
+	// 1. Validation domaine (business rules)
+	if err := exercise.ValidateExerciseInput(ex.Title, ex.Difficulty, ex.Domain); err != nil {
+		return fmt.Errorf("validation failed: %w", err)
+	}
+
+	// 2. Validation contenu (sécurité)
+	if len(ex.Content) > 50000 {
+		return fmt.Errorf("content too large: max 50KB")
+	}
+
+	// 3. Trim whitespace
+	ex.Title = strings.TrimSpace(ex.Title)
+	ex.Description = strings.TrimSpace(ex.Description)
+	ex.Mnemonic = strings.TrimSpace(ex.Mnemonic)
+
+	// 4. Defaults SRS (domain rules)
+	ex.EaseFactor = 2.5
+	ex.IntervalDays = 0
+	ex.Repetitions = 0
+	ex.Done = false
+	ex.NextReviewAt = time.Now() // Disponible immédiatement
+	ex.CompletedSteps = []int{}  // Aucune étape complétée
+
+	// 5. Defaults visuals si vide
+	if ex.ConceptualVisuals == nil {
+		ex.ConceptualVisuals = []models.VisualAid{}
+	}
+
+	// 6. Insert DB (store layer)
+	if err := store.CreateExercise(ex); err != nil {
+		return fmt.Errorf("create exercise in store: %w", err)
+	}
+
+	return nil
+}
+
+// UpdateExercise : Met à jour le contenu d'un exercice existant
+func (s *ExerciseService) UpdateExercise(ex *models.Exercise) error {
+	// 1. Validation ID
+	if err := exercise.ValidateID(ex.ID); err != nil {
+		return fmt.Errorf("invalid exercise ID: %w", err)
+	}
+
+	// 2. Validation domaine (business rules)
+	if err := exercise.ValidateExerciseInput(ex.Title, ex.Difficulty, ex.Domain); err != nil {
+		return fmt.Errorf("validation failed: %w", err)
+	}
+
+	// 3. Validation contenu
+	if len(ex.Content) > 50000 {
+		return fmt.Errorf("content too large: max 50KB")
+	}
+
+	// 4. Trim whitespace
+	ex.Title = strings.TrimSpace(ex.Title)
+	ex.Description = strings.TrimSpace(ex.Description)
+	ex.Mnemonic = strings.TrimSpace(ex.Mnemonic)
+
+	// 5. Vérifie existence + récupère données SRS à préserver
+	existing, err := store.FindExercise(ex.ID)
+	if err != nil {
+		return fmt.Errorf("find existing exercise: %w", err)
+	}
+	if existing == nil {
+		return fmt.Errorf("exercise %d not found", ex.ID)
+	}
+
+	// 6. ⚠️ PRÉSERVE les données SRS (pas de reset !)
+	ex.EaseFactor = existing.EaseFactor
+	ex.IntervalDays = existing.IntervalDays
+	ex.Repetitions = existing.Repetitions
+	ex.Done = existing.Done
+	ex.NextReviewAt = existing.NextReviewAt
+	ex.LastReviewed = existing.LastReviewed
+	ex.SkippedCount = existing.SkippedCount
+	ex.LastSkipped = existing.LastSkipped
+
+	// 7. ⚠️ PRÉSERVE completed_steps (progression utilisateur)
+	ex.CompletedSteps = existing.CompletedSteps
+
+	// 8. Update DB (store layer - UPDATE contenu uniquement)
+	if err := store.UpdateExercise(ex); err != nil {
+		return fmt.Errorf("update exercise in store: %w", err)
+	}
+
+	return nil
 }
 
 // ReviewExercise : Applique SRS + Log historique
@@ -129,15 +224,6 @@ func (s *ExerciseService) GetAllExercises() ([]models.Exercise, error) {
 }
 
 // GetExerciseStats : Stats par vue (délègue à store)
-func (s *ExerciseService) GetExerciseStats() map[string]int {
-	return map[string]int{
-		"urgent":   store.CountByView("urgent"),
-		"today":    store.CountByView("today"),
-		"upcoming": store.CountByView("upcoming"),
-		"active":   store.CountByView("active"),
-		"new":      store.CountByView("new"),
-	}
-}
 
 // GetExerciseHistory : Historique d'un exercice
 func (s *ExerciseService) GetExerciseHistory(
@@ -149,4 +235,38 @@ func (s *ExerciseService) GetExerciseHistory(
 		return nil, fmt.Errorf("get history for exercise %d: %w", exerciseID, err)
 	}
 	return history, nil
+}
+
+// DeleteExercise : Soft delete d'un exercice (préserve l'historique)
+func (s *ExerciseService) DeleteExercise(id int) error {
+	// 1. Validation ID (règle métier)
+	if err := exercise.ValidateID(id); err != nil {
+		return fmt.Errorf("invalid exercise ID: %w", err)
+	}
+
+	// 2. Vérifie existence (optionnel mais plus propre pour message d'erreur)
+	ex, err := store.FindExercise(id)
+	if err != nil {
+		return fmt.Errorf("find exercise before delete: %w", err)
+	}
+	if ex == nil {
+		return fmt.Errorf("exercise %d not found", id)
+	}
+
+	// 3. Soft delete via store
+	if err := store.DeleteExercise(id); err != nil {
+		return fmt.Errorf("delete exercise in store: %w", err)
+	}
+
+	return nil
+}
+
+func (s *ExerciseService) RestoreExercise(id int) error {
+	if err := exercise.ValidateID(id); err != nil {
+		return fmt.Errorf("invalid exercise ID: %w", err)
+	}
+	if err := store.RestoreExercise(id); err != nil {
+		return fmt.Errorf("restore exercise in store: %w", err)
+	}
+	return nil
 }

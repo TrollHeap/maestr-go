@@ -50,9 +50,12 @@ type Exercise struct {
 }
 
 type ExerciseFilter struct {
-	View       string // "all", "urgent", "today", "upcoming", "active", "new"
-	Domain     string
-	Difficulty int
+	Status     string // "in_progress", "mastered", "" (tous)
+	Domain     string // "Go", "Algorithms", "" (tous)
+	Difficulty int    // 1-4, 0 = tous
+
+	Query string // 🔍 texte de recherche
+	Sort  string // "title", "difficulty", "domain", "" (default)
 }
 
 // ========================================
