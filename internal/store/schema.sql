@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS exercises (
 CREATE INDEX IF NOT EXISTS idx_next_review ON exercises(next_review_date, done, deleted);
 CREATE INDEX IF NOT EXISTS idx_domain ON exercises(domain, deleted);
 CREATE INDEX IF NOT EXISTS idx_done ON exercises(done) WHERE deleted = 0;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_title ON exercises(title) WHERE deleted = 0;
 
 -- ============================================
 -- TABLE : SESSIONS

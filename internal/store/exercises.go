@@ -15,33 +15,26 @@ func GetFiltered(filter models.ExerciseFilter) ([]models.Exercise, error) {
               FROM exercises WHERE deleted = 0`
 
 	args := []interface{}{}
-	today := todayInt()
 
-	// Filtres dynamiques (YYYYMMDD)
-	switch filter.View {
-	case "urgent":
-		query += " AND done = 1 AND next_review_date < ?"
-		args = append(args, today)
-	case "today":
-		tomorrow := addDays(today, 1)
-		query += " AND done = 1 AND next_review_date >= ? AND next_review_date < ?"
-		args = append(args, today, tomorrow)
-	case "upcoming":
-		tomorrow := addDays(today, 1)
-		in3days := addDays(today, 3)
-		query += " AND done = 1 AND next_review_date >= ? AND next_review_date < ?"
-		args = append(args, tomorrow, in3days)
-	case "active":
-		query += " AND done = 0 AND completed_steps != '[]'"
-	case "new":
-		query += " AND done = 0 AND (completed_steps = '[]' OR completed_steps IS NULL)"
+	// ✅ FILTRES CONTENU (pas de temps)
+
+	// 1. Statut (done)
+	if filter.Status != "" {
+		switch filter.Status {
+		case "in_progress":
+			query += " AND done = 0"
+		case "mastered":
+			query += " AND done = 1"
+		}
 	}
 
+	// 2. Domaine
 	if filter.Domain != "" {
 		query += " AND domain = ?"
 		args = append(args, filter.Domain)
 	}
 
+	// 3. Difficulté
 	if filter.Difficulty > 0 {
 		query += " AND difficulty = ?"
 		args = append(args, filter.Difficulty)
@@ -141,10 +134,93 @@ func GetAll() []models.Exercise {
 	return exercises
 }
 
-// CountByView : Compte exercices par vue
-func CountByView(view string) int {
-	exercises, _ := GetFiltered(models.ExerciseFilter{View: view})
-	return len(exercises)
+// CreateExercise : INSERT nouveau + RETURNING id
+func CreateExercise(ex *models.Exercise) error {
+	// 1. Serialize JSON
+	stepsJSON, err := json.Marshal(ex.Steps)
+	if err != nil {
+		return fmt.Errorf("marshal steps: %w", err)
+	}
+
+	visualsJSON := "[]" // Vide par défaut
+	if len(ex.ConceptualVisuals) > 0 {
+		data, _ := json.Marshal(ex.ConceptualVisuals)
+		visualsJSON = string(data)
+	}
+
+	// 2. Dates
+	now := todayInt() // YYYYMMDD
+
+	// 3. INSERT avec RETURNING id (SQLite 3.35+)
+	query := `
+        INSERT INTO exercises (
+            title, description, domain, difficulty,
+            content, mnemonic, conceptual_visuals,
+            steps, completed_steps,
+            done, next_review_date,
+            ease_factor, interval_days, repetitions,
+            deleted, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        RETURNING id
+    `
+
+	err = db.QueryRow(query,
+		ex.Title, ex.Description, ex.Domain, ex.Difficulty,
+		ex.Content, ex.Mnemonic, visualsJSON,
+		stepsJSON, "[]", // completed_steps vide
+		0,         // done = false
+		now,       // next_review_date = aujourd'hui
+		2.5, 0, 0, // ease_factor, interval, repetitions (défauts SRS)
+		0, now, now, // deleted, created_at, updated_at
+	).Scan(&ex.ID)
+	if err != nil {
+		// Check contrainte UNIQUE (si tu l'ajoutes)
+		if err.Error() == "UNIQUE constraint failed: exercises.title" {
+			return fmt.Errorf("un exercice avec ce titre existe déjà")
+		}
+		return fmt.Errorf("insert exercise: %w", err)
+	}
+
+	return nil
+}
+
+// UpdateExercise : UPDATE contenu SANS toucher aux données SRS
+func UpdateExercise(ex *models.Exercise) error {
+	// 1. Serialize JSON
+	stepsJSON, _ := json.Marshal(ex.Steps)
+	visualsJSON, _ := json.Marshal(ex.ConceptualVisuals)
+
+	// 2. UPDATE (trigger met à jour updated_at automatiquement)
+	query := `
+        UPDATE exercises SET
+            title = ?,
+            description = ?,
+            domain = ?,
+            difficulty = ?,
+            content = ?,
+            mnemonic = ?,
+            conceptual_visuals = ?,
+            steps = ?
+        WHERE id = ? AND deleted = 0
+    `
+
+	result, err := db.Exec(query,
+		ex.Title, ex.Description, ex.Domain, ex.Difficulty,
+		ex.Content, ex.Mnemonic, visualsJSON,
+		stepsJSON,
+		ex.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("update exercise: %w", err)
+	}
+
+	// 3. Check si exercice trouvé
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("exercice %d introuvable ou supprimé", ex.ID)
+	}
+
+	return nil
 }
 
 // GetNextDueExercise : Prochain exercice à réviser
@@ -231,4 +307,69 @@ func GetProgressHistory(exerciseID int, limit int) ([]map[string]interface{}, er
 	}
 
 	return history, nil
+}
+
+// DeleteExercise : soft delete (marque deleted = 1, deleted_at = today)
+func DeleteExercise(id int) error {
+	today := todayInt()
+
+	query := `
+        UPDATE exercises
+        SET deleted = 1,
+            updated_at = ?
+        WHERE id = ? AND deleted = 0
+    `
+
+	result, err := db.Exec(query, today, id)
+	if err != nil {
+		return fmt.Errorf("delete exercise: %w", err)
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("exercise %d not found or already deleted", id)
+	}
+
+	return nil
+}
+
+// RestoreExercise : restaure un exercice soft-deleted (optionnel)
+func RestoreExercise(id int) error {
+	today := todayInt()
+
+	query := `
+        UPDATE exercises
+        SET deleted = 0,
+            updated_at = ?
+        WHERE id = ? AND deleted = 1
+    `
+
+	result, err := db.Exec(query, today, id)
+	if err != nil {
+		return fmt.Errorf("restore exercise: %w", err)
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("exercise %d not found or not deleted", id)
+	}
+
+	return nil
+}
+
+// HardDeleteExercise : suppression définitive (si un jour tu veux purger)
+func HardDeleteExercise(id int) error {
+	query := `DELETE FROM exercises WHERE id = ?`
+
+	result, err := db.Exec(query, id)
+	if err != nil {
+		return fmt.Errorf("hard delete exercise: %w", err)
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("exercise %d not found", id)
+	}
+
+	return nil
 }
