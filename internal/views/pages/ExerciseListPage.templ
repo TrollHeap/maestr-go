@@ -1,0 +1,125 @@
+// internal/views/pages/exercises.templ
+package pages
+
+import (
+	"maestro/internal/models"
+	"maestro/internal/views/components"
+	"maestro/internal/views/layouts"
+)
+
+templ ExerciseListPage(
+	exercises []models.Exercise,
+	filter models.ExerciseFilter,
+	total int,
+) {
+	@layouts.Base("Exercices - Maestro Terminal") {
+		<div class="relative min-h-[calc(100vh-4rem)] bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50">
+			<!-- Overlay scan -->
+			<div class="pointer-events-none absolute inset-0 overflow-hidden">
+				<div class="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-sky-400/40 to-transparent top-20 animate-[pulse_2s_ease-in-out_infinite]"></div>
+				<div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.10),_transparent_55%)]"></div>
+			</div>
+			<div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+				<!-- Command Bar -->
+				<header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+					<div class="space-y-3">
+						<div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-sky-500/10 border border-sky-400/40 text-[0.7rem] font-mono text-sky-300 tracking-widest">
+							<span class="inline-block h-2 w-2 rounded-full bg-sky-400 animate-pulse"></span>
+							<span>&gt; EXERCICES DATABASE</span>
+							<span class="opacity-60">|</span>
+							<span>STATUS: <span class="animate-pulse">ONLINE</span></span>
+						</div>
+						<h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-50">
+							📚 Bibliothèque d'exercices
+						</h1>
+						<p class="text-xs text-slate-400">
+							{ total } exercice(s) dans la bibliothèque.
+						</p>
+					</div>
+					<div class="flex flex-col items-stretch sm:items-end gap-3">
+						<!-- Search + Filters -->
+						<form class="flex flex-wrap items-center gap-2">
+							<!-- Search -->
+							<div class="relative">
+								<input
+									type="text"
+									name="q"
+									value={ filter.Query }
+									placeholder="Rechercher par titre, domaine..."
+									class="w-64 rounded-full border border-slate-700 bg-slate-950/60 px-9 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/40"
+									hx-get="/exercises/list"
+									hx-target="#exercise-list"
+									hx-trigger="keyup changed delay:300ms"
+									hx-include="closest form"
+								/>
+								<span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-500 text-sm">🔍</span>
+							</div>
+							<!-- Domain dropdown -->
+							@components.FilterDropdown(
+								"Domaine",     // label
+								"domain",      // param
+								filter.Domain, // current
+								map[string]string{
+									"":             "Tous domaines",
+									"Go":           "Go",
+									"Algorithms":   "Algorithms",
+									"Architecture": "Architecture",
+									"Security":     "Security",
+									"DevOps":       "DevOps",
+								},
+								filter.Query,      // q
+								filter.Status,     // status
+								filter.Domain,     // domain
+								filter.Difficulty, // difficulty
+								filter.Sort,       // sort
+							)
+							<!-- Status pills -->
+							<div class="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900/80 px-1.5 py-1">
+								@components.FilterPill("Tous", "", "status", filter.Status == "")
+								@components.FilterPill("En cours", "in_progress", "status", filter.Status == "in_progress")
+								@components.FilterPill("Maîtrisés", "mastered", "status", filter.Status == "mastered")
+							</div>
+							<!-- Difficulty pills -->
+							<div class="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900/80 px-1.5 py-1">
+								@components.FilterPill("Toutes diff.", "", "difficulty", filter.Difficulty == 0)
+								@components.FilterPill("D1–D2", "2", "difficulty", filter.Difficulty == 2)
+								@components.FilterPill("D3", "3", "difficulty", filter.Difficulty == 3)
+								@components.FilterPill("D4", "4", "difficulty", filter.Difficulty == 4)
+							</div>
+						</form>
+						<!-- Bouton créer -->
+						<a
+							href="/exercises/new"
+							hx-boost="true"
+							class="inline-flex items-center justify-center gap-2 rounded-full border border-purple-500/60 bg-purple-900/40 px-5 py-2 text-xs font-mono tracking-widest uppercase text-purple-200 hover:bg-purple-800/60 hover:border-purple-400 transition-colors"
+						>
+							<span class="text-lg">➕</span>
+							<span>NOUVEL EXERCICE</span>
+						</a>
+					</div>
+				</header>
+				<!-- Résumé filtre courant -->
+				<div class="flex items-center justify-between text-[0.7rem] text-slate-400">
+					<span>
+						Affichage de <span class="text-sky-300 font-semibold">{ len(exercises) }</span> / { total } exercice(s)
+					</span>
+					if filter.Status != "" || filter.Domain != "" || filter.Difficulty != 0 || filter.Query != "" || filter.Sort != "" {
+						<button
+							class="inline-flex items-center gap-1 text-slate-400 hover:text-slate-200"
+							hx-get="/exercises/list"
+							hx-target="#exercise-list"
+							hx-swap="innerHTML"
+						>
+							<span>Réinitialiser les filtres</span>
+							<span class="text-xs">✕</span>
+						</button>
+					}
+				</div>
+				<!-- Liste exercices (HTMX target) -->
+				<section id="exercise-list" class="pb-8">
+					@components.ExerciseList(exercises)
+				</section>
+			</div>
+		</div>
+	}
+}

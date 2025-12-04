@@ -6,6 +6,7 @@ import (
 	"maestro/internal/views/components"
 	"maestro/internal/views/layouts"
 	"maestro/internal/views/utils"
+	"strconv"
 )
 
 // ExerciseDetail - Page complète exercice (avec layout HTML)
@@ -41,6 +42,47 @@ templ ExerciseDetailContent(ex models.Exercise, fromSession bool, sessionID stri
 		<div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
 			<!-- Sidebar Sticky -->
 			<aside class="exercise-sidebar lg:col-span-4 space-y-5">
+				<div class="flex items-center justify-center gap-4">
+					<a
+						href="/exercises"
+						hx-boost="true"
+						class="inline-flex items-center gap-1.5 rounded-full border border-sky-500/40 bg-sky-900/30 px-3 py-1.5 
+           text-xs font-mono tracking-widest uppercase text-sky-200 
+           hover:bg-sky-800/50 hover:border-sky-400/60 transition-all"
+					>
+						<span class="text-xl">←</span>
+						<span>Retour</span>
+					</a>
+					<div class="sticky flex items-center justify-center">
+						<div class="inline-flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-900/80 px-1.5 py-1">
+							<a
+								href={ templ.URL("/exercise/" + strconv.Itoa(ex.ID) + "/edit") }
+								hx-boost="true"
+								class="inline-flex items-center gap-1.5 rounded-full bg-emerald-900/60 px-3 py-1.5 
+                   text-xs font-mono tracking-widest uppercase text-emerald-200 
+                   hover:bg-emerald-800/80 hover:border-emerald-400 border border-emerald-500/60 
+                   transition-all"
+							>
+								<span>✏️</span>
+								<span>Éditer</span>
+							</a>
+							<button
+								type="button"
+								hx-post={ templ.URL("/exercise/" + strconv.Itoa(ex.ID) + "/delete") }
+								hx-confirm="Supprimer cet exercice ? Cette action est irréversible."
+								hx-target="body"
+								hx-swap="none"
+								class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 
+                   text-xs font-mono tracking-widest uppercase text-rose-200 
+                   hover:bg-rose-900/70 hover:border-rose-400 border border-transparent 
+                   transition-all"
+							>
+								<span>🗑️</span>
+								<span>Supprimer</span>
+							</button>
+						</div>
+					</div>
+				</div>
 				<!-- Header Info -->
 				<div class="rounded-2xl border border-slate-800 bg-slate-950/70 backdrop-blur-xl p-5 space-y-3">
 					<div class="flex items-start justify-between gap-3">
@@ -96,13 +138,6 @@ templ ExerciseDetailContent(ex models.Exercise, fromSession bool, sessionID stri
 						>
 							⚡ Review Now
 						</button>
-						<a
-							href="/exercises"
-							class="action-btn action-btn--secondary block w-full text-center rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2.5 text-sm font-medium text-slate-200 hover:bg-slate-800 transition-all"
-							hx-boost="true"
-						>
-							← Retour Liste
-						</a>
 					</div>
 				</div>
 			</aside>
@@ -126,16 +161,6 @@ templ ExerciseDetailContent(ex models.Exercise, fromSession bool, sessionID stri
 						<span>📖</span>
 						<span>Contenu</span>
 					</button>
-					<!-- if fromSession { -->
-					<!-- 	<button -->
-					<!-- 		class="tab-btn inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-mono text-slate-300 hover:bg-slate-800 transition-all" -->
-					<!-- 		data-tab="review" -->
-					<!-- 		onclick="switchTab('review')" -->
-					<!-- 	> -->
-					<!-- 		<span>⚡</span> -->
-					<!-- 		<span>Review</span> -->
-					<!-- 	</button> -->
-					<!-- } -->
 				</div>
 				<!-- Tab Content -->
 				<div class="tab-content-wrapper rounded-2xl border border-slate-800 bg-slate-950/70 backdrop-blur-xl p-6">

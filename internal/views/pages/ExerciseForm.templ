@@ -1,0 +1,211 @@
+package pages
+
+import (
+	"maestro/internal/models"
+	"maestro/internal/views/layouts"
+	"maestro/internal/views/utils"
+)
+
+// ExerciseForm : Formulaire création/édition
+templ ExerciseForm(ex *models.Exercise) {
+	@layouts.Base(utils.GetFormTitle(ex)) {
+		<div class="max-w-4xl mx-auto p-6">
+			<!-- Header -->
+			<div class="mb-8">
+				<h1 class="text-3xl font-bold text-slate-100 mb-2">
+					if ex == nil {
+						✨ Créer un nouvel exercice
+					} else {
+						✏️ Éditer l'exercice
+					}
+				</h1>
+				<p class="text-slate-400">
+					if ex == nil {
+						Remplissez le formulaire pour créer un nouveau concept à mémoriser
+					} else {
+						Modifiez les informations de l'exercice (le SRS est préservé)
+					}
+				</p>
+			</div>
+			<!-- Formulaire -->
+			<form
+				hx-post={ utils.GetFormAction(ex) }
+				hx-target="#form-errors"
+				hx-swap="innerHTML"
+				class="space-y-6"
+			>
+				<!-- Container erreurs -->
+				<div id="form-errors"></div>
+				<!-- 1. INFOS GÉNÉRALES -->
+				<div class="rounded-xl border border-slate-700 bg-slate-900/70 p-6">
+					<h2 class="text-lg font-bold text-slate-100 mb-4">📋 Informations générales</h2>
+					<!-- Titre -->
+					<div class="mb-4">
+						<label for="title" class="block text-sm font-medium text-slate-300 mb-2">
+							Titre <span class="text-rose-400">*</span>
+						</label>
+						<input
+							type="text"
+							id="title"
+							name="title"
+							value={ utils.GetStringValue(ex, "title") }
+							required
+							maxlength="200"
+							class="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2.5 text-slate-100 placeholder-slate-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+							placeholder="Ex: Différence entre Interface{} et any en Go"
+						/>
+					</div>
+					<!-- Description -->
+					<div class="mb-4">
+						<label for="description" class="block text-sm font-medium text-slate-300 mb-2">
+							Description courte
+						</label>
+						<input
+							type="text"
+							id="description"
+							name="description"
+							value={ utils.GetStringValue(ex, "description") }
+							maxlength="500"
+							class="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2.5 text-slate-100 placeholder-slate-500 focus:border-purple-500 focus:outline-none"
+							placeholder="Contexte ou utilité de cet exercice"
+						/>
+					</div>
+					<!-- Domaine & Difficulté -->
+					<div class="grid grid-cols-2 gap-4">
+						<!-- Domaine -->
+						<div>
+							<label for="domain" class="block text-sm font-medium text-slate-300 mb-2">
+								Domaine <span class="text-rose-400">*</span>
+							</label>
+							<select
+								id="domain"
+								name="domain"
+								required
+								class="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2.5 text-slate-100 focus:border-purple-500 focus:outline-none"
+							>
+								<option value="">Choisir...</option>
+								<option value="Go" selected?={ utils.IsDomainSelected(ex, "Go") }>Go</option>
+								<option value="Architecture" selected?={ utils.IsDomainSelected(ex, "Architecture") }>Architecture</option>
+								<option value="Database" selected?={ utils.IsDomainSelected(ex, "Database") }>Database</option>
+								<option value="Security" selected?={ utils.IsDomainSelected(ex, "Security") }>Security</option>
+								<option value="DevOps" selected?={ utils.IsDomainSelected(ex, "DevOps") }>DevOps</option>
+								<option value="Algorithms" selected?={ utils.IsDomainSelected(ex, "Algorithms") }>Algorithms</option>
+							</select>
+						</div>
+						<!-- Difficulté -->
+						<div>
+							<label for="difficulty" class="block text-sm font-medium text-slate-300 mb-2">
+								Difficulté <span class="text-rose-400">*</span>
+							</label>
+							<select
+								id="difficulty"
+								name="difficulty"
+								required
+								class="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2.5 text-slate-100 focus:border-purple-500 focus:outline-none"
+							>
+								<option value="">Choisir...</option>
+								<option value="1" selected?={ utils.IsDifficultySelected(ex, 1) }>1 - Facile</option>
+								<option value="2" selected?={ utils.IsDifficultySelected(ex, 2) }>2 - Moyen</option>
+								<option value="3" selected?={ utils.IsDifficultySelected(ex, 3) }>3 - Difficile</option>
+								<option value="4" selected?={ utils.IsDifficultySelected(ex, 4) }>4 - Expert</option>
+							</select>
+						</div>
+					</div>
+				</div>
+				<!-- 2. CONTENU -->
+				<div class="rounded-xl border border-slate-700 bg-slate-900/70 p-6">
+					<h2 class="text-lg font-bold text-slate-100 mb-4">📝 Contenu (Markdown)</h2>
+					<!-- Contenu principal -->
+					<div class="mb-4">
+						<label for="content" class="block text-sm font-medium text-slate-300 mb-2">
+							Contenu principal <span class="text-rose-400">*</span>
+						</label>
+						<textarea
+							id="content"
+							name="content"
+							required
+							rows="12"
+							maxlength="50000"
+							class="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2.5 text-slate-100 font-mono text-sm placeholder-slate-500 focus:border-purple-500 focus:outline-none"
+						>{ utils.GetStringValue(ex, "content") }</textarea>
+						<p class="mt-1 text-xs text-slate-500">Supporte Markdown complet (code, listes, etc.)</p>
+					</div>
+					<!-- Mnémonique -->
+					<div class="mb-4">
+						<label for="mnemonic" class="block text-sm font-medium text-slate-300 mb-2">
+							🧠 Mnémonique (optionnel)
+						</label>
+						<input
+							type="text"
+							id="mnemonic"
+							name="mnemonic"
+							value={ utils.GetStringValue(ex, "mnemonic") }
+							maxlength="200"
+							class="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2.5 text-slate-100 placeholder-slate-500 focus:border-purple-500 focus:outline-none"
+							placeholder="Ex: ANY = Alias Nouvelle Yearning"
+						/>
+					</div>
+					<!-- Visuels ASCII -->
+					<div>
+						<label for="conceptual_visuals" class="block text-sm font-medium text-slate-300 mb-2">
+							🎨 Visuels conceptuels (optionnel)
+						</label>
+						<textarea
+							id="conceptual_visuals"
+							name="conceptual_visuals"
+							rows="10"
+							class="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2.5 text-slate-100 font-mono text-xs placeholder-slate-500 focus:border-purple-500 focus:outline-none"
+							placeholder="Diagrammes ASCII pour visualiser le concept.&#10;&#10;Séparez plusieurs visuels par une ligne contenant uniquement: ---&#10;&#10;Exemple:&#10;┌──────────┐&#10;│  Stack   │&#10;├──────────┤&#10;│   TOP    │&#10;└──────────┘&#10;Caption: Structure LIFO&#10;---&#10;(autre visuel ici)"
+						>{ utils.GetVisualsValue(ex) }</textarea>
+						<p class="mt-1 text-xs text-slate-500">
+							<p class="mt-1 text-xs text-slate-500">
+								<span class="font-semibold">Format :</span>
+								Diagrammes ASCII séparés par de
+								<code class="px-1 py-0.5 bg-slate-800 rounded">---</code>
+								Ajoutez
+								de <code class="px-1 py-0.5 bg-slate-800 rounded">Caption: votre texte</code>
+								à la fin de chaque visuel.
+							</p>
+						</p>
+					</div>
+				</div>
+				<!-- 3. STEPS -->
+				<div class="rounded-xl border border-slate-700 bg-slate-900/70 p-6">
+					<h2 class="text-lg font-bold text-slate-100 mb-4">✅ Étapes (optionnel)</h2>
+					<div>
+						<label for="steps" class="block text-sm font-medium text-slate-300 mb-2">
+							Liste des étapes (une par ligne)
+						</label>
+						<textarea
+							id="steps"
+							name="steps"
+							rows="6"
+							class="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2.5 text-slate-100 font-mono text-sm placeholder-slate-500 focus:border-purple-500 focus:outline-none"
+							placeholder="Lire la doc officielle&#10;Créer un exemple de code&#10;Tester les différences&#10;Expliquer à quelqu'un"
+						>{ utils.GetStepsValue(ex) }</textarea>
+						<p class="mt-1 text-xs text-slate-500">Chaque ligne devient une étape cochable</p>
+					</div>
+				</div>
+				<!-- ACTIONS -->
+				<div class="flex items-center justify-between border-t border-slate-800 pt-6">
+					<a
+						href={ templ.URL(utils.GetCancelURL(ex)) }
+						class="inline-flex items-center px-4 py-2.5 rounded-lg border border-slate-700 bg-slate-900/60 text-slate-300 hover:bg-slate-800/80 transition-colors"
+					>
+						← Annuler
+					</a>
+					<button
+						type="submit"
+						class="inline-flex items-center px-6 py-2.5 rounded-lg border border-purple-500/60 bg-purple-900/40 text-purple-200 font-semibold hover:bg-purple-800/60 transition-colors"
+					>
+						if ex == nil {
+							✨ Créer l'exercice
+						} else {
+							💾 Enregistrer les modifications
+						}
+					</button>
+				</div>
+			</form>
+		</div>
+	}
+}
