@@ -5,6 +5,7 @@ import (
 	"maestro/internal/models"
 	"maestro/internal/service"
 	"maestro/internal/views/layouts"
+	"maestro/internal/views/ui"
 	"time"
 )
 
@@ -17,41 +18,19 @@ templ Dashboard(
 	upcoming []models.Exercise,
 ) {
 	@layouts.Base("Dashboard - Maestro Terminal") {
-		<div class="relative min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50">
-			<!-- Terminal Overlay Effects -->
+		<div class="relative min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-50">
+			<!-- ✅ IDENTIQUE DASHBOARD: Terminal Overlay Effects -->
 			<div class="pointer-events-none absolute inset-0 overflow-hidden">
 				<div class="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-sky-400/60 to-transparent top-20 animate-[pulse_2s_ease-in-out_infinite]"></div>
-				<div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.08),_transparent_50%)]"></div>
-				<div class="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,.05)_2px,rgba(0,0,0,.05)_4px)] opacity-20"></div>
+				<div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.15),_transparent_50%)]"></div>
+				<div class="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,.05)_2px,rgba(0,0,0,.05)_4px)] opacity-30"></div>
 				<div class="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
 				<div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-sky-500/5 rounded-full blur-3xl"></div>
 			</div>
-			<div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+			<div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 				<!-- Hero Terminal Header -->
-				<header class="space-y-4">
-					<div class="flex flex-wrap items-center gap-3 text-xs font-mono">
-						<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-sky-500/10 border border-sky-400/40 text-sky-300 tracking-wider shadow-sm shadow-slate-950/40">
-							<span class="inline-block h-2 w-2 rounded-full bg-sky-400 animate-pulse shadow-[0_0_6px_rgba(56,189,248,0.8)]"></span>
-							<span>&gt; ANALYTICS.DASHBOARD</span>
-						</div>
-						<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/80 border border-slate-800 text-slate-400">
-							<span>{ getGreeting() }</span>
-						</div>
-						if stats.StreakDays > 0 {
-							<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-400/40 text-amber-300 shadow-sm shadow-slate-950/40">
-								<span class="animate-pulse">🔥</span>
-								<span>STREAK: { fmt.Sprint(stats.StreakDays) }d</span>
-							</div>
-						}
-					</div>
-					<div class="space-y-2">
-						<h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-50">
-							System Overview
-						</h1>
-						<p class="text-slate-400 font-mono text-sm">
-							// Real-time learning analytics
-						</p>
-					</div>
+				<header class="mb-8">
+					@ui.TerminalHeaderWithDate("ANALYTICS.DASHBOARD", time.Now(), ui.HeaderAmber)
 				</header>
 				<!-- KPI Grid -->
 				<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -127,46 +106,6 @@ templ Dashboard(
 								if !stats.NextReviewDate.IsZero() {
 									@QuickStat("Next Review", formatDateShort(stats.NextReviewDate), "📅")
 								}
-							</div>
-						</section>
-						<!-- Quick Navigation -->
-						<section class="rounded-2xl border border-slate-800 bg-slate-950/80 p-6 shadow-sm shadow-slate-950/40 transition-all hover:border-sky-500/60 hover:shadow-lg hover:shadow-sky-900/40">
-							<h2 class="text-sm font-mono uppercase tracking-wider text-slate-50 mb-4">
-								QUICK_NAV
-							</h2>
-							<div class="space-y-2">
-								if todayCount > 0 {
-									<a
-										href="/session/builder"
-										class="block px-4 py-3 rounded-lg border border-purple-500/60 bg-purple-900/50 text-purple-200 font-mono text-sm transition-all hover:bg-purple-800/70 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-900/40"
-										hx-boost="true"
-									>
-										⚡ START SESSION [{ fmt.Sprint(todayCount) }]
-									</a>
-								}
-								if overdueCount > 0 {
-									<a
-										href="/planner?view=urgent"
-										class="block px-4 py-3 rounded-lg border border-red-500/60 bg-red-900/50 text-red-200 font-mono text-sm transition-all hover:bg-red-800/70 hover:border-red-400 hover:shadow-lg hover:shadow-red-900/40"
-										hx-boost="true"
-									>
-										⚠ FIX OVERDUE [{ fmt.Sprint(overdueCount) }]
-									</a>
-								}
-								<a
-									href="/planner"
-									class="block px-4 py-3 rounded-lg border border-slate-700 bg-slate-900/80 text-slate-300 font-mono text-sm transition-all hover:bg-slate-800 hover:border-slate-600"
-									hx-boost="true"
-								>
-									📅 VIEW PLANNER
-								</a>
-								<a
-									href="/exercises"
-									class="block px-4 py-3 rounded-lg border border-slate-700 bg-slate-900/80 text-slate-300 font-mono text-sm transition-all hover:bg-slate-800 hover:border-slate-600"
-									hx-boost="true"
-								>
-									📚 BROWSE LIBRARY
-								</a>
 							</div>
 						</section>
 					</div>

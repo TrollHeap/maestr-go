@@ -5,7 +5,7 @@ import (
 	"maestro/internal/models"
 	"maestro/internal/views/components"
 	"maestro/internal/views/layouts"
-	"maestro/internal/views/utils"
+	"maestro/internal/views/ui"
 	"strconv"
 )
 
@@ -89,41 +89,23 @@ templ ExerciseDetailContent(ex models.Exercise, fromSession bool, sessionID stri
 						<h2 class="exercise-title-compact text-lg font-bold text-slate-50 flex-1">
 							{ ex.Title }
 						</h2>
-						<span
-							class={
-								"badge inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold",
-								utils.GetStatusBadgeClassesGlow(ex.Done),
-							}
-						>
-							if ex.Done {
-								✓ Maîtrisé
-							} else {
-								⊙ En cours
-							}
-						</span>
+						<!-- ✅ BADGE STATUS REFACTORÉ -->
+						if ex.Done {
+							@ui.BadgeWithIcon("Maîtrisé", "✓", ui.BadgeStatus, ui.BadgeMD)
+						} else {
+							@ui.BadgeWithIcon("En cours", "⊙", ui.BadgeStatus, ui.BadgeMD)
+						}
 					</div>
 					<!-- Badges -->
 					<div class="exercise-badges-compact flex items-center gap-2">
-						<span
-							class={
-								"badge inline-flex items-center rounded-lg px-2 py-1 text-[0.65rem] font-medium",
-								utils.GetDomainBadgeClass(ex.Domain),
-							}
-						>
-							{ ex.Domain }
-						</span>
-						<span
-							class={
-								"badge inline-flex items-center rounded-lg px-2 py-1 text-[0.65rem] font-mono tracking-widest uppercase",
-								utils.GetDifficultyBadgeClass(ex.Difficulty),
-							}
-						>
-							D{ fmt.Sprintf("%d", ex.Difficulty) }
-						</span>
+						<!-- ✅ BADGE DOMAIN REFACTORÉ -->
+						@ui.Badge(ex.Domain, ui.BadgeDomain, ui.BadgeMD)
+						<!-- ✅ BADGE DIFFICULTY REFACTORÉ -->
+						@ui.Badge(fmt.Sprintf("D%d", ex.Difficulty), ui.BadgeDifficulty, ui.BadgeMD)
 					</div>
 				</div>
 				<!-- Progress Bar -->
-				@components.ProgressBar(len(ex.CompletedSteps), len(ex.Steps))
+				@ui.ProgressBar(len(ex.CompletedSteps), len(ex.Steps))
 				<!-- Steps List -->
 				@components.StepsFragmentWrapper(ex)
 				<!-- Quick Actions -->
@@ -166,7 +148,7 @@ templ ExerciseDetailContent(ex models.Exercise, fromSession bool, sessionID stri
 				<div class="tab-content-wrapper rounded-2xl border border-slate-800 bg-slate-950/70 backdrop-blur-xl p-6">
 					@VisualisationTab(ex)
 					@ContentTab(ex)
-					@ReviewTab(ex, fromSession, sessionID)
+					@components.ReviewTab(ex, fromSession, sessionID)
 				</div>
 			</main>
 		</div>
@@ -231,41 +213,26 @@ templ ContentTab(ex models.Exercise) {
 	</div>
 }
 
-templ ReviewTab(ex models.Exercise, fromSession bool, sessionID string) {
-	<div id="tab-review" class="tab-pane hidden space-y-5">
-		<h2 class="tab-title ...">
-			Révision SRS
-		</h2>
-		<div id="review-panel">
-			@components.ReviewPanel(ex, fromSession, sessionID)
-		</div>
-	</div>
-}
-
 // TabScript - Script pour gestion tabs
 templ TabScript() {
 	<script>
 		function switchTab(tabName) {
-			// Hide all tabs
 			document.querySelectorAll('.tab-pane').forEach(pane => {
 				pane.classList.add('hidden');
 				pane.classList.remove('active');
 			});
 
-			// Remove active from all buttons
 			document.querySelectorAll('.tab-btn').forEach(btn => {
 				btn.classList.remove('active', 'bg-slate-800', 'text-purple-300');
 				btn.classList.add('text-slate-300');
 			});
 
-			// Show target tab
 			const targetPane = document.getElementById('tab-' + tabName);
 			if (targetPane) {
 				targetPane.classList.remove('hidden');
 				targetPane.classList.add('active');
 			}
 
-			// Activate button
 			const targetBtn = document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
 			if (targetBtn) {
 				targetBtn.classList.add('active', 'bg-slate-800', 'text-purple-300');
