@@ -1,4 +1,4 @@
-// internal/views/components/exercise_card.templ
+// internal/views/components/ExerciseCard.templ
 package components
 
 import (
@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"maestro/internal/models"
-	"maestro/internal/views/utils"
+	"maestro/internal/views/ui"
 )
 
 templ ExerciseCard(ex models.Exercise) {
@@ -23,38 +23,20 @@ templ ExerciseCard(ex models.Exercise) {
 					</p>
 				}
 			</div>
-			<span
-				class={
-					"badge inline-flex items-center rounded-full px-2 py-0.5 text-[0.6rem] font-semibold",
-					utils.GetExerciseStatusBadgeClass(ex.Done),
-				}
-			>
-				if ex.Done {
-					✓ Maîtrisé
-				} else {
-					⊙ En cours
-				}
-			</span>
+			<!-- ✅ BADGE STATUS REFACTORÉ -->
+			if ex.Done {
+				@ui.BadgeWithIcon("Maîtrisé", "✓", ui.BadgeStatus, ui.BadgeSM)
+			} else {
+				@ui.BadgeWithIcon("En cours", "⊙", ui.BadgeStatus, ui.BadgeSM)
+			}
 		</div>
 		<!-- Badges / meta -->
 		<div class="flex items-center justify-between gap-2 mb-3">
 			<div class="flex items-center gap-1.5">
-				<span
-					class={
-						"inline-flex items-center rounded-lg px-2 py-0.5 text-[0.6rem] font-medium",
-						utils.GetDomainBadgeClass(ex.Domain),
-					}
-				>
-					{ ex.Domain }
-				</span>
-				<span
-					class={
-						"inline-flex items-center rounded-lg px-2 py-0.5 text-[0.6rem] font-mono tracking-widest uppercase",
-						utils.GetDifficultyBadgeClass(ex.Difficulty),
-					}
-				>
-					D{ fmt.Sprintf("%d", ex.Difficulty) }
-				</span>
+				<!-- ✅ BADGE DOMAIN REFACTORÉ -->
+				@ui.Badge(ex.Domain, ui.BadgeDomain, ui.BadgeSM)
+				<!-- ✅ BADGE DIFFICULTY REFACTORÉ -->
+				@ui.Badge(fmt.Sprintf("D%d", ex.Difficulty), ui.BadgeDifficulty, ui.BadgeSM)
 			</div>
 			<div class="text-[0.6rem] text-slate-400 text-right">
 				if !ex.NextReviewAt.IsZero() {
@@ -66,7 +48,7 @@ templ ExerciseCard(ex models.Exercise) {
 		</div>
 		<!-- Progress -->
 		<div class="mb-3">
-			@ProgressBar(len(ex.CompletedSteps), len(ex.Steps))
+			@ui.ProgressBar(len(ex.CompletedSteps), len(ex.Steps))
 		</div>
 		<!-- Footer actions -->
 		<div class="mt-auto flex items-center justify-between gap-2 pt-2 border-t border-slate-800">

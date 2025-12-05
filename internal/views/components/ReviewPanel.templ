@@ -5,6 +5,17 @@ import (
 	"maestro/internal/models"
 )
 
+templ ReviewTab(ex models.Exercise, fromSession bool, sessionID string) {
+	<div id="tab-review" class="tab-pane hidden space-y-5">
+		<h2 class="tab-title ...">
+			Révision SRS
+		</h2>
+		<div id="review-panel">
+			@ReviewPanel(ex, fromSession, sessionID)
+		</div>
+	</div>
+}
+
 templ ReviewPanel(ex models.Exercise, fromSession bool, sessionID string) {
 	<div class="review-panel space-y-6">
 		<!-- Stats SRS -->
