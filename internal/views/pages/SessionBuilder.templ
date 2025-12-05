@@ -5,34 +5,33 @@ import (
 	"maestro/internal/domain/session"
 	"maestro/internal/views/components"
 	"maestro/internal/views/layouts"
+	"maestro/internal/views/ui"
 )
 
 // SessionBuilder - Page choix énergie
 templ SessionBuilder(configs []session.Config) {
 	@layouts.Base("Nouvelle Session - Maestro") {
 		<!-- Background terminal + overlay scan -->
-		<div class="relative min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50">
-			<!-- Scan line -->
+		<div class="relative min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-50">
+			<!-- ✅ IDENTIQUE DASHBOARD: Terminal Overlay Effects -->
 			<div class="pointer-events-none absolute inset-0 overflow-hidden">
-				<div class="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent animate-[pulse_2s_ease-in-out_infinite] top-1/3"></div>
-				<div class="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(15,23,42,0)_0%,rgba(15,23,42,0.9)_100%)]"></div>
+				<div class="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-sky-400/60 to-transparent top-20 animate-[pulse_2s_ease-in-out_infinite]"></div>
+				<div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.15),_transparent_50%)]"></div>
+				<div class="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,.05)_2px,rgba(0,0,0,.05)_4px)] opacity-30"></div>
+				<div class="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
+				<div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-sky-500/5 rounded-full blur-3xl"></div>
 			</div>
-			<div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+			<div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 				<!-- Header -->
-				<div class="mb-10">
-					<div class="mb-4 inline-flex items-center gap-3 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-400/40 text-xs font-mono text-emerald-300 tracking-widest">
-						<span class="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-						<span>&gt; SESSION INITIALISATION</span>
-						<span class="opacity-60">|</span>
-						<span>STATUS: <span class="animate-pulse">READY</span></span>
-					</div>
-					<h1 class="text-3xl sm:text-4xl font-extrabold text-slate-50 mb-2 tracking-tight">
-						⚡ Nouvelle session
-					</h1>
-					<p class="text-slate-400">
-						Sélectionne ton niveau d'énergie pour adapter l'intensité de la session.
-					</p>
-				</div>
+				<header class="mb-8">
+					@ui.TerminalHeaderSimple("SESSION INITIALISATION", ui.HeaderSky)
+				</header>
+				<h1 class="text-3xl sm:text-4xl font-extrabold text-slate-50 mb-2 tracking-tight">
+					⚡ Nouvelle session
+				</h1>
+				<p class="text-slate-400">
+					Sélectionne ton niveau d'énergie pour adapter l'intensité de la session.
+				</p>
 				<!-- Energy Cards -->
 				<div class="grid gap-6 md:grid-cols-3 mb-10">
 					for _, config := range configs {

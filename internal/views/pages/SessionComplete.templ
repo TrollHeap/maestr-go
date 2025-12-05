@@ -11,14 +11,16 @@ import (
 // SessionComplete - Page résultats session
 templ SessionComplete(sessionID int64, completedCount int, duration time.Duration, completedAt time.Time, exerciseIDs []int) {
 	@layouts.Base("Session Complétée - Maestro") {
-		<div class="relative min-h-[calc(100vh-4rem)] bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-50">
-			<!-- Scan / overlay -->
+		<div class="relative min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-50">
+			<!-- ✅ IDENTIQUE DASHBOARD: Terminal Overlay Effects -->
 			<div class="pointer-events-none absolute inset-0 overflow-hidden">
-				<div class="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent top-20 animate-[pulse_2s_ease-in-out_infinite]"></div>
-				<div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.15),_transparent_55%)]"></div>
+				<div class="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-sky-400/60 to-transparent top-20 animate-[pulse_2s_ease-in-out_infinite]"></div>
+				<div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.15),_transparent_50%)]"></div>
+				<div class="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,.05)_2px,rgba(0,0,0,.05)_4px)] opacity-30"></div>
+				<div class="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
+				<div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-sky-500/5 rounded-full blur-3xl"></div>
 			</div>
-			<!-- Terminal header -->
-			<div class="relative z-10 border-b border-slate-800 bg-slate-950/90 backdrop-blur-md">
+			<div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 				<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
 					<div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-400/40 text-xs font-mono text-emerald-300 tracking-widest">
 						<span class="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
