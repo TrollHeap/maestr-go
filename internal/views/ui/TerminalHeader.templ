@@ -1,0 +1,79 @@
+// internal/views/ui/TerminalHeader.templ
+package ui
+
+import (
+	"fmt"
+	"maestro/internal/views/logic" // ← ✅ AJOUT IMPORT
+	"time"
+)
+
+type HeaderTheme string
+
+const (
+	HeaderSky     HeaderTheme = "sky"
+	HeaderEmerald HeaderTheme = "emerald"
+	HeaderPurple  HeaderTheme = "purple"
+	HeaderAmber   HeaderTheme = "amber"
+)
+
+type HeaderSegment struct {
+	Label string
+	Value string
+	Icon  string
+}
+
+// TerminalHeader - Header système avec pulse dot
+templ TerminalHeader(mainLabel string, segments []HeaderSegment, theme HeaderTheme, showPulse bool) {
+	<div class={ logic.GetHeaderClasses(string(theme)) }>
+		if showPulse {
+			<span class={ logic.GetPulseDotClasses(string(theme)) }></span>
+		}
+		<span>&gt; { mainLabel }</span>
+		for _, seg := range segments {
+			<span class="opacity-60">|</span>
+			if seg.Icon != "" {
+				<span>{ seg.Icon }</span>
+			}
+			<span>
+				if seg.Label != "" {
+					{ seg.Label }: 
+				}
+				if seg.Value != "" {
+					<span class="animate-pulse">{ seg.Value }</span>
+				}
+			</span>
+		}
+	</div>
+}
+
+// TerminalHeaderSimple - Version simplifiée sans segments
+templ TerminalHeaderSimple(mainLabel string, theme HeaderTheme) {
+	<div class={ logic.GetHeaderClasses(string(theme)) }>
+		<span class={ logic.GetPulseDotClasses(string(theme)) }></span>
+		<span>&gt; { mainLabel }</span>
+		<span class="opacity-60">|</span>
+		<span>STATUS: <span class="animate-pulse">ONLINE</span></span>
+	</div>
+}
+
+// TerminalHeaderWithDate - Header avec date (Planner use case)
+templ TerminalHeaderWithDate(mainLabel string, date time.Time, theme HeaderTheme) {
+	<div class={ logic.GetHeaderClasses(string(theme)) }>
+		<span class={ logic.GetPulseDotClasses(string(theme)) }></span>
+		<span>&gt; { mainLabel }</span>
+		<span class="opacity-60">|</span>
+		<span>DATE: { date.Format("2006-01-02") }</span>
+		<span class="opacity-60">|</span>
+		<span>STATUS: <span class="animate-pulse">ONLINE</span></span>
+	</div>
+}
+
+// TerminalHeaderWithID - Header avec ID (ExerciseDetail use case)
+templ TerminalHeaderWithID(title string, id int, theme HeaderTheme) {
+	<div class={ logic.GetHeaderClasses(string(theme)) }>
+		<span class={ logic.GetPulseDotClasses(string(theme)) }></span>
+		<span>&gt; { title } #{ fmt.Sprintf("%03d", id) }</span>
+		<span class="opacity-60">|</span>
+		<span>STATUS: <span class="animate-pulse">ONLINE</span></span>
+	</div>
+}
