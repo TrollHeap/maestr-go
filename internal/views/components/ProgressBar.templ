@@ -38,3 +38,27 @@ templ ProgressBar(completed, total int) {
 		</div>
 	</div>
 }
+
+templ ProgressBarInline(completed, total int) {
+	<div class="progress-section rounded-2xl border border-slate-700/80 bg-slate-900/80 backdrop-blur-xl p-4 space-y-2">
+		<div class="flex items-center justify-between text-[11px] font-mono">
+			<span class="text-slate-400">
+				{ fmt.Sprintf("%d/%d", completed, total) }
+			</span>
+			<span
+				class={
+					"font-semibold",
+					utils.GetProgressTextColor(completed, total),
+				}
+			>
+				{ fmt.Sprintf("%d%%", utils.CalculateProgressPercent(completed, total)) }
+			</span>
+		</div>
+		<div class="relative h-1.5 rounded-full bg-slate-800 overflow-hidden">
+			<div
+				class="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500"
+				style={ fmt.Sprintf("width: %d%%", utils.CalculateProgressPercent(completed, total)) }
+			></div>
+		</div>
+	</div>
+}
