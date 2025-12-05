@@ -10,8 +10,8 @@ templ Base(title string) {
 			<title>{ title } | CodeGrunt</title>
 			<!-- CSS Compilé -->
 			<link rel="stylesheet" href="/public/css/style.css"/>
-			<!-- HTMX -->
-			<script src="/public/js/htmx.min.js" defer></script>
+			<!-- ✅ HTMX 2.0.4 (14KB vs 46KB avant) -->
+			<script src="/public/js/htmx-2.0.4.min.js" defer></script>
 			<!-- Fonts Preconnect (Performance) -->
 			<link rel="preconnect" href="https://fonts.googleapis.com"/>
 			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -23,7 +23,6 @@ templ Base(title string) {
 					<div class="flex items-center justify-between h-16">
 						<!-- Logo -->
 						<a href="/" class="flex items-center gap-3 group" hx-boost="true">
-							<!-- Image avec toutes les contraintes -->
 							<img
 								src="/public/assets/icon-orc.svg"
 								alt="Codegrunt"
@@ -99,25 +98,25 @@ templ Base(title string) {
 			</footer>
 			<!-- Scripts -->
 			<script>
-				// Mobile Menu Toggle
-				function toggleMobileMenu() {
-					const menu = document.getElementById('mobileMenu');
-					menu.classList.toggle('hidden');
-				}
-				
-				// HTMX: Scroll to top après navigation
-				document.body.addEventListener('htmx:afterSwap', function(evt) {
-					window.scrollTo({ top: 0, behavior: 'smooth' });
-				});
-				
-				// Close mobile menu on navigation
-				document.body.addEventListener('htmx:beforeRequest', function(evt) {
-					const menu = document.getElementById('mobileMenu');
-					if (!menu.classList.contains('hidden')) {
-						menu.classList.add('hidden');
-					}
-				});
-			</script>
+                // Mobile Menu Toggle
+                function toggleMobileMenu() {
+                    const menu = document.getElementById('mobileMenu');
+                    menu.classList.toggle('hidden');
+                }
+                
+                // ✅ HTMX 2.0: Scroll instant (performant)
+                document.body.addEventListener('htmx:afterSwap', function(evt) {
+                    window.scrollTo({ top: 0 }); // Instant par défaut
+                });
+                
+                // Close mobile menu on navigation
+                document.body.addEventListener('htmx:beforeRequest', function(evt) {
+                    const menu = document.getElementById('mobileMenu');
+                    if (!menu.classList.contains('hidden')) {
+                        menu.classList.add('hidden');
+                    }
+                });
+            </script>
 		</body>
 	</html>
 }
