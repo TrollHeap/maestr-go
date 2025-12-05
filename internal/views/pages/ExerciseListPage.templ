@@ -30,10 +30,10 @@ templ ExerciseListPage(
 							<span>STATUS: <span class="animate-pulse">ONLINE</span></span>
 						</div>
 						<h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-50">
-							📚 Bibliothèque d'exercices
+							📚Bibliothèque
 						</h1>
 						<p class="text-xs text-slate-400">
-							{ total } exercice(s) dans la bibliothèque.
+							<span class="text-sky-300 font-semibold">{ total }</span> exercice(s) dans la bibliothèque.
 						</p>
 					</div>
 					<div class="flex flex-col items-stretch sm:items-end gap-3">
@@ -98,23 +98,6 @@ templ ExerciseListPage(
 						</a>
 					</div>
 				</header>
-				<!-- Résumé filtre courant -->
-				<div class="flex items-center justify-between text-[0.7rem] text-slate-400">
-					<span>
-						Affichage de <span class="text-sky-300 font-semibold">{ len(exercises) }</span> / { total } exercice(s)
-					</span>
-					if filter.Status != "" || filter.Domain != "" || filter.Difficulty != 0 || filter.Query != "" || filter.Sort != "" {
-						<button
-							class="inline-flex items-center gap-1 text-slate-400 hover:text-slate-200"
-							hx-get="/exercises/list"
-							hx-target="#exercise-list"
-							hx-swap="innerHTML"
-						>
-							<span>Réinitialiser les filtres</span>
-							<span class="text-xs">✕</span>
-						</button>
-					}
-				</div>
 				<!-- Liste exercices (HTMX target) -->
 				<section id="exercise-list" class="pb-8">
 					@components.ExerciseList(exercises)
