@@ -1,13 +1,14 @@
 package pages
 
 import (
+	"fmt"
 	"maestro/internal/models"
+	"maestro/internal/views/data"
 	"maestro/internal/views/layouts"
 	"maestro/internal/views/logic"
 	"maestro/internal/views/utils"
 )
 
-// ExerciseForm : Formulaire création/édition
 templ ExerciseForm(ex *models.Exercise) {
 	@layouts.Base(logic.GetFormTitle(ex)) {
 		<div class="max-w-4xl mx-auto p-6">
@@ -73,7 +74,7 @@ templ ExerciseForm(ex *models.Exercise) {
 					</div>
 					<!-- Domaine & Difficulté -->
 					<div class="grid grid-cols-2 gap-4">
-						<!-- Domaine -->
+						<!-- ✅ Domaine (depuis data/options.go) -->
 						<div>
 							<label for="domain" class="block text-sm font-medium text-slate-300 mb-2">
 								Domaine <span class="text-rose-400">*</span>
@@ -85,15 +86,18 @@ templ ExerciseForm(ex *models.Exercise) {
 								class="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2.5 text-slate-100 focus:border-purple-500 focus:outline-none"
 							>
 								<option value="">Choisir...</option>
-								<option value="Go" selected?={ utils.IsDomainSelected(ex, "Go") }>Go</option>
-								<option value="Architecture" selected?={ utils.IsDomainSelected(ex, "Architecture") }>Architecture</option>
-								<option value="Database" selected?={ utils.IsDomainSelected(ex, "Database") }>Database</option>
-								<option value="Security" selected?={ utils.IsDomainSelected(ex, "Security") }>Security</option>
-								<option value="DevOps" selected?={ utils.IsDomainSelected(ex, "DevOps") }>DevOps</option>
-								<option value="Algorithms" selected?={ utils.IsDomainSelected(ex, "Algorithms") }>Algorithms</option>
+								// ✅ Itération sur domains triés alphabétiquement
+								for _, domain := range data.GetDomains() {
+									<option
+										value={ domain }
+										selected?={ utils.IsDomainSelected(ex, domain) }
+									>
+										{ domain }
+									</option>
+								}
 							</select>
 						</div>
-						<!-- Difficulté -->
+						<!-- ✅ Difficulté (depuis data/options.go) -->
 						<div>
 							<label for="difficulty" class="block text-sm font-medium text-slate-300 mb-2">
 								Difficulté <span class="text-rose-400">*</span>
@@ -105,10 +109,15 @@ templ ExerciseForm(ex *models.Exercise) {
 								class="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2.5 text-slate-100 focus:border-purple-500 focus:outline-none"
 							>
 								<option value="">Choisir...</option>
-								<option value="1" selected?={ utils.IsDifficultySelected(ex, 1) }>1 - Facile</option>
-								<option value="2" selected?={ utils.IsDifficultySelected(ex, 2) }>2 - Moyen</option>
-								<option value="3" selected?={ utils.IsDifficultySelected(ex, 3) }>3 - Difficile</option>
-								<option value="4" selected?={ utils.IsDifficultySelected(ex, 4) }>4 - Expert</option>
+								// ✅ Itération sur difficulties ordonnées
+								for _, diff := range data.GetDifficulties() {
+									<option
+										value={ fmt.Sprint(diff.Value) }
+										selected?={ utils.IsDifficultySelected(ex, diff.Value) }
+									>
+										{ diff.Label }
+									</option>
+								}
 							</select>
 						</div>
 					</div>
@@ -156,17 +165,27 @@ templ ExerciseForm(ex *models.Exercise) {
 							name="conceptual_visuals"
 							rows="10"
 							class="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2.5 text-slate-100 font-mono text-xs placeholder-slate-500 focus:border-purple-500 focus:outline-none"
-							placeholder="Diagrammes ASCII pour visualiser le concept.&#10;&#10;Séparez plusieurs visuels par une ligne contenant uniquement: ---&#10;&#10;Exemple:&#10;┌──────────┐&#10;│  Stack   │&#10;├──────────┤&#10;│   TOP    │&#10;└──────────┘&#10;Caption: Structure LIFO&#10;---&#10;(autre visuel ici)"
+							placeholder="Diagrammes ASCII pour visualiser le concept.
+
+Séparez plusieurs visuels par une ligne contenant uniquement: ---
+
+Exemple:
+┌──────────┐
+│  Stack   │
+├──────────┤
+│   TOP    │
+└──────────┘
+Caption: Structure LIFO
+---
+(autre visuel ici)"
 						>{ utils.GetVisualsValue(ex) }</textarea>
 						<p class="mt-1 text-xs text-slate-500">
-							<p class="mt-1 text-xs text-slate-500">
-								<span class="font-semibold">Format :</span>
-								Diagrammes ASCII séparés par de
-								<code class="px-1 py-0.5 bg-slate-800 rounded">---</code>
-								Ajoutez
-								de <code class="px-1 py-0.5 bg-slate-800 rounded">Caption: votre texte</code>
-								à la fin de chaque visuel.
-							</p>
+							<span class="font-semibold">Format :</span>
+							Diagrammes ASCII séparés par
+							de <code class="px-1 py-0.5 bg-slate-800 rounded">---</code>.
+							Ajoutez
+							de <code class="px-1 py-0.5 bg-slate-800 rounded">Caption: votre texte</code>
+							à la fin de chaque visuel.
 						</p>
 					</div>
 				</div>
@@ -182,7 +201,10 @@ templ ExerciseForm(ex *models.Exercise) {
 							name="steps"
 							rows="6"
 							class="w-full rounded-lg border border-slate-700 bg-slate-900/60 px-4 py-2.5 text-slate-100 font-mono text-sm placeholder-slate-500 focus:border-purple-500 focus:outline-none"
-							placeholder="Lire la doc officielle&#10;Créer un exemple de code&#10;Tester les différences&#10;Expliquer à quelqu'un"
+							placeholder="Lire la doc officielle
+Créer un exemple de code
+Tester les différences
+Expliquer à quelqu'un"
 						>{ utils.GetStepsValue(ex) }</textarea>
 						<p class="mt-1 text-xs text-slate-500">Chaque ligne devient une étape cochable</p>
 					</div>
