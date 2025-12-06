@@ -1,90 +1,209 @@
-// internal/views/components/planner_month.templ
+// internal/views/components/PlannerMonthViewEnhanced.templ
 package components
 
 import (
 	"fmt"
-	"maestro/internal/views/logic"
+	"maestro/internal/service"
 	"time"
 )
 
-// PlannerMonthView - Vue mois (fragment HTMX)
-templ PlannerMonthView(
-	year int,
-	month time.Month,
-	monthName string,
-	counts map[int]int,
-	firstDay time.Time,
-	daysInMonth int,
-	prevYear int,
-	prevMonth time.Month,
-	nextYear int,
-	nextMonth time.Month,
-) {
-	<div class="space-y-6">
-		<!-- Header mois -->
-		<div class="flex items-center justify-between gap-4">
-			<button
-				class="nav-arrow inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-900/70 text-slate-300 hover:border-slate-500 hover:text-emerald-300 transition-colors"
-				hx-get={ fmt.Sprintf("/planner/month?year=%d&month=%d", prevYear, prevMonth) }
-				hx-target="#planner-view"
-				hx-swap="innerHTML"
-			>
-				←
-			</button>
-			<h2 class="month-title text-lg sm:text-xl font-semibold text-slate-50">
-				{ monthName } { fmt.Sprintf("%d", year) }
-			</h2>
-			<button
-				class="nav-arrow inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-900/70 text-slate-300 hover:border-slate-500 hover:text-emerald-300 transition-colors"
-				hx-get={ fmt.Sprintf("/planner/month?year=%d&month=%d", nextYear, nextMonth) }
-				hx-target="#planner-view"
-				hx-swap="innerHTML"
-			>
-				→
-			</button>
+templ PlannerMonthView(currentDate time.Time) {
+	<div class="space-y-5">
+		<!-- Header Month -->
+		<div class="flex items-center justify-between">
+			<div class="flex items-center gap-3">
+				<span class="text-xl">🗓️</span>
+				<div>
+					<h2 class="text-lg font-mono uppercase tracking-wider text-slate-200">
+						MONTH.CALENDAR
+					</h2>
+					<p class="text-xs font-mono text-slate-500">
+						{ currentDate.Format("January 2006") }
+					</p>
+				</div>
+			</div>
+			<!-- Navigation -->
+			<div class="flex items-center gap-2">
+				<button
+					class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-700 bg-slate-900/80 text-slate-400 hover:border-purple-500/60 hover:text-purple-300 transition-all"
+					hx-get={ getPrevMonthURL(currentDate) }
+					hx-target="#month-view"
+					hx-swap="innerHTML"
+				>
+					<span class="text-sm">←</span>
+				</button>
+				<button
+					class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900/80 text-xs font-mono text-slate-400 hover:border-purple-500/60 hover:text-purple-300 transition-all"
+					hx-get={ fmt.Sprintf("/planner/month?year=%d&month=%d", time.Now().Year(), time.Now().Month()) }
+					hx-target="#month-view"
+					hx-swap="innerHTML"
+				>
+					Today
+				</button>
+				<button
+					class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-700 bg-slate-900/80 text-slate-400 hover:border-purple-500/60 hover:text-purple-300 transition-all"
+					hx-get={ getNextMonthURL(currentDate) }
+					hx-target="#month-view"
+					hx-swap="innerHTML"
+				>
+					<span class="text-sm">→</span>
+				</button>
+			</div>
 		</div>
-		<!-- Calendrier -->
-		<div class="month-calendar space-y-3">
-			<!-- Header jours semaine -->
-			<div class="grid grid-cols-7 text-center text-[0.7rem] font-mono text-slate-400 uppercase tracking-widest">
-				for _, day := range []string{"Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"} {
-					<div class="py-1">
+		<!-- Calendar Grid -->
+		<div class="space-y-2">
+			<!-- Weekday Headers -->
+			<div class="grid grid-cols-7 gap-2">
+				for _, day := range []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"} {
+					<div class="text-center text-[10px] font-mono text-slate-500 uppercase tracking-wider py-2">
 						{ day }
 					</div>
 				}
 			</div>
-			<!-- Grille jours -->
-			<div class="grid grid-cols-7 gap-1 text-xs">
-				<!-- Jours vides avant le 1er -->
-				for i := 0; i < logic.GetEmptyDaysBefore(firstDay); i++ {
-					<div class="h-16 rounded-xl bg-slate-900/40 border border-dashed border-slate-800"></div>
-				}
-				<!-- Jours du mois -->
-				for day := 1; day <= daysInMonth; day++ {
-					@MonthDayCell(year, month, day, counts[day])
-				}
+			<!-- Days Grid -->
+			<div class="grid grid-cols-7 gap-2">
+				@renderMonthDays(currentDate)
+			</div>
+		</div>
+		<!-- Legend -->
+		<div class="flex items-center justify-end gap-4 pt-4 border-t border-slate-800">
+			<div class="flex items-center gap-2 text-xs font-mono text-slate-500">
+				<div class="w-3 h-3 rounded bg-slate-800"></div>
+				<span>No reviews</span>
+			</div>
+			<div class="flex items-center gap-2 text-xs font-mono text-slate-500">
+				<div class="w-3 h-3 rounded bg-sky-500/30 border border-sky-500/50"></div>
+				<span>Scheduled</span>
 			</div>
 		</div>
 	</div>
 }
 
-// MonthDayCell - Cellule jour mois
-templ MonthDayCell(year int, month time.Month, day int, count int) {
+templ MonthDayCellCompact(day int, count int, isCurrentDay bool, isOtherMonth bool) {
 	<div
 		class={
-			"h-16 rounded-xl border text-xs flex flex-col justify-between p-1.5",
-			logic.GetMonthDayClasses(year, month, day, count),
+			"aspect-square rounded-lg border flex flex-col items-center justify-center p-2 transition-all",
+			templ.KV("border-emerald-500/50 bg-emerald-950/30 shadow-sm shadow-emerald-900/30", isCurrentDay),
+			templ.KV("border-slate-800 bg-slate-900/40", !isCurrentDay && count == 0 && !isOtherMonth),
+			templ.KV("border-sky-500/40 bg-sky-950/30", !isCurrentDay && count > 0 && !isOtherMonth),
+			templ.KV("border-slate-900 bg-slate-950/20 opacity-40", isOtherMonth),
+			templ.KV("hover:scale-105 cursor-pointer", count > 0 && !isOtherMonth),
 		}
 	>
-		<div class="flex items-center justify-between">
-			<span class="text-[0.7rem] font-mono text-slate-400">
-				{ fmt.Sprintf("%d", day) }
-			</span>
-			if count > 0 {
-				<span class="inline-flex items-center justify-center rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[0.6rem] font-mono text-emerald-200">
-					{ fmt.Sprintf("%d", count) }
-				</span>
+		<div
+			class={
+				"text-xs font-mono mb-1",
+				templ.KV("text-emerald-300 font-bold", isCurrentDay),
+				templ.KV("text-slate-400", !isCurrentDay && !isOtherMonth),
+				templ.KV("text-slate-600", isOtherMonth),
 			}
+		>
+			{ fmt.Sprint(day) }
 		</div>
+		if count > 0 && !isOtherMonth {
+			<div class="w-1.5 h-1.5 rounded-full bg-sky-400"></div>
+		}
 	</div>
+}
+
+// ============================================
+// HELPER COMPONENT
+// ============================================
+templ renderMonthDays(currentDate time.Time) {
+	for _, cell := range getMonthCells(currentDate) {
+		@MonthDayCellCompact(cell.Day, cell.Count, cell.IsToday, cell.IsOtherMonth)
+	}
+}
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+type MonthCell struct {
+	Day          int
+	Count        int
+	IsToday      bool
+	IsOtherMonth bool
+}
+
+func getMonthCells(currentDate time.Time) []MonthCell {
+	year := currentDate.Year()
+	month := currentDate.Month()
+
+	// Get counts from service
+	plannerSvc := service.NewPlannerService()
+	counts := plannerSvc.GetMonthSchedule(year, month)
+
+	// Calculate month metadata
+	firstDay := time.Date(year, month, 1, 0, 0, 0, 0, time.Local)
+	lastDay := firstDay.AddDate(0, 1, -1)
+	daysInMonth := lastDay.Day()
+
+	// Get weekday of first day (Mon=1, Sun=7)
+	firstWeekday := int(firstDay.Weekday())
+	if firstWeekday == 0 {
+		firstWeekday = 7
+	}
+
+	var cells []MonthCell
+	now := time.Now()
+
+	// Previous month days
+	prevMonthLastDay := firstDay.AddDate(0, 0, -1).Day()
+	for i := 1; i < firstWeekday; i++ {
+		day := prevMonthLastDay - (firstWeekday - i) + 1
+		cells = append(cells, MonthCell{
+			Day:          day,
+			Count:        0,
+			IsToday:      false,
+			IsOtherMonth: true,
+		})
+	}
+
+	// Current month days
+	for day := 1; day <= daysInMonth; day++ {
+		date := time.Date(year, month, day, 0, 0, 0, 0, time.Local)
+		isCurrentDay := date.Year() == now.Year() &&
+			date.Month() == now.Month() &&
+			date.Day() == now.Day()
+
+		cells = append(cells, MonthCell{
+			Day:          day,
+			Count:        counts[day],
+			IsToday:      isCurrentDay,
+			IsOtherMonth: false,
+		})
+	}
+
+	// Next month days
+	totalCells := firstWeekday - 1 + daysInMonth
+	remainingCells := 35 - totalCells
+	if remainingCells < 0 {
+		remainingCells = 42 - totalCells
+	}
+
+	for day := 1; day <= remainingCells; day++ {
+		cells = append(cells, MonthCell{
+			Day:          day,
+			Count:        0,
+			IsToday:      false,
+			IsOtherMonth: true,
+		})
+	}
+
+	return cells
+}
+
+func getPrevMonthURL(date time.Time) string {
+	if date.Month() == time.January {
+		return fmt.Sprintf("/planner/month?year=%d&month=%d", date.Year()-1, time.December)
+	}
+	return fmt.Sprintf("/planner/month?year=%d&month=%d", date.Year(), date.Month()-1)
+}
+
+func getNextMonthURL(date time.Time) string {
+	if date.Month() == time.December {
+		return fmt.Sprintf("/planner/month?year=%d&month=%d", date.Year()+1, time.January)
+	}
+	return fmt.Sprintf("/planner/month?year=%d&month=%d", date.Year(), date.Month()+1)
 }

@@ -45,14 +45,14 @@ templ PlannerPage(currentDate time.Time, reviews, upcoming, overdue []models.Exe
 							id="week-view"
 							class="rounded-2xl border border-slate-800 bg-slate-950/80 backdrop-blur-xl shadow-xl p-6"
 						>
-							@components.PlannerWeekViewEnhanced(currentDate)
+							@components.PlannerWeekView(currentDate)
 						</section>
 						<!-- Month View (Bottom) -->
 						<section
 							id="month-view"
 							class="rounded-2xl border border-slate-800 bg-slate-950/80 backdrop-blur-xl shadow-xl p-6"
 						>
-							@components.PlannerMonthViewEnhanced(currentDate)
+							@components.PlannerMonthView(currentDate)
 						</section>
 					</main>
 				</div>

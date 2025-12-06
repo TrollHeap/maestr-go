@@ -1,81 +1,150 @@
-// internal/views/components/planner_week.templ
+// internal/views/components/PlannerWeekViewEnhanced.templ
 package components
 
 import (
 	"fmt"
-	"maestro/internal/models"
-	"maestro/internal/views/logic"
+	"maestro/internal/service"
 	"time"
 )
 
-// PlannerWeekView - Vue semaine (fragment HTMX)
-templ PlannerWeekView(startDate time.Time, schedule []models.DaySchedule, prevWeek, nextWeek time.Time) {
-	<div class="space-y-6">
-		<!-- Header semaine -->
-		<div class="flex items-center justify-between gap-4">
-			<button
-				class="nav-arrow inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-900/70 text-slate-300 hover:border-slate-500 hover:text-emerald-300 transition-colors"
-				hx-get={ fmt.Sprintf("/planner/week?week=%s", prevWeek.Format("2006-01-02")) }
-				hx-target="#planner-view"
-				hx-swap="innerHTML"
-			>
-				←
-			</button>
-			<h2 class="week-title text-lg sm:text-xl font-semibold text-slate-50">
-				Semaine du { startDate.Format("02/01/2006") }
-			</h2>
-			<button
-				class="nav-arrow inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-900/70 text-slate-300 hover:border-slate-500 hover:text-emerald-300 transition-colors"
-				hx-get={ fmt.Sprintf("/planner/week?week=%s", nextWeek.Format("2006-01-02")) }
-				hx-target="#planner-view"
-				hx-swap="innerHTML"
-			>
-				→
-			</button>
+templ PlannerWeekView(currentDate time.Time) {
+	<div class="space-y-5">
+		<!-- Header Week -->
+		<div class="flex items-center justify-between">
+			<div class="flex items-center gap-3">
+				<span class="text-xl">📊</span>
+				<div>
+					<h2 class="text-lg font-mono uppercase tracking-wider text-slate-200">
+						WEEK.OVERVIEW
+					</h2>
+					<p class="text-xs font-mono text-slate-500">
+						{ getWeekLabel(currentDate) }
+					</p>
+				</div>
+			</div>
+			<!-- Navigation -->
+			<div class="flex items-center gap-2">
+				<button
+					class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-700 bg-slate-900/80 text-slate-400 hover:border-sky-500/60 hover:text-sky-300 transition-all"
+					hx-get={ fmt.Sprintf("/planner/week?week=%s", currentDate.AddDate(0, 0, -7).Format("2006-01-02")) }
+					hx-target="#week-view"
+					hx-swap="innerHTML"
+				>
+					<span class="text-sm">←</span>
+				</button>
+				<button
+					class="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-900/80 text-xs font-mono text-slate-400 hover:border-sky-500/60 hover:text-sky-300 transition-all"
+					hx-get={ fmt.Sprintf("/planner/week?week=%s", getMonday(time.Now()).Format("2006-01-02")) }
+					hx-target="#week-view"
+					hx-swap="innerHTML"
+				>
+					Today
+				</button>
+				<button
+					class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-700 bg-slate-900/80 text-slate-400 hover:border-sky-500/60 hover:text-sky-300 transition-all"
+					hx-get={ fmt.Sprintf("/planner/week?week=%s", currentDate.AddDate(0, 0, 7).Format("2006-01-02")) }
+					hx-target="#week-view"
+					hx-swap="innerHTML"
+				>
+					<span class="text-sm">→</span>
+				</button>
+			</div>
 		</div>
-		<div class="week-grid grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-7">
-			for _, day := range schedule {
-				@WeekDayCard(day)
+		<!-- Week Grid -->
+		<div class="grid grid-cols-7 gap-3">
+			@renderWeekDays(currentDate)
+		</div>
+	</div>
+}
+
+templ WeekDayCardCompact(date time.Time, count int) {
+	<div
+		class={
+			"rounded-xl border p-3 transition-all hover:scale-[1.02]",
+			templ.KV("border-emerald-500/50 bg-emerald-950/30 shadow-emerald-900/30", isToday(date)),
+			templ.KV("border-slate-800 bg-slate-900/50", !isToday(date)),
+			templ.KV("hover:border-sky-500/50 cursor-pointer", count > 0),
+		}
+	>
+		<!-- Day Header -->
+		<div class="text-center mb-3">
+			<div class="text-xs font-mono text-slate-500 uppercase">
+				{ date.Format("Mon") }
+			</div>
+			<div
+				class={
+					"text-lg font-bold font-mono mt-1",
+					templ.KV("text-emerald-300", isToday(date)),
+					templ.KV("text-slate-300", !isToday(date)),
+				}
+			>
+				{ date.Format("02") }
+			</div>
+		</div>
+		<!-- Count Badge -->
+		<div class="text-center">
+			if count > 0 {
+				<div class="inline-flex items-center justify-center px-2.5 py-1 rounded-full bg-sky-500/20 border border-sky-500/30">
+					<span class="text-xs font-mono font-bold text-sky-300">
+						{ fmt.Sprint(count) }
+					</span>
+				</div>
+			} else {
+				<div class="text-slate-600 text-xs">—</div>
 			}
 		</div>
 	</div>
 }
 
-// WeekDayCard - Card jour semaine
-templ WeekDayCard(day models.DaySchedule) {
-	<div
-		class={
-			"week-day-card rounded-2xl border bg-slate-900/70 p-4 flex flex-col gap-3",
-			logic.GetWeekDayCardClasses(day.Date, day.Count),
-		}
-	>
-		<div class="week-day-header flex items-center justify-between">
-			<div class="week-day-name text-sm font-semibold text-slate-200">
-				{ day.Date.Format("Mon") }
-			</div>
-			<div class="week-day-date text-xs font-mono text-slate-400">
-				{ day.Date.Format("02") }
-			</div>
-		</div>
-		<div class="week-day-count text-center">
-			if day.Count > 0 {
-				<span class="count-badge inline-flex items-center justify-center rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-mono text-emerald-300">
-					{ fmt.Sprintf("%d", day.Count) } exos
-				</span>
-			} else {
-				<span class="count-empty text-xs text-slate-500">—</span>
-			}
-		</div>
-		if day.Count > 0 {
-			<div class="week-day-exercises mt-2 space-y-1.5 text-[0.7rem]">
-				for _, ex := range day.Exercises {
-					<div class="mini-exercise truncate text-emerald-200 hover:text-emerald-100">
-						<a href={ templ.URL(fmt.Sprintf("/exercise/%d", ex.ID)) } class="hover:underline" hx-boost="true">
-							{ logic.Truncate(ex.Title, 22) }
-						</a>
-					</div>
-				}
-			</div>
-		}
-	</div>
+// ============================================
+// HELPER COMPONENT
+// ============================================
+templ renderWeekDays(startDate time.Time) {
+	for _, day := range getWeekScheduleData(startDate) {
+		@WeekDayCardCompact(day.Date, day.Count)
+	}
+}
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+func getWeekScheduleData(startDate time.Time) []struct {
+	Date  time.Time
+	Count int
+} {
+	plannerSvc := service.NewPlannerService()
+	schedule := plannerSvc.GetWeekSchedule(startDate)
+
+	result := make([]struct {
+		Date  time.Time
+		Count int
+	}, len(schedule))
+
+	for i, day := range schedule {
+		result[i].Date = day.Date
+		result[i].Count = day.Count
+	}
+
+	return result
+}
+
+func isToday(date time.Time) bool {
+	now := time.Now()
+	return date.Year() == now.Year() &&
+		date.Month() == now.Month() &&
+		date.Day() == now.Day()
+}
+
+func getWeekLabel(date time.Time) string {
+	_, week := date.ISOWeek()
+	return fmt.Sprintf("Week %d, %s", week, date.Format("January 2006"))
+}
+
+func getMonday(date time.Time) time.Time {
+	weekday := int(date.Weekday())
+	if weekday == 0 {
+		weekday = 7
+	}
+	return date.AddDate(0, 0, -(weekday - 1))
 }
