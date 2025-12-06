@@ -1,3 +1,4 @@
+// internal/handlers/dashboard.go
 package handlers
 
 import (
@@ -28,17 +29,16 @@ func HandleDashboard(w http.ResponseWriter, r *http.Request) {
 	log.Printf("📊 Stats: today=%d, overdue=%d, upcoming=%d",
 		len(todayReviews), len(overdueReviews), len(upcomingReviews))
 
-	// ✅ Pass models.Exercise slices directement
+	// Render component
 	component := pages.Dashboard(
 		stats,
 		len(todayReviews),
 		len(overdueReviews),
 		len(upcomingReviews),
-		overdueReviews,  // []models.Exercise
-		upcomingReviews, // []models.Exercise
+		overdueReviews,
+		upcomingReviews,
 	)
 
-	// Render component
 	if err := component.Render(r.Context(), w); err != nil {
 		log.Printf("❌ Error rendering dashboard: %v", err)
 		http.Error(w, "Error rendering page", http.StatusInternalServerError)

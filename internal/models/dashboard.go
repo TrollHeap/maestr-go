@@ -1,10 +1,11 @@
+// internal/models/dashboard.go
 package models
 
 import "time"
 
 // DashboardStats - Stats complètes
 type DashboardStats struct {
-	// Existant
+	// Core metrics
 	TotalExercises    int
 	CompletedCount    int
 	InProgressCount   int
@@ -23,12 +24,24 @@ type DashboardStats struct {
 	TopDomain         string
 	DomainBreakdown   map[string]int
 
-	// ✅ NOUVEAUX pour analyse avancée
+	// Advanced analytics
 	AverageEaseFactor float64
 	RetentionRate     int // % de reviews réussies (quality >= 2)
+
+	// ✅ NEW: Learning velocity
+	TotalReviews     int     // Total reviews (30d)
+	PeakDailyReviews int     // Max reviews in a single day
+	VelocityTrend    float64 // +/- trend percentage
+
+	// ✅ NEW: Focus recommendations
+	WeakestDomain          string
+	WeakestDomainRetention int
+	WeakestDomainCount     int
+	ShortIntervalCount     int // Exercises with interval < 7d
+	LowEaseCount           int // Exercises with ease < 2.3
 }
 
-// ✅ FailurePattern - Pattern d'échecs répétés
+// FailurePattern - Pattern d'échecs répétés
 type FailurePattern struct {
 	ExerciseID int
 	Title      string
@@ -37,7 +50,7 @@ type FailurePattern struct {
 	EaseFactor float64
 }
 
-// ✅ RepetitionStat - Exercices les plus révisés
+// RepetitionStat - Exercices les plus révisés
 type RepetitionStat struct {
 	ExerciseID  int
 	Title       string
@@ -45,7 +58,7 @@ type RepetitionStat struct {
 	ReviewCount int
 }
 
-// ✅ DomainStrength - Force par domaine
+// DomainStrength - Force par domaine
 type DomainStrength struct {
 	Name            string
 	TotalCount      int
