@@ -4,20 +4,21 @@ package pages
 import (
 	"fmt"
 	"maestro/internal/models"
+	"maestro/internal/views/components"
 	"maestro/internal/views/layouts"
 	"maestro/internal/views/ui"
 	"time"
 )
 
 templ Dashboard(
-	stats service.DashboardStats,
+	stats models.DashboardStats,
 	todayCount int,
 	overdueCount int,
 	upcomingCount int,
 	overdue []models.Exercise,
 	upcoming []models.Exercise,
 ) {
-	@layouts.Base("Mission Control - Analytics") {
+	@layouts.Base("Analytics Dashboard - Maestro") {
 		<div class="relative min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
 			<!-- Ambient Effects -->
 			<div class="pointer-events-none absolute inset-0 overflow-hidden opacity-40">
@@ -25,106 +26,86 @@ templ Dashboard(
 				<div class="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,_rgba(168,85,247,0.1),_transparent_50%)]"></div>
 			</div>
 			<div class="relative z-10 max-w-[1920px] mx-auto px-6 py-8 space-y-6">
-				<!-- Hero Section -->
+				<!-- ============================================ -->
+				<!-- HERO: Header + Quick Actions -->
+				<!-- ============================================ -->
 				<div class="flex items-center justify-between mb-8">
 					@ui.TerminalHeaderWithDate("MISSION_CONTROL.ANALYTICS", time.Now(), ui.HeaderSky)
 					<!-- Quick Actions -->
 					<div class="flex items-center gap-3">
+						<!-- CTA primaire : Start Session -->
 						<a
 							href="/session/builder"
-							class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-mono text-xs uppercase tracking-wider shadow-lg shadow-emerald-900/50 hover:shadow-emerald-900/70 hover:scale-105 transition-all"
+							class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-emerald-600/60 bg-emerald-950/40 text-emerald-300 
+                            font-mono text-xs uppercase tracking-wider hover:bg-emerald-900/60 hover:border-emerald-500 transition-all"
 							hx-boost="true"
 						>
-							<span>⚡</span>
+							<span class="text-xl animate-pulse">⚡</span>
 							<span>START SESSION</span>
 						</a>
-						<!-- ✅ NEW: Link to Planner -->
+						<!-- CTA secondaire : Planner -->
 						<a
-							href="/planner"
-							class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-700 bg-slate-900/80 text-slate-300 font-mono text-xs uppercase tracking-wider hover:border-emerald-500/60 hover:bg-slate-800 transition-all"
+							href="/exercises/new"
+							class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-slate-700 bg-slate-900/80 text-slate-300 
+                            font-mono text-xs uppercase tracking-wider hover:border-sky-500/60 hover:bg-slate-800 transition-all"
 							hx-boost="true"
 						>
-							<span>📅</span>
-							<span>OPEN PLANNER</span>
+							<span>+</span>
+							<span>NEW EXERCISE</span>
 						</a>
 					</div>
 				</div>
-				<!-- ✅ KPI Grid (Keep - unique to Dashboard) -->
+				<!-- ============================================ -->
+				<!-- KPI GRID: 4 metrics stratégiques (NO DUPLICATION) -->
+				<!-- ============================================ -->
 				<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-					@KPICardEnhanced("TODAY", todayCount, "reviews", "⏰", todayCount > 5, "/planner", stats.CompletionRate)
-					@KPICardEnhanced("OVERDUE", overdueCount, "critical", "⚠", overdueCount > 0, "/planner", 0)
-					@KPICardEnhanced("STREAK", stats.StreakDays, "days", "🔥", stats.StreakDays >= 7, "/planner", 0)
-					@KPICardEnhanced("MASTERED", stats.TotalMastered, fmt.Sprintf("/%d", stats.TotalExercises), "✓", false, "/exercises?status=mastered", stats.CompletionRate)
+					<!-- ❌ REMOVED: TODAY (déjà dans Planner sidebar) -->
+					<!-- ❌ REMOVED: OVERDUE (déjà dans Planner sidebar) -->
+					<!-- ✅ KEEP: Long-term metrics only -->
+					@components.KPICard("STREAK", stats.StreakDays, "days", "🔥", stats.StreakDays >= 7, "/planner", 0)
+					@components.KPICard("RETENTION", stats.RetentionRate, "%", "🧠", stats.RetentionRate < 70, "/exercises?sort=retention", 0)
+					@components.KPICard("MASTERED", stats.TotalMastered, fmt.Sprintf("/%d", stats.TotalExercises), "✓", false, "/exercises?status=mastered", stats.CompletionRate)
+					@components.KPICard("AVG_EASE", int(stats.AverageEaseFactor*100), "/500", "📊", stats.AverageEaseFactor < 2.5, "/exercises?sort=difficulty", 0)
 				</div>
-				<!-- Main Grid: 3 colonnes -->
-				<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-					<!-- ✅ Colonne 1: Performance + SRS Health -->
-					<div class="space-y-6">
-						@PerformanceCard(stats)
-						@SRSHealthCard(stats)
-					</div>
-					<!-- ✅ Colonne 2: Activity Heatmap (unique!) -->
-					<div class="space-y-6">
-						@ActivityHeatmapV2(stats)
-						<!-- ❌ REMOVED: Priority Queue (duplication with Planner) -->
-						<!-- ✅ NEW: Quick Stats instead -->
-						@QuickStatsCard(stats)
-					</div>
-					<!-- ✅ Colonne 3: Insights + Weaknesses + Domain Strength -->
-					<div class="space-y-6">
-						@InsightsCard(stats, todayCount, overdueCount)
-						@WeaknessCard(stats)
-						@DomainStrengthCard(stats)
-					</div>
-				</div>
-				<!-- Bottom Section: Review Distribution + Time Investment -->
+				<!-- ============================================ -->
+				<!-- TOP SECTION: Heatmap + Focus -->
+				<!-- ============================================ -->
 				<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-					@ReviewDistributionCard(stats)
-					@TimeInvestmentCard(stats)
+					<!-- Retention Curve -->
+					@components.RetentionCurveCard(stats)
+					<!-- Review Distribution -->
+					@components.FocusRecommendationCard(stats)
 				</div>
 			</div>
+			<!-- ============================================ -->
+			<!-- MAIN GRID: Performance + Analytics -->
+			<!-- ============================================ -->
+			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+				<!-- ===== COLONNE 1: Velocity + Performance ===== -->
+				<div class="space-y-6">
+					<!-- Learning Velocity (30d) -->
+					@components.LearningVelocityCard(stats)
+					<!-- Performance Matrix -->
+					@components.PerformanceCard(stats)
+				</div>
+				<!-- ===== COLONNE 2: SRS + Insights ===== -->
+				<div class="space-y-6">
+					<!-- SRS Health -->
+					@components.SRSHealthCard(stats)
+					<!-- AI Insights -->
+					@components.InsightsCard(stats, todayCount, overdueCount)
+				</div>
+				<!-- ===== COLONNE 3: Weaknesses + Domains ===== -->
+				<div class="space-y-6">
+					<!-- Weak Exercises -->
+					@components.WeaknessCard(stats)
+					<!-- Domain Strength -->
+					@components.DomainStrengthCard(stats)
+				</div>
+			</div>
+			<!-- ============================================ -->
+			<!-- BOTTOM: Advanced Analytics -->
+			<!-- ============================================ -->
 		</div>
 	}
-}
-
-// ============================================
-// ✅ NEW COMPONENT: Quick Stats Card
-// ============================================
-templ QuickStatsCard(stats service.DashboardStats) {
-	<section class="rounded-2xl border border-slate-800 bg-slate-950/90 p-6 shadow-lg">
-		<div class="flex items-center gap-2 mb-5">
-			<span class="text-lg">📊</span>
-			<h2 class="text-sm font-mono uppercase tracking-wider text-slate-300">
-				QUICK_STATS
-			</h2>
-		</div>
-		<div class="space-y-3">
-			<div class="flex items-center justify-between py-2 border-b border-slate-800">
-				<span class="text-xs font-mono text-slate-400">Total Exercises</span>
-				<span class="text-sm font-mono text-slate-50 font-semibold">
-					{ fmt.Sprint(stats.TotalExercises) }
-				</span>
-			</div>
-			<div class="flex items-center justify-between py-2 border-b border-slate-800">
-				<span class="text-xs font-mono text-slate-400">Top Domain</span>
-				<span class="text-sm font-mono text-emerald-300 font-semibold">
-					{ stats.TopDomain }
-				</span>
-			</div>
-			<div class="flex items-center justify-between py-2 border-b border-slate-800">
-				<span class="text-xs font-mono text-slate-400">Session Count</span>
-				<span class="text-sm font-mono text-sky-300 font-semibold">
-					{ fmt.Sprint(stats.SessionCount) }
-				</span>
-			</div>
-			if !stats.NextReviewDate.IsZero() {
-				<div class="flex items-center justify-between py-2">
-					<span class="text-xs font-mono text-slate-400">Next Review</span>
-					<span class="text-sm font-mono text-purple-300 font-semibold">
-						{ stats.NextReviewDate.Format("Jan 02") }
-					</span>
-				</div>
-			}
-		</div>
-	</section>
 }
