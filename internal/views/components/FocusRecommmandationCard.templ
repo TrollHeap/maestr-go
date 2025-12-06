@@ -1,0 +1,83 @@
+// internal/views/components/FocusRecommendationCard.templ
+package components
+
+import (
+	"fmt"
+	"maestro/internal/models"
+)
+
+templ FocusRecommendationCard(stats models.DashboardStats) {
+	<section class="rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-950/40 to-slate-950 p-6 shadow-lg shadow-purple-900/20">
+		<div class="flex items-center gap-2 mb-5">
+			<span class="text-xl">🎯</span>
+			<h2 class="text-sm font-mono uppercase tracking-wider text-purple-300">
+				FOCUS_ZONE
+			</h2>
+		</div>
+		<!-- Primary Recommendation -->
+		<div class="mb-6 p-4 rounded-xl border border-purple-500/40 bg-purple-900/20">
+			<div class="flex items-start justify-between mb-3">
+				<div>
+					<div class="text-xs font-mono text-purple-400 mb-1">Priority Domain</div>
+					<div class="text-lg font-bold text-purple-200">
+						{ stats.WeakestDomain }
+					</div>
+				</div>
+				<div class="px-3 py-1 rounded-full bg-red-500/20 border border-red-500/40">
+					<span class="text-xs font-mono font-bold text-red-300">
+						{ fmt.Sprintf("%d%%", stats.WeakestDomainRetention) }
+					</span>
+				</div>
+			</div>
+			<p class="text-xs text-purple-300 mb-3">
+				{ fmt.Sprintf("%d exercises need attention", stats.WeakestDomainCount) }
+			</p>
+			<a
+				href={ templ.URL(fmt.Sprintf("/exercises?domain=%s&sort=retention", stats.WeakestDomain)) }
+				class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-500/20 border border-purple-500/40 text-purple-200 font-mono text-xs uppercase hover:bg-purple-500/30 transition-all"
+				hx-boost="true"
+			>
+				<span>Review Now</span>
+				<span>→</span>
+			</a>
+		</div>
+		<!-- Secondary Recommendations -->
+		<div class="space-y-2">
+			<div class="text-xs font-mono text-slate-500 uppercase tracking-wider mb-2">
+				Also Consider
+			</div>
+			<div class="flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-slate-800">
+				<div class="flex items-center gap-3">
+					<span class="text-sm">🔄</span>
+					<div>
+						<div class="text-xs text-slate-300">Short Intervals</div>
+						<div class="text-[10px] text-slate-500">{ fmt.Sprint(stats.ShortIntervalCount) } exercises</div>
+					</div>
+				</div>
+				<a
+					href="/exercises?interval=short"
+					class="text-xs text-sky-400 hover:text-sky-300 font-mono"
+					hx-boost="true"
+				>
+					View →
+				</a>
+			</div>
+			<div class="flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-slate-800">
+				<div class="flex items-center gap-3">
+					<span class="text-sm">📉</span>
+					<div>
+						<div class="text-xs text-slate-300">Low Ease Factor</div>
+						<div class="text-[10px] text-slate-500">{ fmt.Sprint(stats.LowEaseCount) } exercises</div>
+					</div>
+				</div>
+				<a
+					href="/exercises?ease=low"
+					class="text-xs text-sky-400 hover:text-sky-300 font-mono"
+					hx-boost="true"
+				>
+					View →
+				</a>
+			</div>
+		</div>
+	</section>
+}

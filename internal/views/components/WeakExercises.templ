@@ -1,0 +1,65 @@
+package components
+
+import (
+	"fmt"
+	"maestro/internal/models"
+)
+
+templ WeakExercisesPanel(exercises []models.Exercise) {
+	<section class="rounded-2xl border border-red-500/40 bg-red-950/20 p-6 backdrop-blur-xl">
+		<div class="flex items-center gap-2 mb-4">
+			<span class="text-lg">⚠️</span>
+			<h2 class="text-sm font-mono uppercase tracking-wider text-red-300">
+				EXERCICES.FAIBLES
+			</h2>
+		</div>
+		<div class="space-y-3">
+			if len(exercises) == 0 {
+				<p class="text-xs text-slate-500 italic text-center py-4">
+					Aucun exercice faible détecté
+				</p>
+			} else {
+				for _, ex := range exercises {
+					@WeakExerciseItem(ex)
+				}
+			}
+		</div>
+	</section>
+}
+
+templ WeakExerciseItem(ex models.Exercise) {
+	<a
+		href={ templ.URL(fmt.Sprintf("/exercise/%d", ex.ID)) }
+		hx-boost="true"
+		class="group block rounded-xl border border-red-700/60 bg-red-950/40 p-3 hover:bg-red-900/60 transition-all"
+	>
+		<div class="flex items-center justify-between gap-3">
+			<div class="flex-1 min-w-0">
+				<div class="flex items-center gap-2">
+					<span class="text-sm">
+						if ex.EaseFactor < 2.0 {
+							🔴
+						} else {
+							🟡
+						}
+					</span>
+					<span class="text-sm font-medium text-red-200 truncate">
+						{ ex.Title }
+					</span>
+				</div>
+				<div class="flex items-center gap-2 mt-1">
+					<span class="text-xs font-mono text-red-400">
+						EF: { fmt.Sprintf("%.1f", ex.EaseFactor) }
+					</span>
+					<span class="text-xs text-slate-500">|</span>
+					<span class="text-xs text-slate-400">
+						{ ex.Domain }
+					</span>
+				</div>
+			</div>
+			<svg class="w-4 h-4 text-red-600 group-hover:text-red-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+			</svg>
+		</div>
+	</a>
+}

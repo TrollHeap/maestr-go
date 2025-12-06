@@ -1,0 +1,67 @@
+// internal/views/components/LearningVelocityCard.templ
+package components
+
+import (
+	"fmt"
+	"maestro/internal/models"
+)
+
+templ LearningVelocityCard(stats models.DashboardStats) {
+	<section class="rounded-2xl border border-slate-800 bg-slate-950/90 backdrop-blur-xl p-6 shadow-lg">
+		<div class="flex items-center gap-2 mb-5">
+			<span class="text-lg">📈</span>
+			<h2 class="text-sm font-mono uppercase tracking-wider text-slate-300">
+				LEARNING_VELOCITY
+			</h2>
+			<span class="ml-auto text-xs font-mono text-slate-500">Last 30 days</span>
+		</div>
+		<!-- Sparkline approximation -->
+		<div class="h-24 flex items-end gap-1 mb-4">
+			for i := 0; i < 30; i++ {
+				<div
+					class="flex-1 rounded-t bg-gradient-to-t from-sky-600 to-sky-400 opacity-60 hover:opacity-100 transition-opacity"
+					style={ fmt.Sprintf("height: %d%%", getVelocityHeight(i, stats)) }
+				></div>
+			}
+		</div>
+		<!-- Stats -->
+		<div class="grid grid-cols-3 gap-4 pt-4 border-t border-slate-800">
+			<div class="text-center">
+				<div class="text-xs font-mono text-slate-500 mb-1">Avg/Day</div>
+				<div class="text-lg font-bold text-sky-300">
+					{ fmt.Sprintf("%.1f", float64(stats.TotalReviews)/30.0) }
+				</div>
+			</div>
+			<div class="text-center">
+				<div class="text-xs font-mono text-slate-500 mb-1">Peak</div>
+				<div class="text-lg font-bold text-emerald-300">
+					{ fmt.Sprint(stats.PeakDailyReviews) }
+				</div>
+			</div>
+			<div class="text-center">
+				<div class="text-xs font-mono text-slate-500 mb-1">Trend</div>
+				<div class="text-lg font-bold text-purple-300">
+					{ getTrendIcon(stats.VelocityTrend) }
+				</div>
+			</div>
+		</div>
+	</section>
+}
+
+func getVelocityHeight(day int, stats models.DashboardStats) int {
+	// Simulate data - replace with real service call
+	base := 40 + (day * 2)
+	if base > 100 {
+		base = 100
+	}
+	return base
+}
+
+func getTrendIcon(trend float64) string {
+	if trend > 0 {
+		return "↗"
+	} else if trend < 0 {
+		return "↘"
+	}
+	return "→"
+}

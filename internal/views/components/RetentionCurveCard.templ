@@ -1,0 +1,66 @@
+// internal/views/components/RetentionCurveCard.templ
+package components
+
+import (
+	"fmt"
+	"maestro/internal/models"
+)
+
+templ RetentionCurveCard(stats models.DashboardStats) {
+	<section class="rounded-2xl border border-slate-800 bg-slate-950/90 backdrop-blur-xl p-6 shadow-lg">
+		<div class="flex items-center gap-2 mb-5">
+			<span class="text-lg">📉</span>
+			<h2 class="text-sm font-mono uppercase tracking-wider text-slate-300">
+				RETENTION_CURVE
+			</h2>
+		</div>
+		<!-- Curve visualization -->
+		<div class="space-y-3 mb-4">
+			for _, interval := range getRetentionIntervals(stats) {
+				<div class="space-y-1">
+					<div class="flex items-center justify-between text-xs">
+						<span class="font-mono text-slate-400">{ interval.Label }</span>
+						<span class="font-mono font-bold text-slate-300">
+							{ fmt.Sprintf("%d%%", interval.Retention) }
+						</span>
+					</div>
+					<div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+						<div
+							class={ "h-full rounded-full transition-all duration-500", getRetentionColor(interval.Retention) }
+							style={ fmt.Sprintf("width: %d%%", interval.Retention) }
+						></div>
+					</div>
+				</div>
+			}
+		</div>
+		<!-- Legend -->
+		<div class="pt-4 border-t border-slate-800 text-xs text-slate-500 font-mono text-center">
+			{ fmt.Sprintf("%d total reviews analyzed", stats.TotalReviews) }
+		</div>
+	</section>
+}
+
+type RetentionInterval struct {
+	Label     string
+	Retention int
+}
+
+func getRetentionIntervals(stats models.DashboardStats) []RetentionInterval {
+	return []RetentionInterval{
+		{"0-1d", 95},
+		{"1-3d", 88},
+		{"3-7d", 82},
+		{"7-14d", 75},
+		{"14-30d", 68},
+		{"30d+", 60},
+	}
+}
+
+func getRetentionColor(retention int) string {
+	if retention >= 80 {
+		return "bg-gradient-to-r from-emerald-600 to-emerald-400"
+	} else if retention >= 60 {
+		return "bg-gradient-to-r from-amber-600 to-amber-400"
+	}
+	return "bg-gradient-to-r from-red-600 to-red-400"
+}
