@@ -1,0 +1,49 @@
+package components
+
+import (
+	"fmt"
+	"maestro/internal/models"
+)
+
+templ InsightsCard(stats models.DashboardStats, todayCount int, overdueCount int) {
+	<section class="rounded-2xl border border-purple-500/40 bg-gradient-to-br from-purple-950/40 to-slate-950 p-6 shadow-lg shadow-purple-900/20">
+		<div class="flex items-center gap-2 mb-4">
+			<span class="text-lg">🤖</span>
+			<h2 class="text-sm font-mono uppercase tracking-wider text-purple-300">
+				INSIGHTS.AI
+			</h2>
+		</div>
+		<div class="space-y-3 text-xs font-mono leading-relaxed">
+			if overdueCount > 0 {
+				<div class="flex items-start gap-2 text-red-300">
+					<span class="mt-0.5">⚠</span>
+					<p>Critical: { fmt.Sprint(overdueCount) } overdue. Start session now.</p>
+				</div>
+			}
+			if stats.StreakDays >= 7 {
+				<div class="flex items-start gap-2 text-emerald-300">
+					<span class="mt-0.5">🔥</span>
+					<p>{ fmt.Sprint(stats.StreakDays) }-day streak! Consistency unlocks mastery.</p>
+				</div>
+			}
+			if stats.CompletionRate > 80 {
+				<div class="flex items-start gap-2 text-sky-300">
+					<span class="mt-0.5">✨</span>
+					<p>{ fmt.Sprint(stats.CompletionRate) }% completion. Excellent trajectory.</p>
+				</div>
+			}
+			if stats.RetentionRate < 60 {
+				<div class="flex items-start gap-2 text-amber-300">
+					<span class="mt-0.5">💡</span>
+					<p>Retention { fmt.Sprint(stats.RetentionRate) }%. Consider shorter intervals.</p>
+				</div>
+			}
+			if todayCount == 0 && overdueCount == 0 {
+				<div class="flex items-start gap-2 text-emerald-300">
+					<span class="mt-0.5">✓</span>
+					<p>All clear. Perfect time for new exercises.</p>
+				</div>
+			}
+		</div>
+	</section>
+}

@@ -1,0 +1,35 @@
+package components
+
+import (
+	"fmt"
+	"maestro/internal/models"
+)
+
+templ TimeInvestCard(stats models.DashboardStats) {
+	<section class="rounded-2xl border border-slate-800 bg-slate-950/90 p-6 shadow-lg">
+		<div class="flex items-center gap-2 mb-4">
+			<span class="text-lg">⏱</span>
+			<h2 class="text-sm font-mono uppercase tracking-wider text-slate-300">
+				TIME_INVESTMENT
+			</h2>
+		</div>
+		<div class="grid grid-cols-2 gap-4">
+			<div class="p-4 rounded-lg border border-slate-800 bg-slate-900/50">
+				<div class="text-2xl font-bold font-mono text-sky-300 mb-1">
+					{ fmt.Sprintf("%dh", int(stats.TotalSessionTime.Hours())) }
+				</div>
+				<div class="text-[10px] font-mono text-slate-500 uppercase">
+					Total Time
+				</div>
+			</div>
+			<div class="p-4 rounded-lg border border-slate-800 bg-slate-900/50">
+				<div class="text-2xl font-bold font-mono text-purple-300 mb-1">
+					{ fmt.Sprintf("%dm", int(stats.AvgSessionTime.Minutes())) }
+				</div>
+				<div class="text-[10px] font-mono text-slate-500 uppercase">
+					Avg Session
+				</div>
+			</div>
+		</div>
+	</section>
+}

@@ -1,0 +1,44 @@
+package components
+
+import (
+	"fmt"
+	"maestro/internal/models"
+)
+
+templ WeaknessCard(stats models.DashboardStats) {
+	<section class="rounded-2xl border border-slate-800 bg-slate-950/90 p-6 shadow-lg">
+		<div class="flex items-center gap-2 mb-4">
+			<span class="text-lg">📉</span>
+			<h2 class="text-sm font-mono uppercase tracking-wider text-slate-300">
+				WEAK_SPOTS
+			</h2>
+		</div>
+		<!-- Placeholder for weak exercises -->
+		<div class="space-y-2">
+			<div class="p-3 rounded-lg border border-amber-500/30 bg-amber-950/20">
+				<div class="flex items-center justify-between">
+					<span class="text-xs text-amber-300 font-mono">Low Ease Factor</span>
+					<span class="text-sm font-mono font-bold text-amber-400">
+						{ fmt.Sprintf("%.2f", stats.AverageEaseFactor) }
+					</span>
+				</div>
+				<p class="text-[10px] text-slate-500 mt-1">
+					Focus on fundamentals
+				</p>
+			</div>
+			if stats.AverageInterval < 3 {
+				<div class="p-3 rounded-lg border border-red-500/30 bg-red-950/20">
+					<div class="flex items-center justify-between">
+						<span class="text-xs text-red-300 font-mono">Short Intervals</span>
+						<span class="text-sm font-mono font-bold text-red-400">
+							{ fmt.Sprintf("%dd", stats.AverageInterval) }
+						</span>
+					</div>
+					<p class="text-[10px] text-slate-500 mt-1">
+						Struggling with retention
+					</p>
+				</div>
+			}
+		</div>
+	</section>
+}

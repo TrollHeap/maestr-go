@@ -1,0 +1,43 @@
+package components
+
+import (
+	"fmt"
+	"maestro/internal/models"
+)
+
+templ ReviewDistribCard(stats models.DashboardStats) {
+	<section class="rounded-2xl border border-slate-800 bg-slate-950/90 p-6 shadow-lg">
+		<div class="flex items-center gap-2 mb-4">
+			<span class="text-lg">📈</span>
+			<h2 class="text-sm font-mono uppercase tracking-wider text-slate-300">
+				REVIEW_DISTRIBUTION
+			</h2>
+		</div>
+		<div class="grid grid-cols-3 gap-3">
+			<div class="text-center p-3 rounded-lg border border-slate-800 bg-slate-900/50">
+				<div class="text-xl font-bold font-mono text-emerald-300">
+					{ fmt.Sprint(stats.TotalMastered) }
+				</div>
+				<div class="text-[10px] font-mono text-slate-500 uppercase mt-1">
+					Mastered
+				</div>
+			</div>
+			<div class="text-center p-3 rounded-lg border border-slate-800 bg-slate-900/50">
+				<div class="text-xl font-bold font-mono text-amber-300">
+					{ fmt.Sprint(stats.InProgressCount) }
+				</div>
+				<div class="text-[10px] font-mono text-slate-500 uppercase mt-1">
+					Learning
+				</div>
+			</div>
+			<div class="text-center p-3 rounded-lg border border-slate-800 bg-slate-900/50">
+				<div class="text-xl font-bold font-mono text-slate-400">
+					{ fmt.Sprint(stats.TodoCount) }
+				</div>
+				<div class="text-[10px] font-mono text-slate-500 uppercase mt-1">
+					Pending
+				</div>
+			</div>
+		</div>
+	</section>
+}

@@ -88,3 +88,23 @@ func GetHeatmapTooltip(day HeatmapDay) string {
 		reviews,
 	)
 }
+
+func GetHeatmapClass(daysAgo int, weeklyReviews int) string {
+	intensity := (7 - daysAgo) * weeklyReviews / 7
+
+	switch {
+	case intensity == 0:
+		return "bg-slate-900 border-slate-800"
+	case intensity < 3:
+		return "bg-sky-900/30 border-sky-800/50"
+	case intensity < 6:
+		return "bg-sky-700/50 border-sky-600/50"
+	default:
+		return "bg-sky-500/70 border-sky-500 shadow-[0_0_10px_rgba(56,189,248,0.4)]"
+	}
+}
+
+func GetDayShort(daysAgo int) string {
+	date := time.Now().AddDate(0, 0, -daysAgo)
+	return date.Format("Mon")[0:1]
+}

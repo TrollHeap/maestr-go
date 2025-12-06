@@ -1,8 +1,10 @@
+// internal/views/pages/Dashboard.templ
 package pages
 
 import (
 	"fmt"
 	"maestro/internal/models"
+	"maestro/internal/views/components"
 	"maestro/internal/views/layouts"
 	"maestro/internal/views/ui"
 	"time"
@@ -16,371 +18,89 @@ templ Dashboard(
 	overdue []models.Exercise,
 	upcoming []models.Exercise,
 ) {
-	@layouts.Base("Dashboard - Maestro Terminal") {
-		<div class="relative min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-50">
-			<!-- ✅ IDENTIQUE DASHBOARD: Terminal Overlay Effects -->
-			<div class="pointer-events-none absolute inset-0 overflow-hidden">
-				<div class="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-sky-400/60 to-transparent top-20 animate-[pulse_2s_ease-in-out_infinite]"></div>
-				<div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.15),_transparent_50%)]"></div>
-				<div class="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,.05)_2px,rgba(0,0,0,.05)_4px)] opacity-30"></div>
-				<div class="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
-				<div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-sky-500/5 rounded-full blur-3xl"></div>
+	@layouts.Base("Analytics Dashboard - Maestro") {
+		<div class="relative min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+			<!-- Ambient Effects -->
+			<div class="pointer-events-none absolute inset-0 overflow-hidden opacity-40">
+				<div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,_rgba(56,189,248,0.1),_transparent_50%)]"></div>
+				<div class="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,_rgba(168,85,247,0.1),_transparent_50%)]"></div>
 			</div>
-			<div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-				<!-- Hero Terminal Header -->
-				<header class="mb-8">
-					@ui.TerminalHeaderWithDate("ANALYTICS.DASHBOARD", time.Now(), ui.HeaderAmber)
-				</header>
-				<!-- KPI Grid -->
-				<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-					@KPICard("TODAY", todayCount, "reviews", "⏰", todayCount > 5, "/session/builder")
-					@KPICard("OVERDUE", overdueCount, "critical", "⚠", overdueCount > 0, "/planner?view=urgent")
-					@KPICard("UPCOMING", upcomingCount, "queued", "📅", false, "/planner")
-					@KPICard("MASTERED", stats.TotalMastered, "complete", "✓", false, "/exercises?status=mastered")
-				</div>
-				<!-- Main Dashboard Grid -->
-				<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-					<!-- Left Column: Activity + Performance -->
-					<div class="lg:col-span-2 space-y-6">
-						<!-- Activity Heatmap -->
-						<section class="rounded-2xl border border-slate-800 bg-slate-950/80 p-6 shadow-sm shadow-slate-950/40 transition-all hover:border-sky-500/60 hover:shadow-lg hover:shadow-sky-900/40">
-							<div class="flex items-center justify-between mb-4">
-								<h2 class="text-sm font-mono uppercase tracking-wider text-slate-50">
-									ACTIVITY_MAP.7D
-								</h2>
-								<span class="text-xs text-slate-400 font-mono">
-									{ fmt.Sprint(stats.WeeklyReviews) } reviews
-								</span>
-							</div>
-							@ActivityHeatmap(stats)
-						</section>
-						<!-- Performance Metrics - ✅ Style ProgressBar -->
-						<section class="rounded-2xl border border-slate-700/80 bg-slate-900/80 backdrop-blur-xl p-6 shadow-sm shadow-slate-950/40 transition-all hover:border-sky-500/60 hover:shadow-lg hover:shadow-sky-900/40">
-							<div class="flex items-center gap-2 mb-4">
-								<span>📊</span>
-								<h2 class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">
-									PERFORMANCE_METRICS
-								</h2>
-							</div>
-							<div class="space-y-4">
-								@MetricBar("Completion", stats.CompletionRate, "%", "emerald")
-								@MetricBar("Avg Interval", stats.AverageInterval, "d", "purple")
-								@MetricBar("Avg Difficulty", int(stats.AverageDifficulty*20), "/5", "amber")
-							</div>
-						</section>
-						<!-- Domain Distribution - ✅ Style ProgressBar -->
-						<section class="rounded-2xl border border-slate-700/80 bg-slate-900/80 backdrop-blur-xl p-6 shadow-sm shadow-slate-950/40 transition-all hover:border-sky-500/60 hover:shadow-lg hover:shadow-sky-900/40">
-							<div class="flex items-center gap-2 mb-4">
-								<span>📊</span>
-								<h2 class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">
-									DOMAIN_DISTRIBUTION
-								</h2>
-							</div>
-							@DomainBreakdown(stats.DomainBreakdown, stats.TotalExercises)
-						</section>
-					</div>
-					<!-- Right Column: Insights + Quick Actions -->
-					<div class="space-y-6">
-						<!-- AI Insights -->
-						<section class="rounded-2xl border border-purple-500/60 bg-gradient-to-br from-purple-950/60 to-purple-900/40 p-6 shadow-sm shadow-slate-950/40 transition-all hover:border-purple-400/80 hover:shadow-lg hover:shadow-purple-900/40">
-							<div class="flex items-center gap-2 mb-4">
-								<span class="text-lg">🤖</span>
-								<h2 class="text-sm font-mono uppercase tracking-wider text-purple-300">
-									INSIGHTS.AI
-								</h2>
-							</div>
-							<div class="space-y-3 text-sm">
-								@InsightItem(todayCount, overdueCount, stats)
-							</div>
-						</section>
-						<!-- Quick Stats -->
-						<section class="rounded-2xl border border-slate-800 bg-slate-950/80 p-6 shadow-sm shadow-slate-950/40 transition-all hover:border-sky-500/60 hover:shadow-lg hover:shadow-sky-900/40">
-							<h2 class="text-sm font-mono uppercase tracking-wider text-slate-50 mb-4">
-								QUICK_STATS
-							</h2>
-							<div class="space-y-3">
-								@QuickStat("Total Exercises", stats.TotalExercises, "📚")
-								@QuickStat("Top Domain", stats.TopDomain, "⭐")
-								@QuickStat("Session Count", stats.SessionCount, "🎯")
-								if !stats.NextReviewDate.IsZero() {
-									@QuickStat("Next Review", formatDateShort(stats.NextReviewDate), "📅")
-								}
-							</div>
-						</section>
-					</div>
-				</div>
-				<!-- Empty State -->
-				if stats.TotalExercises == 0 {
-					<div class="text-center py-16 space-y-6">
-						<div class="inline-flex items-center justify-center w-24 h-24 rounded-full border-2 border-slate-800 bg-slate-950/80">
-							<span class="text-5xl">📚</span>
-						</div>
-						<div class="space-y-2">
-							<h3 class="text-2xl font-bold font-mono text-slate-50">
-								NO_DATA_LOADED
-							</h3>
-							<p class="text-slate-400 font-mono text-sm">
-								// Import exercises to start tracking
-							</p>
-						</div>
+			<div class="relative z-10 max-w-[1920px] mx-auto px-6 py-8 space-y-6">
+				<!-- ============================================ -->
+				<!-- HERO SECTION: Status + Actions Rapides -->
+				<!-- ============================================ -->
+				<div class="flex items-center justify-between mb-8">
+					@ui.TerminalHeaderWithDate("MISSION_CONTROL.ANALYTICS", time.Now(), ui.HeaderSky)
+					<!-- Quick Actions -->
+					<div class="flex items-center gap-3">
 						<a
-							href="/exercises"
-							class="inline-flex items-center gap-2 px-6 py-3 rounded-lg border-2 border-purple-500/60 bg-purple-900/50 text-purple-200 font-mono text-sm uppercase transition-all hover:bg-purple-800/70 hover:border-purple-400 hover:shadow-lg hover:shadow-purple-900/40"
+							href="/session/builder"
+							class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-purple-500/60 bg-purple-900/40 text-purple-200 
+                                font-mono text-xs tracking-wider uppercase hover:bg-purple-800/60 hover:border-purple-400 transition-all hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]"
 							hx-boost="true"
 						>
-							<span>ADD_EXERCISES</span>
+							<span class="text-xl animate-pulse">⚡</span>
+							<span>START SESSION</span>
 							<span class="text-xs opacity-60">→</span>
 						</a>
+						<a
+							href="/exercises/new"
+							class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-slate-700 bg-slate-900/80 text-slate-300 
+                            font-mono text-xs uppercase tracking-wider hover:border-sky-500/60 hover:bg-slate-800 transition-all"
+							hx-boost="true"
+						>
+							<span>+</span>
+							<span>NEW EXERCISE</span>
+						</a>
 					</div>
-				}
+				</div>
+				<!-- ============================================ -->
+				<!-- KPI GRID: 4 cartes principales -->
+				<!-- ============================================ -->
+				<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+					@components.KPICard("TODAY", todayCount, "reviews", "⏰", todayCount > 5, "/session/builder", stats.CompletionRate)
+					@components.KPICard("OVERDUE", overdueCount, "critical", "⚠", overdueCount > 0, "/planner?view=urgent", 0)
+					@components.KPICard("STREAK", stats.StreakDays, "days", "🔥", stats.StreakDays >= 7, "/planner", 0)
+					@components.KPICard("MASTERED", stats.TotalMastered, fmt.Sprintf("/%d", stats.TotalExercises), "✓", false, "/exercises?status=mastered", stats.CompletionRate)
+				</div>
+				<!-- ============================================ -->
+				<!-- MAIN GRID: 3 colonnes responsives -->
+				<!-- ============================================ -->
+				<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+					<!-- ===== COLONNE 1: Performance + SRS ===== -->
+					<div class="space-y-6">
+						<!-- Performance Overview -->
+						@components.PerformanceCard(stats)
+						<!-- SRS Health -->
+						@components.SRSHealthCard(stats)
+					</div>
+					<!-- ===== COLONNE 2: Activity + Priority ===== -->
+					<div class="space-y-6">
+						<!-- Activity Heatmap -->
+						@components.ActivityHeatmapV2(stats)
+						<!-- Priority Queue -->
+						@components.PriorityQueueCard(overdue, upcoming)
+					</div>
+					<!-- ===== COLONNE 3: Insights + Weaknesses ===== -->
+					<div class="space-y-6">
+						<!-- AI Insights -->
+						@components.InsightsCard(stats, todayCount, overdueCount)
+						<!-- Weak Exercises -->
+						@components.WeaknessCard(stats)
+						<!-- Domain Strength -->
+						@components.DomainStrengthCard(stats)
+					</div>
+				</div>
+				<!-- ============================================ -->
+				<!-- BOTTOM SECTION: Advanced Analytics -->
+				<!-- ============================================ -->
+				<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+					<!-- Review Distribution -->
+					@components.ReviewDistribCard(stats)
+					<!-- Time Investment -->
+					@components.TimeInvestCard(stats)
+				</div>
 			</div>
 		</div>
 	}
-}
-
-// ============================================
-// COMPONENTS - PROGRESSBAR STYLE UNIFIED
-// ============================================
-templ KPICard(label string, value int, unit string, icon string, isUrgent bool, url string) {
-	<a
-		href={ templ.URL(url) }
-		class={
-			"relative block rounded-2xl border p-4 shadow-sm transition-all hover:scale-105",
-			templ.KV("border-red-500/70 bg-red-950/60 shadow-red-950/40 hover:shadow-lg hover:shadow-red-900/50", isUrgent),
-			templ.KV("border-slate-800 bg-slate-950/80 shadow-slate-950/40 hover:border-sky-500/60 hover:shadow-lg hover:shadow-sky-900/40", !isUrgent),
-		}
-		hx-boost="true"
-	>
-		<div class="flex items-center justify-between mb-2">
-			<span class="text-xs font-mono uppercase tracking-widest text-slate-400">
-				{ label }
-			</span>
-			<span class="text-xl">{ icon }</span>
-		</div>
-		<div class="flex items-baseline gap-1">
-			<span
-				class={
-					"text-3xl font-bold font-mono",
-					templ.KV("text-red-400", isUrgent),
-					templ.KV("text-sky-400", !isUrgent),
-				}
-			>
-				{ fmt.Sprint(value) }
-			</span>
-			<span class="text-xs text-slate-400 font-mono">
-				{ unit }
-			</span>
-		</div>
-		if isUrgent {
-			<span class="absolute top-2 right-2 flex h-2 w-2">
-				<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-				<span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-			</span>
-		}
-	</a>
-}
-
-templ ActivityHeatmap(stats models.DashboardStats) {
-	<div class="grid grid-cols-7 gap-2">
-		for i := 6; i >= 0; i-- {
-			@HeatmapDay(i, stats.WeeklyReviews)
-		}
-	</div>
-	<div class="flex items-center justify-between mt-4 text-xs text-slate-400 font-mono">
-		<span>7d ago</span>
-		<span>today</span>
-	</div>
-}
-
-templ HeatmapDay(daysAgo int, weeklyReviews int) {
-	<div class="text-center">
-		<div class={ "h-16 rounded-lg border transition-all hover:scale-105", getHeatmapColor(daysAgo, weeklyReviews) }></div>
-		<span class="text-xs text-slate-400 font-mono mt-1 block">
-			{ getDayLabel(daysAgo) }
-		</span>
-	</div>
-}
-
-// ✅ MetricBar avec style ProgressBar
-templ MetricBar(label string, value int, unit string, color string) {
-	<div class="space-y-2">
-		<!-- Label avec tracking étendu -->
-		<div class="flex items-center justify-between">
-			<span class="text-[11px] font-mono text-slate-400">
-				{ label }
-			</span>
-			<span class={ "text-sm font-mono font-semibold", getMetricColor(color) }>
-				{ fmt.Sprint(value) }{ unit }
-			</span>
-		</div>
-		<!-- Barre avec glow emerald -->
-		<div class="relative h-2.5 rounded-full bg-slate-800/80 overflow-hidden">
-			<div
-				class={ "h-full rounded-full transition-all duration-500", getMetricBarBg(color) }
-				style={ fmt.Sprintf("width: %d%%", min(value, 100)) }
-			></div>
-		</div>
-	</div>
-}
-
-templ DomainBreakdown(breakdown map[string]int, total int) {
-	if len(breakdown) > 0 {
-		<div class="space-y-4">
-			for domain, count := range breakdown {
-				@DomainBar(domain, count, total)
-			}
-		</div>
-	} else {
-		<p class="text-[11px] text-slate-400 font-mono text-center py-4">
-			// No data available
-		</p>
-	}
-}
-
-// ✅ DomainBar avec style ProgressBar
-templ DomainBar(domain string, count int, total int) {
-	<div class="space-y-2">
-		<div class="flex items-center justify-between">
-			<span class="text-[11px] font-mono text-slate-300">{ domain }</span>
-			<span class="text-[11px] font-mono text-slate-400">
-				{ fmt.Sprint(count) } ({ fmt.Sprint(calculatePercentage(count, total)) }%)
-			</span>
-		</div>
-		<div class="relative h-1.5 rounded-full bg-slate-800/80 overflow-hidden">
-			<div
-				class="h-full rounded-full bg-gradient-to-r from-sky-500 via-sky-400 to-purple-500 shadow-[0_0_10px_rgba(56,189,248,0.5)] transition-all duration-500"
-				style={ fmt.Sprintf("width: %d%%", calculatePercentage(count, total)) }
-			></div>
-		</div>
-	</div>
-}
-
-templ InsightItem(todayCount, overdueCount int, stats models.DashboardStats) {
-	if overdueCount > 0 {
-		<div class="flex items-start gap-2 text-red-300">
-			<span class="mt-0.5">⚠</span>
-			<p class="text-xs font-mono leading-relaxed">
-				Critical: { fmt.Sprint(overdueCount) } overdue tasks require immediate attention
-			</p>
-		</div>
-	}
-	if todayCount > 5 {
-		<div class="flex items-start gap-2 text-amber-300">
-			<span class="mt-0.5">💡</span>
-			<p class="text-xs font-mono leading-relaxed">
-				High load today. Consider splitting into multiple sessions
-			</p>
-		</div>
-	}
-	if stats.StreakDays >= 7 {
-		<div class="flex items-start gap-2 text-emerald-300">
-			<span class="mt-0.5">🎯</span>
-			<p class="text-xs font-mono leading-relaxed">
-				{ fmt.Sprint(stats.StreakDays) }-day streak! Consistency is key to mastery
-			</p>
-		</div>
-	}
-	if stats.CompletionRate > 80 {
-		<div class="flex items-start gap-2 text-sky-300">
-			<span class="mt-0.5">✨</span>
-			<p class="text-xs font-mono leading-relaxed">
-				{ fmt.Sprint(stats.CompletionRate) }% completion rate. Excellent progress!
-			</p>
-		</div>
-	}
-	if todayCount == 0 && overdueCount == 0 {
-		<div class="flex items-start gap-2 text-emerald-300">
-			<span class="mt-0.5">✓</span>
-			<p class="text-xs font-mono leading-relaxed">
-				All tasks completed. Perfect time to explore new exercises
-			</p>
-		</div>
-	}
-}
-
-templ QuickStat(label string, value interface{}, icon string) {
-	<div class="flex items-center justify-between py-2 border-b border-slate-800">
-		<span class="text-xs font-mono text-slate-400 flex items-center gap-2">
-			<span>{ icon }</span>
-			<span>{ label }</span>
-		</span>
-		<span class="text-sm font-mono text-slate-50 font-semibold">
-			{ fmt.Sprint(value) }
-		</span>
-	</div>
-}
-
-// ============================================
-// HELPER FUNCTIONS
-// ============================================
-
-func getGreeting() string {
-	hour := time.Now().Hour()
-	switch {
-	case hour < 12:
-		return "MORNING.SYS"
-	case hour < 18:
-		return "AFTERNOON.SYS"
-	default:
-		return "EVENING.SYS"
-	}
-}
-
-func getDayLabel(daysAgo int) string {
-	date := time.Now().AddDate(0, 0, -daysAgo)
-	return date.Format("Mon")[0:1]
-}
-
-func getHeatmapColor(daysAgo int, weeklyReviews int) string {
-	intensity := (7 - daysAgo) * weeklyReviews / 7
-
-	switch {
-	case intensity == 0:
-		return "bg-slate-800 border-slate-800 hover:border-slate-700"
-	case intensity < 3:
-		return "bg-sky-900/40 border-slate-800 hover:border-sky-700/60"
-	case intensity < 6:
-		return "bg-sky-700/60 border-slate-800 hover:border-sky-500/60"
-	default:
-		return "bg-sky-500/80 border-sky-500/60 hover:border-sky-400"
-	}
-}
-
-func getMetricColor(color string) string {
-	colors := map[string]string{
-		"emerald": "text-emerald-300", // ✅ Ajout emerald
-		"sky":     "text-sky-400",
-		"purple":  "text-purple-400",
-		"amber":   "text-amber-400",
-	}
-	return colors[color]
-}
-
-func getMetricBarBg(color string) string {
-	colors := map[string]string{
-		// ✅ Emerald avec glow comme ProgressBar
-		"emerald": "bg-gradient-to-r from-emerald-400 via-emerald-300 to-emerald-200 shadow-[0_0_12px_rgba(45,212,191,0.7)]",
-		"sky":     "bg-gradient-to-r from-sky-600 to-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.5)]",
-		"purple":  "bg-gradient-to-r from-purple-600 to-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.5)]",
-		"amber":   "bg-gradient-to-r from-amber-600 to-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]",
-	}
-	return colors[color]
-}
-
-func calculatePercentage(part, total int) int {
-	if total == 0 {
-		return 0
-	}
-	return (part * 100) / total
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func formatDateShort(t time.Time) string {
-	return t.Format("Jan 02")
 }

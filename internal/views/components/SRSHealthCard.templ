@@ -1,0 +1,48 @@
+package components
+
+import (
+	"fmt"
+	"maestro/internal/models"
+)
+
+templ SRSHealthCard(stats models.DashboardStats) {
+	<section class="rounded-2xl border border-slate-800 bg-slate-950/90 p-6 shadow-lg">
+		<div class="flex items-center gap-2 mb-5">
+			<span class="text-lg">🧠</span>
+			<h2 class="text-sm font-mono uppercase tracking-wider text-slate-300">
+				SRS_HEALTH
+			</h2>
+		</div>
+		<div class="grid grid-cols-2 gap-4">
+			<!-- Total Reviews -->
+			<div class="p-3 rounded-lg border border-slate-800 bg-slate-900/50">
+				<div class="text-2xl font-bold font-mono text-sky-300 mb-1">
+					{ fmt.Sprint(stats.WeeklyReviews) }
+				</div>
+				<div class="text-[10px] font-mono text-slate-500 uppercase">
+					Reviews (7d)
+				</div>
+			</div>
+			<!-- Session Count -->
+			<div class="p-3 rounded-lg border border-slate-800 bg-slate-900/50">
+				<div class="text-2xl font-bold font-mono text-emerald-300 mb-1">
+					{ fmt.Sprint(stats.SessionCount) }
+				</div>
+				<div class="text-[10px] font-mono text-slate-500 uppercase">
+					Sessions
+				</div>
+			</div>
+			<!-- Avg Session Time -->
+			<div class="col-span-2 p-3 rounded-lg border border-slate-800 bg-slate-900/50">
+				<div class="flex items-center justify-between">
+					<span class="text-[10px] font-mono text-slate-500 uppercase">
+						Avg Session
+					</span>
+					<span class="text-lg font-bold font-mono text-purple-300">
+						{ fmt.Sprintf("%dm", int(stats.AvgSessionTime.Minutes())) }
+					</span>
+				</div>
+			</div>
+		</div>
+	</section>
+}

@@ -1,0 +1,73 @@
+package components
+
+import (
+	"fmt"
+	"maestro/internal/models"
+)
+
+templ PriorityQueueCard(overdue []models.Exercise, upcoming []models.Exercise) {
+	<section class="rounded-2xl border border-slate-800 bg-slate-950/90 p-6 shadow-lg">
+		<div class="flex items-center gap-2 mb-4">
+			<span class="text-lg">🎯</span>
+			<h2 class="text-sm font-mono uppercase tracking-wider text-slate-300">
+				PRIORITY_QUEUE
+			</h2>
+		</div>
+		<div class="space-y-3">
+			<!-- Overdue -->
+			if len(overdue) > 0 {
+				<div class="space-y-2">
+					<div class="text-[10px] font-mono text-red-400 uppercase tracking-wider">
+						⚠ Overdue ({ fmt.Sprint(len(overdue)) })
+					</div>
+					for i, ex := range overdue {
+						if i < 3 {
+							@PriorityItem(ex, true)
+						}
+					}
+				</div>
+			}
+			<!-- Upcoming -->
+			if len(upcoming) > 0 {
+				<div class="space-y-2">
+					<div class="text-[10px] font-mono text-sky-400 uppercase tracking-wider mt-3">
+						📅 Upcoming ({ fmt.Sprint(len(upcoming)) })
+					</div>
+					for i, ex := range upcoming {
+						if i < 3 {
+							@PriorityItem(ex, false)
+						}
+					}
+				</div>
+			}
+			<!-- Empty state -->
+			if len(overdue) == 0 && len(upcoming) == 0 {
+				<div class="text-center py-6 text-slate-500">
+					<span class="text-2xl mb-2 block">✓</span>
+					<p class="text-xs font-mono">All caught up!</p>
+				</div>
+			}
+		</div>
+	</section>
+}
+
+templ PriorityItem(ex models.Exercise, isOverdue bool) {
+	<a
+		href={ templ.URL(fmt.Sprintf("/exercise/%d", ex.ID)) }
+		class={
+			"block p-2 rounded-lg border transition-all hover:scale-[1.02]",
+			templ.KV("border-red-500/30 bg-red-950/30 hover:border-red-500/60", isOverdue),
+			templ.KV("border-slate-700 bg-slate-900/50 hover:border-sky-500/60", !isOverdue),
+		}
+		hx-boost="true"
+	>
+		<div class="flex items-center justify-between gap-2">
+			<span class="text-xs text-slate-300 truncate flex-1">
+				{ ex.Title }
+			</span>
+			<span class="text-[10px] font-mono text-slate-500">
+				D{ fmt.Sprint(ex.Difficulty) }
+			</span>
+		</div>
+	</a>
+}

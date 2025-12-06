@@ -1,0 +1,62 @@
+package components
+
+import "fmt"
+
+templ KPICard(label string, value int, unit string, icon string, isUrgent bool, url string, progress int) {
+	<a
+		href={ templ.URL(url) }
+		class={
+			"group relative block rounded-2xl border p-5 shadow-lg transition-all hover:scale-[1.02]",
+			templ.KV("border-red-500/50 bg-gradient-to-br from-red-950/60 to-slate-950 shadow-red-900/40 hover:shadow-red-900/60", isUrgent),
+			templ.KV("border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950 shadow-slate-900/40 hover:border-sky-500/60 hover:shadow-sky-900/50", !isUrgent),
+		}
+		hx-boost="true"
+	>
+		<!-- Header -->
+		<div class="flex items-center justify-between mb-3">
+			<span class="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+				{ label }
+			</span>
+			<span class="text-2xl opacity-80">{ icon }</span>
+		</div>
+		<!-- Value -->
+		<div class="flex items-baseline gap-2 mb-3">
+			<span
+				class={
+					"text-4xl font-bold font-mono leading-none",
+					templ.KV("text-red-400", isUrgent),
+					templ.KV("text-sky-300", !isUrgent),
+				}
+			>
+				{ fmt.Sprint(value) }
+			</span>
+			<span class="text-sm text-slate-400 font-mono">
+				{ unit }
+			</span>
+		</div>
+		<!-- Progress Bar (si applicable) -->
+		if progress > 0 {
+			<div class="h-1 bg-slate-800 rounded-full overflow-hidden">
+				<div
+					class={
+						"h-full transition-all duration-500",
+						templ.KV("bg-gradient-to-r from-red-500 to-rose-400", isUrgent),
+						templ.KV("bg-gradient-to-r from-emerald-500 to-emerald-400", !isUrgent),
+					}
+					style={ fmt.Sprintf("width: %d%%", progress) }
+				></div>
+			</div>
+		}
+		<!-- Pulse indicator (urgent) -->
+		if isUrgent {
+			<span class="absolute top-3 right-3 flex h-3 w-3">
+				<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+				<span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+			</span>
+		}
+		<!-- Hover Arrow -->
+		<div class="absolute bottom-3 right-3 text-slate-600 group-hover:text-sky-400 transition-colors">
+			<span class="text-xs">→</span>
+		</div>
+	</a>
+}

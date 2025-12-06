@@ -1,0 +1,71 @@
+package components
+
+import (
+	"fmt"
+	"maestro/internal/models"
+)
+
+templ PerformanceCard(stats models.DashboardStats) {
+	<section class="rounded-2xl border border-slate-800 bg-slate-950/90 backdrop-blur-xl p-6 shadow-lg">
+		<div class="flex items-center gap-2 mb-5">
+			<span class="text-lg">📊</span>
+			<h2 class="text-sm font-mono uppercase tracking-wider text-slate-300">
+				PERFORMANCE_MATRIX
+			</h2>
+		</div>
+		<div class="space-y-5">
+			<!-- Completion Rate -->
+			<div class="space-y-2">
+				<div class="flex items-center justify-between">
+					<span class="text-xs font-mono text-slate-400">Completion Rate</span>
+					<span class="text-sm font-mono font-bold text-emerald-300">
+						{ fmt.Sprintf("%d%%", stats.CompletionRate) }
+					</span>
+				</div>
+				<div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+					<div
+						class="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.6)] transition-all duration-500"
+						style={ fmt.Sprintf("width: %d%%", stats.CompletionRate) }
+					></div>
+				</div>
+			</div>
+			<!-- Retention Rate -->
+			<div class="space-y-2">
+				<div class="flex items-center justify-between">
+					<span class="text-xs font-mono text-slate-400">Retention Rate</span>
+					<span class="text-sm font-mono font-bold text-sky-300">
+						{ fmt.Sprintf("%d%%", stats.RetentionRate) }
+					</span>
+				</div>
+				<div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+					<div
+						class="h-full bg-gradient-to-r from-sky-600 to-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.6)] transition-all duration-500"
+						style={ fmt.Sprintf("width: %d%%", stats.RetentionRate) }
+					></div>
+				</div>
+			</div>
+			<!-- Avg Ease Factor -->
+			<div class="space-y-2">
+				<div class="flex items-center justify-between">
+					<span class="text-xs font-mono text-slate-400">Avg Ease Factor</span>
+					<span class="text-sm font-mono font-bold text-purple-300">
+						{ fmt.Sprintf("%.2f", stats.AverageEaseFactor) }
+					</span>
+				</div>
+				<div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+					<div
+						class="h-full bg-gradient-to-r from-purple-600 to-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.6)] transition-all duration-500"
+						style={ fmt.Sprintf("width: %d%%", min(int(stats.AverageEaseFactor*40), 100)) }
+					></div>
+				</div>
+			</div>
+			<!-- Avg Interval -->
+			<div class="flex items-center justify-between pt-2 border-t border-slate-800">
+				<span class="text-xs font-mono text-slate-400">Avg Review Interval</span>
+				<span class="text-sm font-mono font-semibold text-amber-300">
+					{ fmt.Sprintf("%dd", stats.AverageInterval) }
+				</span>
+			</div>
+		</div>
+	</section>
+}
