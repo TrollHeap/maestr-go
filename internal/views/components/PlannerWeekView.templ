@@ -4,7 +4,7 @@ package components
 import (
 	"fmt"
 	"maestro/internal/models"
-	"maestro/internal/views/utils"
+	"maestro/internal/views/logic"
 	"time"
 )
 
@@ -46,7 +46,7 @@ templ WeekDayCard(day models.DaySchedule) {
 	<div
 		class={
 			"week-day-card rounded-2xl border bg-slate-900/70 p-4 flex flex-col gap-3",
-			utils.GetWeekDayCardClasses(day.Date, day.Count),
+			logic.GetWeekDayCardClasses(day.Date, day.Count),
 		}
 	>
 		<div class="week-day-header flex items-center justify-between">
@@ -71,7 +71,7 @@ templ WeekDayCard(day models.DaySchedule) {
 				for _, ex := range day.Exercises {
 					<div class="mini-exercise truncate text-emerald-200 hover:text-emerald-100">
 						<a href={ templ.URL(fmt.Sprintf("/exercise/%d", ex.ID)) } class="hover:underline" hx-boost="true">
-							{ utils.Truncate(ex.Title, 22) }
+							{ logic.Truncate(ex.Title, 22) }
 						</a>
 					</div>
 				}

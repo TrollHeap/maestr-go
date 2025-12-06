@@ -3,12 +3,13 @@ package pages
 import (
 	"maestro/internal/models"
 	"maestro/internal/views/layouts"
+	"maestro/internal/views/logic"
 	"maestro/internal/views/utils"
 )
 
 // ExerciseForm : Formulaire création/édition
 templ ExerciseForm(ex *models.Exercise) {
-	@layouts.Base(utils.GetFormTitle(ex)) {
+	@layouts.Base(logic.GetFormTitle(ex)) {
 		<div class="max-w-4xl mx-auto p-6">
 			<!-- Header -->
 			<div class="mb-8">
@@ -29,7 +30,7 @@ templ ExerciseForm(ex *models.Exercise) {
 			</div>
 			<!-- Formulaire -->
 			<form
-				hx-post={ utils.GetFormAction(ex) }
+				hx-post={ logic.GetFormAction(ex) }
 				hx-target="#form-errors"
 				hx-swap="innerHTML"
 				class="space-y-6"

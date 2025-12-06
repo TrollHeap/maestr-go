@@ -3,7 +3,7 @@ package components
 
 import (
 	"fmt"
-	"maestro/internal/views/utils"
+	"maestro/internal/views/logic"
 	"time"
 )
 
@@ -56,7 +56,7 @@ templ PlannerMonthView(
 			<!-- Grille jours -->
 			<div class="grid grid-cols-7 gap-1 text-xs">
 				<!-- Jours vides avant le 1er -->
-				for i := 0; i < utils.GetEmptyDaysBefore(firstDay); i++ {
+				for i := 0; i < logic.GetEmptyDaysBefore(firstDay); i++ {
 					<div class="h-16 rounded-xl bg-slate-900/40 border border-dashed border-slate-800"></div>
 				}
 				<!-- Jours du mois -->
@@ -73,7 +73,7 @@ templ MonthDayCell(year int, month time.Month, day int, count int) {
 	<div
 		class={
 			"h-16 rounded-xl border text-xs flex flex-col justify-between p-1.5",
-			utils.GetMonthDayClasses(year, month, day, count),
+			logic.GetMonthDayClasses(year, month, day, count),
 		}
 	>
 		<div class="flex items-center justify-between">

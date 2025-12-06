@@ -4,7 +4,7 @@ package pages
 import (
 	"fmt"
 	"maestro/internal/views/layouts"
-	"maestro/internal/views/utils"
+	"maestro/internal/views/logic"
 	"time"
 )
 
@@ -67,7 +67,7 @@ templ SessionComplete(sessionID int64, completedCount int, duration time.Duratio
 								Durée totale
 							</div>
 							<div class="stat-value text-2xl font-bold text-sky-300">
-								{ utils.FormatDuration(duration) }
+								{ logic.FormatDuration(duration) }
 							</div>
 						</div>
 						<div class="stat-card rounded-2xl border border-purple-600/40 bg-purple-950/20 backdrop-blur-xl p-5 text-center space-y-2">

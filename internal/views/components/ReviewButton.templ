@@ -1,15 +1,18 @@
 package components
 
-import "maestro/internal/views/utils"
+import (
+	"maestro/internal/views/logic"
+	"maestro/internal/views/ui/style"
+)
 
 // ReviewButton - Version avec gradient
 templ ReviewButton(exerciseID, quality int, label, interval string, fromSession bool, sessionID string) {
 	<button
 		class={
 			"review-btn group relative rounded-2xl border px-5 py-4 text-left transition-all hover:shadow-2xl hover:-translate-y-1",
-			utils.GetReviewButtonClassesGradient(quality),
+			style.GetReviewButtonClassesGradient(quality),
 		}
-		hx-post={ utils.BuildReviewURL(exerciseID, quality, fromSession, sessionID) }
+		hx-post={ logic.BuildReviewURL(exerciseID, quality, fromSession, sessionID) }
 		hx-target="#review-panel"
 		hx-swap="outerHTML"
 	>
@@ -20,7 +23,7 @@ templ ReviewButton(exerciseID, quality int, label, interval string, fromSession 
 			<span
 				class={
 					"review-interval text-xs font-mono tracking-wider uppercase px-2 py-1 rounded-lg",
-					utils.GetIntervalBadgeClasses(quality),
+					style.GetIntervalBadgeClasses(quality),
 				}
 			>
 				{ interval }
