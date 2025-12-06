@@ -1,4 +1,4 @@
-// internal/views/pages/planner.templ
+// internal/views/pages/Planner.templ
 package pages
 
 import (
@@ -10,98 +10,258 @@ import (
 	"time"
 )
 
-// PlannerPage - Page principale Planner
 templ PlannerPage(currentDate time.Time, reviews, upcoming, overdue []models.Exercise) {
-	@layouts.Base("Planner - Maestro Terminal") {
-		<div class="relative min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-50">
-			<!-- ✅ IDENTIQUE DASHBOARD: Terminal Overlay Effects -->
-			<div class="pointer-events-none absolute inset-0 overflow-hidden">
-				<div class="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-sky-400/60 to-transparent top-20 animate-[pulse_2s_ease-in-out_infinite]"></div>
-				<div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.15),_transparent_50%)]"></div>
-				<div class="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,0,0,.05)_2px,rgba(0,0,0,.05)_4px)] opacity-30"></div>
-				<div class="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
-				<div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-sky-500/5 rounded-full blur-3xl"></div>
+	@layouts.Base("Command Center - Maestro Planner") {
+		<div class="relative min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+			<!-- Ambient Effects -->
+			<div class="pointer-events-none absolute inset-0 overflow-hidden opacity-30">
+				<div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,_rgba(16,185,129,0.1),_transparent_50%)]"></div>
+				<div class="absolute inset-0 bg-[radial-gradient(circle_at_80%_70%,_rgba(56,189,248,0.1),_transparent_50%)]"></div>
 			</div>
-			<div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+			<div class="relative z-10 max-w-[1920px] mx-auto px-6 py-8">
 				<!-- Header -->
 				<header class="mb-8">
-					@ui.TerminalHeaderWithDate("PLANNING SYSTÈME", time.Now(), ui.HeaderEmerald)
+					@ui.TerminalHeaderWithDate("COMMAND_CENTER.PLANNER", time.Now(), ui.HeaderEmerald)
 				</header>
-				<div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-					<div>
-						<h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-50">
-							📅 Planificateur
-						</h1>
-						<p class="text-slate-400">
-							Visualise tes révisions du jour, de la semaine ou du mois.
-						</p>
-					</div>
-					<!-- Stats rapides -->
-					<div class="grid grid-cols-3 gap-3 text-center text-xs font-mono">
-						<div class="rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2">
-							<div class="text-slate-400 uppercase tracking-widest text-[0.65rem]">
-								Aujourd'hui
-							</div>
-							<div class="mt-1 text-lg font-semibold text-emerald-400">
-								{ fmt.Sprintf("%d", len(reviews)) }
-							</div>
-						</div>
-						<div class="rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2">
-							<div class="text-slate-400 uppercase tracking-widest text-[0.65rem]">
-								À venir
-							</div>
-							<div class="mt-1 text-lg font-semibold text-sky-400">
-								{ fmt.Sprintf("%d", len(upcoming)) }
-							</div>
-						</div>
-						<div class="rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2">
-							<div class="text-slate-400 uppercase tracking-widest text-[0.65rem]">
-								En retard
-							</div>
-							<div class="mt-1 text-lg font-semibold text-rose-400">
-								{ fmt.Sprintf("%d", len(overdue)) }
-							</div>
-						</div>
-					</div>
+				<!-- ============================================ -->
+				<!-- LAYOUT 3-COLONNES: Sidebar | Main | (Auto) -->
+				<!-- ============================================ -->
+				<div class="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6">
+					<!-- ===== SIDEBAR GAUCHE: Today + Queue ===== -->
+					<aside class="space-y-6">
+						<!-- Today Reviews -->
+						@TodayReviewsCard(currentDate, reviews)
+						<!-- Upcoming Queue -->
+						@UpcomingQueueCard(upcoming)
+						<!-- Overdue Alert (si applicable) -->
+						if len(overdue) > 0 {
+							@OverdueAlertCard(overdue)
+						}
+					</aside>
+					<!-- ===== MAIN AREA: Week + Month Stack ===== -->
+					<main class="space-y-6">
+						<!-- Week View (Top) -->
+						<section
+							id="week-view"
+							class="rounded-2xl border border-slate-800 bg-slate-950/80 backdrop-blur-xl shadow-xl p-6"
+						>
+							@components.PlannerWeekViewEnhanced(currentDate)
+						</section>
+						<!-- Month View (Bottom) -->
+						<section
+							id="month-view"
+							class="rounded-2xl border border-slate-800 bg-slate-950/80 backdrop-blur-xl shadow-xl p-6"
+						>
+							@components.PlannerMonthViewEnhanced(currentDate)
+						</section>
+					</main>
 				</div>
-				<!-- Navigation vues -->
-				<div class="mt-6 inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/80 p-1">
-					<button
-						class="view-btn active inline-flex items-center gap-2 rounded-full bg-slate-800 px-4 py-1.5 text-xs font-mono text-emerald-300 tracking-widest uppercase"
-						hx-get={ fmt.Sprintf("/planner/day?date=%s", currentDate.Format("2006-01-02")) }
-						hx-target="#planner-view"
-						hx-swap="innerHTML"
-					>
-						<span>📆</span>
-						<span>Jour</span>
-					</button>
-					<button
-						class="view-btn inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-mono text-slate-300 hover:bg-slate-800 transition-colors"
-						hx-get={ fmt.Sprintf("/planner/week?week=%s", currentDate.Format("2006-01-02")) }
-						hx-target="#planner-view"
-						hx-swap="innerHTML"
-					>
-						<span>📊</span>
-						<span>Semaine</span>
-					</button>
-					<button
-						class="view-btn inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-mono text-slate-300 hover:bg-slate-800 transition-colors"
-						hx-get={ fmt.Sprintf("/planner/month?year=%d&month=%d", currentDate.Year(), currentDate.Month()) }
-						hx-target="#planner-view"
-						hx-swap="innerHTML"
-					>
-						<span>🗓️</span>
-						<span>Mois</span>
-					</button>
-				</div>
-				<!-- Vue dynamique (HTMX target) -->
-				<section
-					id="planner-view"
-					class="rounded-2xl border border-slate-800 bg-slate-950/70 backdrop-blur-xl shadow-xl shadow-slate-900/50 p-5"
-				>
-					@components.PlannerDayView(currentDate, reviews)
-				</section>
 			</div>
 		</div>
 	}
+}
+
+// ============================================
+// COMPONENT: Today Reviews Card
+// ============================================
+templ TodayReviewsCard(date time.Time, reviews []models.Exercise) {
+	<div class="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-950/40 to-slate-950 p-6 shadow-lg shadow-emerald-900/20">
+		<!-- Header -->
+		<div class="flex items-center justify-between mb-5">
+			<div class="flex items-center gap-2">
+				<span class="text-xl">⏰</span>
+				<h2 class="text-sm font-mono uppercase tracking-wider text-emerald-300">
+					TODAY.REVIEWS
+				</h2>
+			</div>
+			<div class="px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/30">
+				<span class="text-xs font-mono font-bold text-emerald-300">
+					{ fmt.Sprint(len(reviews)) }
+				</span>
+			</div>
+		</div>
+		<!-- Date Display -->
+		<div class="mb-4 pb-4 border-b border-slate-800">
+			<div class="text-lg font-bold text-slate-200">
+				{ date.Format("Monday") }
+			</div>
+			<div class="text-sm text-slate-500 font-mono">
+				{ date.Format("02 January 2006") }
+			</div>
+		</div>
+		<!-- Reviews List -->
+		<div class="space-y-2 max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-900">
+			if len(reviews) == 0 {
+				<div class="text-center py-8">
+					<span class="text-4xl mb-2 block">✨</span>
+					<p class="text-xs font-mono text-slate-500">
+						No reviews today
+					</p>
+				</div>
+			} else {
+				for _, ex := range reviews {
+					@TodayReviewItem(ex)
+				}
+			}
+		</div>
+		<!-- CTA -->
+		if len(reviews) > 0 {
+			<div class="mt-5 pt-5 border-t border-slate-800">
+				<a
+					href="/session/builder"
+					class="block w-full text-center px-4 py-2.5 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-mono text-xs uppercase tracking-wider shadow-lg shadow-emerald-900/50 hover:shadow-emerald-900/70 hover:scale-[1.02] transition-all"
+					hx-boost="true"
+				>
+					⚡ Start Session
+				</a>
+			</div>
+		}
+	</div>
+}
+
+templ TodayReviewItem(ex models.Exercise) {
+	<a
+		href={ templ.URL(fmt.Sprintf("/exercise/%d", ex.ID)) }
+		class="block p-3 rounded-lg border border-slate-800 bg-slate-900/50 hover:border-emerald-500/50 hover:bg-slate-900/80 transition-all group"
+		hx-boost="true"
+	>
+		<div class="flex items-start justify-between gap-2 mb-2">
+			<span class="text-xs text-slate-300 line-clamp-2 group-hover:text-emerald-200 transition-colors flex-1">
+				{ ex.Title }
+			</span>
+			<span class="text-[10px] font-mono text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">
+				D{ fmt.Sprint(ex.Difficulty) }
+			</span>
+		</div>
+		<div class="flex items-center justify-between">
+			<span class="text-[10px] font-mono text-slate-500">
+				{ ex.Domain }
+			</span>
+			<time class="text-[10px] font-mono font-semibold text-emerald-400">
+				{ ex.NextReviewAt.Format("15:04") }
+			</time>
+		</div>
+	</a>
+}
+
+// ============================================
+// COMPONENT: Upcoming Queue Card
+// ============================================
+templ UpcomingQueueCard(upcoming []models.Exercise) {
+	<div class="rounded-2xl border border-slate-800 bg-slate-950/80 p-6 shadow-lg">
+		<!-- Header -->
+		<div class="flex items-center justify-between mb-5">
+			<div class="flex items-center gap-2">
+				<span class="text-xl">📅</span>
+				<h2 class="text-sm font-mono uppercase tracking-wider text-sky-300">
+					UPCOMING.QUEUE
+				</h2>
+			</div>
+			<div class="px-2.5 py-1 rounded-lg bg-sky-500/20 border border-sky-500/30">
+				<span class="text-xs font-mono font-bold text-sky-300">
+					{ fmt.Sprint(len(upcoming)) }
+				</span>
+			</div>
+		</div>
+		<!-- Queue List -->
+		<div class="space-y-2 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-900">
+			if len(upcoming) == 0 {
+				<div class="text-center py-6">
+					<span class="text-3xl mb-2 block opacity-50">📭</span>
+					<p class="text-xs font-mono text-slate-500">
+						Queue empty
+					</p>
+				</div>
+			} else {
+				for i, ex := range upcoming {
+					if i < 10 {
+						@UpcomingQueueItem(ex)
+					}
+				}
+			}
+		</div>
+	</div>
+}
+
+templ UpcomingQueueItem(ex models.Exercise) {
+	<a
+		href={ templ.URL(fmt.Sprintf("/exercise/%d", ex.ID)) }
+		class="block p-2.5 rounded-lg border border-slate-800 bg-slate-900/40 hover:border-sky-500/50 hover:bg-slate-900/70 transition-all group"
+		hx-boost="true"
+	>
+		<div class="flex items-center justify-between gap-2 mb-1.5">
+			<span class="text-xs text-slate-400 line-clamp-1 group-hover:text-sky-300 transition-colors flex-1">
+				{ ex.Title }
+			</span>
+		</div>
+		<div class="flex items-center justify-between">
+			<span class="text-[10px] font-mono text-slate-600">
+				{ ex.Domain }
+			</span>
+			<time class="text-[10px] font-mono text-slate-500">
+				{ ex.NextReviewAt.Format("Jan 02") }
+			</time>
+		</div>
+	</a>
+}
+
+// ============================================
+// COMPONENT: Overdue Alert Card
+// ============================================
+templ OverdueAlertCard(overdue []models.Exercise) {
+	<div class="rounded-2xl border border-red-500/40 bg-gradient-to-br from-red-950/40 to-slate-950 p-6 shadow-lg shadow-red-900/20">
+		<!-- Header -->
+		<div class="flex items-center justify-between mb-5">
+			<div class="flex items-center gap-2">
+				<span class="text-xl">⚠</span>
+				<h2 class="text-sm font-mono uppercase tracking-wider text-red-300">
+					OVERDUE.CRITICAL
+				</h2>
+			</div>
+			<div class="flex h-3 w-3">
+				<span class="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-red-400 opacity-75"></span>
+				<span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+			</div>
+		</div>
+		<!-- Overdue List -->
+		<div class="space-y-2 max-h-[250px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-slate-900">
+			for i, ex := range overdue {
+				if i < 8 {
+					@OverdueItem(ex)
+				}
+			}
+		</div>
+		<!-- CTA -->
+		<div class="mt-4 pt-4 border-t border-slate-800">
+			<a
+				href="/session/builder?priority=overdue"
+				class="block w-full text-center px-4 py-2 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 font-mono text-xs uppercase tracking-wider hover:bg-red-500/30 hover:border-red-500/60 transition-all"
+				hx-boost="true"
+			>
+				Catch Up Now
+			</a>
+		</div>
+	</div>
+}
+
+templ OverdueItem(ex models.Exercise) {
+	<a
+		href={ templ.URL(fmt.Sprintf("/exercise/%d", ex.ID)) }
+		class="block p-2.5 rounded-lg border border-red-500/30 bg-red-950/30 hover:border-red-500/50 hover:bg-red-950/50 transition-all group"
+		hx-boost="true"
+	>
+		<div class="flex items-center justify-between gap-2 mb-1.5">
+			<span class="text-xs text-red-200 line-clamp-1 group-hover:text-red-100 transition-colors flex-1">
+				{ ex.Title }
+			</span>
+		</div>
+		<div class="flex items-center justify-between">
+			<span class="text-[10px] font-mono text-red-400/60">
+				{ ex.Domain }
+			</span>
+			<time class="text-[10px] font-mono text-red-400">
+				{ ex.NextReviewAt.Format("Jan 02") }
+			</time>
+		</div>
+	</a>
 }

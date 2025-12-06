@@ -16,8 +16,17 @@ templ ExerciseListPage(exercises []models.Exercise, filter models.ExerciseFilter
 				<div class="absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-sky-400/30 to-transparent"></div>
 			</div>
 			<div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-				<header class="mb-8">
+				<header class="flex items-center justify-between mb-8">
 					@ui.TerminalHeaderSimple("EXERCISES.LIST", ui.HeaderSky)
+					<a
+						href="/exercises/new"
+						class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-purple-500/60 bg-purple-900/40 text-purple-200 
+                        font-mono text-xs uppercase tracking-wider hover:bg-purple-800/60 hover:border-purple-400 transition-all hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]"
+						hx-boost="true"
+					>
+						<span>+</span>
+						<span>NEW EXERCISE</span>
+					</a>
 				</header>
 				<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 					<div>
