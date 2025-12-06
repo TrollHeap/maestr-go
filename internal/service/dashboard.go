@@ -1,3 +1,4 @@
+// internal/service/dashboard.go
 package service
 
 import (
@@ -5,42 +6,68 @@ import (
 
 	"maestro/internal/models"
 	"maestro/internal/store"
+	"maestro/internal/views/logic"
 )
 
-// DashboardService gère les stats du dashboard
-type DashboardService struct{}
-
-// NewDashboardService crée une nouvelle instance
-func NewDashboardService() *DashboardService {
-	return &DashboardService{}
-}
-
-// DashboardStats regroupe toutes les statistiques
+// DashboardStats - Stats complètes
 type DashboardStats struct {
-	TotalExercises  int
-	CompletedCount  int
-	InProgressCount int
-	TodoCount       int
-	OverdueCount    int
-
-	// ✅ NOUVEAUX CHAMPS
-	TotalMastered  int           // Exercices maîtrisés (Done=true)
-	StreakDays     int           // Jours consécutifs de révision
-	WeeklyReviews  int           // Révisions cette semaine
-	AvgSessionTime time.Duration // Durée moyenne session
-
-	// Stats existantes
-	CompletionRate    int // %
-	AverageInterval   int // jours
+	// Existant
+	TotalExercises    int
+	CompletedCount    int
+	InProgressCount   int
+	TodoCount         int
+	OverdueCount      int
+	TotalMastered     int
+	StreakDays        int
+	WeeklyReviews     int
+	AvgSessionTime    time.Duration
+	CompletionRate    int
+	AverageInterval   int
 	NextReviewDate    time.Time
 	TotalSessionTime  time.Duration
 	SessionCount      int
 	AverageDifficulty float64
 	TopDomain         string
 	DomainBreakdown   map[string]int
+
+	// ✅ NOUVEAUX pour analyse avancée
+	AverageEaseFactor float64
+	RetentionRate     int // % de reviews réussies (quality >= 2)
 }
 
-// GetDashboardStats calcule toutes les stats
+// ✅ FailurePattern - Pattern d'échecs répétés
+type FailurePattern struct {
+	ExerciseID int
+	Title      string
+	Domain     string
+	FailCount  int // Nombre d'échecs (quality 0-1)
+	EaseFactor float64
+}
+
+// ✅ RepetitionStat - Exercices les plus révisés
+type RepetitionStat struct {
+	ExerciseID  int
+	Title       string
+	Domain      string
+	ReviewCount int
+}
+
+// ✅ DomainStrength - Force par domaine
+type DomainStrength struct {
+	Name            string
+	TotalCount      int
+	MasteredCount   int
+	AvgEaseFactor   float64
+	StrengthPercent int
+}
+
+type DashboardService struct{}
+
+func NewDashboardService() *DashboardService {
+	return &DashboardService{}
+}
+
+// GetDashboardStats - Stats principales
 func (s *DashboardService) GetDashboardStats() DashboardStats {
 	allExercises := store.GetAll()
 	now := time.Now()
@@ -54,8 +81,10 @@ func (s *DashboardService) GetDashboardStats() DashboardStats {
 	var nextReviews []time.Time
 	var totalInterval int
 	var intervalCount int
-
-	// ✅ Variables pour nouveaux calculs
+	var totalEaseFactor float64
+	var easeCount int
+	var successfulReviews int
+	var totalReviews int
 	weekAgo := now.AddDate(0, 0, -7)
 	var weeklyReviewCount int
 
@@ -63,7 +92,7 @@ func (s *DashboardService) GetDashboardStats() DashboardStats {
 		// Compte les états
 		if ex.Done {
 			stats.CompletedCount++
-			stats.TotalMastered++ // ✅ Maîtrisés = Done
+			stats.TotalMastered++
 		} else if len(ex.CompletedSteps) > 0 {
 			stats.InProgressCount++
 		} else {
@@ -80,21 +109,34 @@ func (s *DashboardService) GetDashboardStats() DashboardStats {
 			nextReviews = append(nextReviews, ex.NextReviewAt)
 		}
 
-		// ✅ FIX: Révisions cette semaine (check nil + type)
+		// Weekly reviews
 		if ex.LastReviewed != nil && !ex.LastReviewed.IsZero() && ex.LastReviewed.After(weekAgo) {
 			weeklyReviewCount++
 		}
 
-		// Stats de difficulté
 		totalDifficulty += ex.Difficulty
 
-		// Stats d'intervalle SRS
+		// Intervalle SRS
 		if ex.IntervalDays > 0 {
 			totalInterval += ex.IntervalDays
 			intervalCount++
 		}
 
-		// Breakdown par domaine
+		// ✅ EaseFactor moyen
+		if ex.EaseFactor > 0 {
+			totalEaseFactor += ex.EaseFactor
+			easeCount++
+		}
+
+		// ✅ Retention rate (reviews réussies)
+		if ex.Repetitions > 0 {
+			totalReviews += ex.Repetitions
+			// Approximation: si EF >= 2.5, c'est "réussi"
+			if ex.EaseFactor >= 2.5 {
+				successfulReviews += ex.Repetitions
+			}
+		}
+
 		stats.DomainBreakdown[ex.Domain]++
 	}
 
@@ -108,14 +150,18 @@ func (s *DashboardService) GetDashboardStats() DashboardStats {
 		stats.AverageInterval = totalInterval / intervalCount
 	}
 
-	// ✅ Weekly reviews
+	if easeCount > 0 {
+		stats.AverageEaseFactor = totalEaseFactor / float64(easeCount)
+	}
+
+	if totalReviews > 0 {
+		stats.RetentionRate = (successfulReviews * 100) / totalReviews
+	}
+
 	stats.WeeklyReviews = weeklyReviewCount
-
-	// ✅ Streak calculation
 	stats.StreakDays = calculateStreak(allExercises)
-
-	// ✅ Session stats (si tu as une table sessions)
 	stats.SessionCount, stats.TotalSessionTime = getSessionStats()
+
 	if stats.SessionCount > 0 {
 		stats.AvgSessionTime = stats.TotalSessionTime / time.Duration(stats.SessionCount)
 	}
@@ -137,28 +183,183 @@ func (s *DashboardService) GetDashboardStats() DashboardStats {
 	return stats
 }
 
+// ✅ GetHeatmapData - Données pour le heatmap GitHub-style
+func (s *DashboardService) GetHeatmapData(weeks int) []logic.HeatmapDay {
+	allExercises := store.GetAll()
+
+	// Compte les reviews par date
+	reviewCounts := make(map[string]int)
+
+	for _, ex := range allExercises {
+		if ex.LastReviewed != nil && !ex.LastReviewed.IsZero() {
+			dateKey := ex.LastReviewed.Format("2006-01-02")
+			reviewCounts[dateKey]++
+		}
+	}
+
+	// Génère les jours via logic helper
+	return logic.GenerateHeatmapDays(reviewCounts, weeks)
+}
+
+// ✅ GetWeakExercises - Exercices avec EaseFactor faible
+func (s *DashboardService) GetWeakExercises(limit int) []models.Exercise {
+	allExercises := store.GetAll()
+	var weak []models.Exercise
+
+	// Seuil: EaseFactor < 2.3 ET pas encore maîtrisé
+	for _, ex := range allExercises {
+		if !ex.Done && ex.EaseFactor < 2.3 && ex.EaseFactor > 0 {
+			weak = append(weak, ex)
+		}
+	}
+
+	// Trie par EaseFactor croissant (plus faibles en premier)
+	for i := 0; i < len(weak)-1; i++ {
+		for j := i + 1; j < len(weak); j++ {
+			if weak[i].EaseFactor > weak[j].EaseFactor {
+				weak[i], weak[j] = weak[j], weak[i]
+			}
+		}
+	}
+
+	// Limite à N résultats
+	if len(weak) > limit {
+		weak = weak[:limit]
+	}
+
+	return weak
+}
+
+// ✅ GetFailurePatterns - Exercices avec échecs répétés
+func (s *DashboardService) GetFailurePatterns(limit int) []FailurePattern {
+	allExercises := store.GetAll()
+	var patterns []FailurePattern
+
+	for _, ex := range allExercises {
+		// Critère: EaseFactor bas + répétitions élevées = échecs répétés
+		if !ex.Done && ex.EaseFactor < 2.3 && ex.Repetitions >= 3 {
+			failCount := ex.Repetitions // Approximation
+			patterns = append(patterns, FailurePattern{
+				ExerciseID: ex.ID,
+				Title:      ex.Title,
+				Domain:     ex.Domain,
+				FailCount:  failCount,
+				EaseFactor: ex.EaseFactor,
+			})
+		}
+	}
+
+	// Trie par FailCount décroissant
+	for i := 0; i < len(patterns)-1; i++ {
+		for j := i + 1; j < len(patterns); j++ {
+			if patterns[i].FailCount < patterns[j].FailCount {
+				patterns[i], patterns[j] = patterns[j], patterns[i]
+			}
+		}
+	}
+
+	if len(patterns) > limit {
+		patterns = patterns[:limit]
+	}
+
+	return patterns
+}
+
+// ✅ GetRepetitionStats - Exercices les plus révisés
+func (s *DashboardService) GetRepetitionStats(limit int) []RepetitionStat {
+	allExercises := store.GetAll()
+	var stats []RepetitionStat
+
+	for _, ex := range allExercises {
+		if ex.Repetitions > 0 {
+			stats = append(stats, RepetitionStat{
+				ExerciseID:  ex.ID,
+				Title:       ex.Title,
+				Domain:      ex.Domain,
+				ReviewCount: ex.Repetitions,
+			})
+		}
+	}
+
+	// Trie par ReviewCount décroissant
+	for i := 0; i < len(stats)-1; i++ {
+		for j := i + 1; j < len(stats); j++ {
+			if stats[i].ReviewCount < stats[j].ReviewCount {
+				stats[i], stats[j] = stats[j], stats[i]
+			}
+		}
+	}
+
+	if len(stats) > limit {
+		stats = stats[:limit]
+	}
+
+	return stats
+}
+
+// ✅ GetDomainStrengths - Analyse force par domaine
+func (s *DashboardService) GetDomainStrengths() []DomainStrength {
+	allExercises := store.GetAll()
+	domainMap := make(map[string]*DomainStrength)
+
+	for _, ex := range allExercises {
+		if domainMap[ex.Domain] == nil {
+			domainMap[ex.Domain] = &DomainStrength{
+				Name: ex.Domain,
+			}
+		}
+
+		ds := domainMap[ex.Domain]
+		ds.TotalCount++
+
+		if ex.Done {
+			ds.MasteredCount++
+		}
+
+		if ex.EaseFactor > 0 {
+			ds.AvgEaseFactor += ex.EaseFactor
+		}
+	}
+
+	var strengths []DomainStrength
+	for _, ds := range domainMap {
+		if ds.TotalCount > 0 {
+			ds.AvgEaseFactor /= float64(ds.TotalCount)
+			ds.StrengthPercent = (ds.MasteredCount * 100) / ds.TotalCount
+		}
+		strengths = append(strengths, *ds)
+	}
+
+	// Trie par StrengthPercent décroissant
+	for i := 0; i < len(strengths)-1; i++ {
+		for j := i + 1; j < len(strengths); j++ {
+			if strengths[i].StrengthPercent < strengths[j].StrengthPercent {
+				strengths[i], strengths[j] = strengths[j], strengths[i]
+			}
+		}
+	}
+
+	return strengths
+}
+
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
 
-// calculateStreak calcule la séquence de jours consécutifs
 func calculateStreak(exercises []models.Exercise) int {
 	if len(exercises) == 0 {
 		return 0
 	}
 
-	// Map des dates où au moins 1 exercice a été revu
 	reviewDates := make(map[string]bool)
 
 	for _, ex := range exercises {
-		// ✅ FIX: Check nil avant IsZero
 		if ex.LastReviewed != nil && !ex.LastReviewed.IsZero() {
 			dateKey := ex.LastReviewed.Format("2006-01-02")
 			reviewDates[dateKey] = true
 		}
 	}
 
-	// Compte jours consécutifs depuis aujourd'hui
 	streak := 0
 	currentDate := time.Now()
 
@@ -170,7 +371,6 @@ func calculateStreak(exercises []models.Exercise) int {
 		streak++
 		currentDate = currentDate.AddDate(0, 0, -1)
 
-		// Limite à 365 jours pour éviter boucle infinie
 		if streak > 365 {
 			break
 		}
@@ -179,8 +379,7 @@ func calculateStreak(exercises []models.Exercise) int {
 	return streak
 }
 
-// getSessionStats récupère stats sessions (si tu as une table sessions)
 func getSessionStats() (int, time.Duration) {
-	// ✅ Version simple sans table sessions
+	// Version simple sans table sessions
 	return 0, 0
 }
