@@ -1,43 +1,67 @@
 package ui
 
-// FilterDropdown - Harmonisé avec Dashboard
+import "maestro/internal/views/logic"
+
+// ────────────────────────────────────────────────────
+// DROPDOWN avec ordre alphabétique
+// ────────────────────────────────────────────────────
+
+// FilterDropdown - Version Alpine.js pure avec slice ordonnée
 templ FilterDropdown(
 	label string,
 	param string,
 	current string,
-	options map[string]string,
+	options []struct{ Value, Label string }, // ← Slice ordonnée (pas map)
 	q string,
 	status string,
 	domain string,
 	difficulty int,
 	sort string,
 ) {
-	<div class="relative inline-block">
-		<!-- ✅ Bouton dropdown harmonisé -->
+	<div
+		x-data="{ open: false }"
+		class="relative inline-block"
+	>
+		<!-- Bouton trigger avec label dynamique -->
 		<button
 			type="button"
+			@click="open = !open"
+			@click.away="open = false"
 			class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-slate-600 bg-slate-800/80 backdrop-blur-sm text-xs text-slate-300 hover:bg-slate-700 hover:border-slate-500 transition-all shadow-[0_0_10px_rgba(0,0,0,0.2)]"
-			onclick="this.nextElementSibling.classList.toggle('hidden')"
 		>
-			<span class="font-mono">{ label }</span>
-			<span class="text-slate-500">▼</span>
+			<!-- ✅ Affiche le label actif ou label par défaut -->
+			<span class="font-mono">
+				{ getActiveLabel(label, current, options) }
+			</span>
+			<span
+				class="text-slate-500 transition-transform duration-200"
+				:class="open ? 'rotate-180' : ''"
+			>▼</span>
 		</button>
-		<!-- ✅ Menu dropdown harmonisé -->
-		<div class="hidden absolute right-0 mt-2 w-48 rounded-xl border border-slate-600 bg-slate-800/95 backdrop-blur-sm shadow-[0_0_30px_rgba(0,0,0,0.4)] z-50">
+		<!-- Menu dropdown avec ordre préservé -->
+		<div
+			x-show="open"
+			x-transition:enter="transition ease-out duration-200"
+			x-transition:enter-start="opacity-0 scale-95"
+			x-transition:enter-end="opacity-100 scale-100"
+			x-transition:leave="transition ease-in duration-150"
+			x-transition:leave-start="opacity-100 scale-100"
+			x-transition:leave-end="opacity-0 scale-95"
+			class="absolute right-0 mt-2 w-48 rounded-xl border border-slate-600 bg-slate-800/95 backdrop-blur-sm shadow-[0_0_30px_rgba(0,0,0,0.4)] z-50"
+		>
 			<div class="p-2 space-y-1">
-				for value, text := range options {
+				// ✅ Itération ordonnée (préserve l'ordre de la slice)
+				for _, opt := range options {
 					<a
-						href={ buildFilterURL(param, value, q, status, domain, difficulty, sort) }
+						href={ logic.BuildFilterURL(param, opt.Value, q, status, domain, difficulty, sort) }
 						class={
 							"block px-3 py-2 rounded-lg text-xs font-mono transition-all",
-							templ.KV("bg-purple-500/20 text-purple-200 border border-purple-500/40", current == value),
-							templ.KV("text-slate-300 hover:bg-slate-700 hover:text-slate-100", current != value),
+							templ.KV("bg-purple-500/20 text-purple-200 border border-purple-500/40", current == opt.Value),
+							templ.KV("text-slate-300 hover:bg-slate-700 hover:text-slate-100", current != opt.Value),
 						}
-						hx-get="/exercises/list"
-						hx-target="#exercise-list"
-						hx-push-url="true"
+						@click="open = false"
 					>
-						{ text }
+						{ opt.Label }
 					</a>
 				}
 			</div>
@@ -45,30 +69,51 @@ templ FilterDropdown(
 	</div>
 }
 
-// FilterPill - Harmonisé avec Dashboard
-templ FilterPill(label string, value string, param string, isActive bool) {
+// ────────────────────────────────────────────────────
+// PILLS avec ordre contrôlé
+// ────────────────────────────────────────────────────
+
+// FilterPill - Version pure Alpine (sans HTMX)
+templ FilterPill(
+	label string,
+	value string,
+	param string,
+	isActive bool,
+	q string,
+	status string,
+	domain string,
+	difficulty int,
+	sort string,
+) {
 	<a
-		href={ buildPillURL(param, value) }
+		href={ logic.BuildFilterURL(param, value, q, status, domain, difficulty, sort) }
 		class={
-			"inline-flex items-center px-3 py-1.5 rounded-full text-xs font-mono tracking-wider transition-all",
+			"inline-flex items-center px-3 py-1.5 rounded-full text-xs font-mono tracking-wider uppercase transition-all",
 			templ.KV("bg-purple-500/30 text-purple-200 border border-purple-500/60 shadow-[0_0_10px_rgba(168,85,247,0.3)]", isActive),
-			templ.KV("text-slate-400 hover:text-slate-200 hover:bg-slate-700/60", !isActive),
+			templ.KV("text-slate-400 hover:text-slate-200 hover:bg-slate-700/60 border border-transparent", !isActive),
 		}
-		hx-get="/exercises/list"
-		hx-target="#exercise-list"
-		hx-push-url="true"
 	>
 		{ label }
 	</a>
 }
 
-// Helper functions
-func buildFilterURL(param, value, q, status, domain string, difficulty int, sort string) templ.SafeURL {
-	// Implémente la logique de construction d'URL
-	return templ.SafeURL("/exercises?param=" + value)
-}
+// ────────────────────────────────────────────────────
+// HELPER: Trouve le label actif dans la slice
+// ────────────────────────────────────────────────────
 
-func buildPillURL(param, value string) templ.SafeURL {
-	// Implémente la logique de construction d'URL
-	return templ.SafeURL("/exercises?" + param + "=" + value)
+func getActiveLabel(defaultLabel string, current string, options []struct{ Value, Label string }) string {
+	// Si aucune valeur active, retourne le label par défaut
+	if current == "" {
+		return defaultLabel
+	}
+
+	// Cherche le label correspondant à la valeur active
+	for _, opt := range options {
+		if opt.Value == current {
+			return opt.Label
+		}
+	}
+
+	// Fallback au label par défaut
+	return defaultLabel
 }
