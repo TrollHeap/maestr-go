@@ -2,7 +2,7 @@ package ui
 
 import (
 	"fmt"
-	"maestro/internal/views/utils"
+	"maestro/internal/views/logic"
 )
 
 // ProgressBar - Barre de progression
@@ -20,7 +20,7 @@ templ ProgressBar(completed, total int) {
 					// retire animate-pulse si tu veux un remplissage net
 					// templ.KV("animate-pulse", completed > 0 && completed < total),
 				}
-				style={ fmt.Sprintf("width: %d%%", utils.CalculateProgressPercent(completed, total)) }
+				style={ fmt.Sprintf("width: %d%%", logic.CalculateProgressPercent(completed, total)) }
 			></div>
 		</div>
 		<div class="progress-text flex items-center justify-between text-[11px]">
@@ -30,10 +30,10 @@ templ ProgressBar(completed, total int) {
 			<span
 				class={
 					"font-mono font-semibold",
-					utils.GetProgressTextColor(completed, total),
+					logic.GetProgressTextColor(completed, total),
 				}
 			>
-				{ fmt.Sprintf("%d%%", utils.CalculateProgressPercent(completed, total)) }
+				{ fmt.Sprintf("%d%%", logic.CalculateProgressPercent(completed, total)) }
 			</span>
 		</div>
 	</div>
@@ -48,16 +48,16 @@ templ ProgressBarInline(completed, total int) {
 			<span
 				class={
 					"font-semibold",
-					utils.GetProgressTextColor(completed, total),
+					logic.GetProgressTextColor(completed, total),
 				}
 			>
-				{ fmt.Sprintf("%d%%", utils.CalculateProgressPercent(completed, total)) }
+				{ fmt.Sprintf("%d%%", logic.CalculateProgressPercent(completed, total)) }
 			</span>
 		</div>
 		<div class="relative h-1.5 rounded-full bg-slate-800 overflow-hidden">
 			<div
 				class="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500"
-				style={ fmt.Sprintf("width: %d%%", utils.CalculateProgressPercent(completed, total)) }
+				style={ fmt.Sprintf("width: %d%%", logic.CalculateProgressPercent(completed, total)) }
 			></div>
 		</div>
 	</div>

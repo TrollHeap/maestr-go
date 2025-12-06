@@ -3,7 +3,7 @@ package ui
 
 import (
 	"fmt"
-	"maestro/internal/views/logic" // ← ✅ AJOUT IMPORT
+	"maestro/internal/views/ui/style"
 	"time"
 )
 
@@ -24,9 +24,9 @@ type HeaderSegment struct {
 
 // TerminalHeader - Header système avec pulse dot
 templ TerminalHeader(mainLabel string, segments []HeaderSegment, theme HeaderTheme, showPulse bool) {
-	<div class={ logic.GetHeaderClasses(string(theme)) }>
+	<div class={ style.GetHeaderClasses(string(theme)) }>
 		if showPulse {
-			<span class={ logic.GetPulseDotClasses(string(theme)) }></span>
+			<span class={ style.GetPulseDotClasses(string(theme)) }></span>
 		}
 		<span>&gt; { mainLabel }</span>
 		for _, seg := range segments {
@@ -48,8 +48,8 @@ templ TerminalHeader(mainLabel string, segments []HeaderSegment, theme HeaderThe
 
 // TerminalHeaderSimple - Version simplifiée sans segments
 templ TerminalHeaderSimple(mainLabel string, theme HeaderTheme) {
-	<div class={ logic.GetHeaderClasses(string(theme)) }>
-		<span class={ logic.GetPulseDotClasses(string(theme)) }></span>
+	<div class={ style.GetHeaderClasses(string(theme)) }>
+		<span class={ style.GetPulseDotClasses(string(theme)) }></span>
 		<span>&gt; { mainLabel }</span>
 		<span class="opacity-60">|</span>
 		<span>STATUS: <span class="animate-pulse">ONLINE</span></span>
@@ -58,8 +58,8 @@ templ TerminalHeaderSimple(mainLabel string, theme HeaderTheme) {
 
 // TerminalHeaderWithDate - Header avec date (Planner use case)
 templ TerminalHeaderWithDate(mainLabel string, date time.Time, theme HeaderTheme) {
-	<div class={ logic.GetHeaderClasses(string(theme)) }>
-		<span class={ logic.GetPulseDotClasses(string(theme)) }></span>
+	<div class={ style.GetHeaderClasses(string(theme)) }>
+		<span class={ style.GetPulseDotClasses(string(theme)) }></span>
 		<span>&gt; { mainLabel }</span>
 		<span class="opacity-60">|</span>
 		<span>DATE: { date.Format("2006-01-02") }</span>
@@ -70,8 +70,8 @@ templ TerminalHeaderWithDate(mainLabel string, date time.Time, theme HeaderTheme
 
 // TerminalHeaderWithID - Header avec ID (ExerciseDetail use case)
 templ TerminalHeaderWithID(title string, id int, theme HeaderTheme) {
-	<div class={ logic.GetHeaderClasses(string(theme)) }>
-		<span class={ logic.GetPulseDotClasses(string(theme)) }></span>
+	<div class={ style.GetHeaderClasses(string(theme)) }>
+		<span class={ style.GetPulseDotClasses(string(theme)) }></span>
 		<span>&gt; { title } #{ fmt.Sprintf("%03d", id) }</span>
 		<span class="opacity-60">|</span>
 		<span>STATUS: <span class="animate-pulse">ONLINE</span></span>

@@ -2,7 +2,7 @@ package ui
 
 import (
 	"fmt"
-	"maestro/internal/views/logic"
+	"maestro/internal/views/ui/style"
 )
 
 type BadgeVariant string
@@ -25,14 +25,14 @@ const (
 
 // Badge - Composant atomique universel
 templ Badge(text string, variant BadgeVariant, size BadgeSize) {
-	<span class={ logic.GetBadgeClasses(string(variant), string(size)) }>
+	<span class={ style.GetBadgeClasses(string(variant), string(size)) }>
 		{ text }
 	</span>
 }
 
 // BadgeWithIcon - Badge avec icône
 templ BadgeWithIcon(text string, icon string, variant BadgeVariant, size BadgeSize) {
-	<span class={ logic.GetBadgeClasses(string(variant), string(size)) }>
+	<span class={ style.GetBadgeClasses(string(variant), string(size)) }>
 		if icon != "" {
 			<span aria-hidden="true">{ icon }</span>
 		}
@@ -42,14 +42,14 @@ templ BadgeWithIcon(text string, icon string, variant BadgeVariant, size BadgeSi
 
 // BadgeCount - Badge compteur (pour notifications)
 templ BadgeCounter(count int, variant BadgeVariant) {
-	<span class={ logic.GetBadgeClasses(string(variant), "xs") }>
+	<span class={ style.GetBadgeClasses(string(variant), "xs") }>
 		{ fmt.Sprint(count) }
 	</span>
 }
 
 // BadgePulse - Badge avec animation pulse (système online)
 templ BadgePulse(text string, variant BadgeVariant) {
-	<span class={ logic.GetBadgeClasses(string(variant), "sm") }>
+	<span class={ style.GetBadgeClasses(string(variant), "sm") }>
 		<span
 			class="inline-block h-2 w-2 rounded-full animate-pulse"
 			style="background-color: currentColor"
