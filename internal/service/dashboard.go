@@ -9,58 +9,6 @@ import (
 	"maestro/internal/views/logic"
 )
 
-// DashboardStats - Stats complètes
-type DashboardStats struct {
-	// Existant
-	TotalExercises    int
-	CompletedCount    int
-	InProgressCount   int
-	TodoCount         int
-	OverdueCount      int
-	TotalMastered     int
-	StreakDays        int
-	WeeklyReviews     int
-	AvgSessionTime    time.Duration
-	CompletionRate    int
-	AverageInterval   int
-	NextReviewDate    time.Time
-	TotalSessionTime  time.Duration
-	SessionCount      int
-	AverageDifficulty float64
-	TopDomain         string
-	DomainBreakdown   map[string]int
-
-	// ✅ NOUVEAUX pour analyse avancée
-	AverageEaseFactor float64
-	RetentionRate     int // % de reviews réussies (quality >= 2)
-}
-
-// ✅ FailurePattern - Pattern d'échecs répétés
-type FailurePattern struct {
-	ExerciseID int
-	Title      string
-	Domain     string
-	FailCount  int // Nombre d'échecs (quality 0-1)
-	EaseFactor float64
-}
-
-// ✅ RepetitionStat - Exercices les plus révisés
-type RepetitionStat struct {
-	ExerciseID  int
-	Title       string
-	Domain      string
-	ReviewCount int
-}
-
-// ✅ DomainStrength - Force par domaine
-type DomainStrength struct {
-	Name            string
-	TotalCount      int
-	MasteredCount   int
-	AvgEaseFactor   float64
-	StrengthPercent int
-}
-
 type DashboardService struct{}
 
 func NewDashboardService() *DashboardService {
@@ -68,11 +16,11 @@ func NewDashboardService() *DashboardService {
 }
 
 // GetDashboardStats - Stats principales
-func (s *DashboardService) GetDashboardStats() DashboardStats {
+func (s *DashboardService) GetDashboardStats() models.DashboardStats {
 	allExercises := store.GetAll()
 	now := time.Now()
 
-	stats := DashboardStats{
+	stats := models.DashboardStats{
 		TotalExercises:  len(allExercises),
 		DomainBreakdown: make(map[string]int),
 	}
@@ -231,15 +179,15 @@ func (s *DashboardService) GetWeakExercises(limit int) []models.Exercise {
 }
 
 // ✅ GetFailurePatterns - Exercices avec échecs répétés
-func (s *DashboardService) GetFailurePatterns(limit int) []FailurePattern {
+func (s *DashboardService) GetFailurePatterns(limit int) []models.FailurePattern {
 	allExercises := store.GetAll()
-	var patterns []FailurePattern
+	var patterns []models.FailurePattern
 
 	for _, ex := range allExercises {
 		// Critère: EaseFactor bas + répétitions élevées = échecs répétés
 		if !ex.Done && ex.EaseFactor < 2.3 && ex.Repetitions >= 3 {
 			failCount := ex.Repetitions // Approximation
-			patterns = append(patterns, FailurePattern{
+			patterns = append(patterns, models.FailurePattern{
 				ExerciseID: ex.ID,
 				Title:      ex.Title,
 				Domain:     ex.Domain,
@@ -266,13 +214,13 @@ func (s *DashboardService) GetFailurePatterns(limit int) []FailurePattern {
 }
 
 // ✅ GetRepetitionStats - Exercices les plus révisés
-func (s *DashboardService) GetRepetitionStats(limit int) []RepetitionStat {
+func (s *DashboardService) GetRepetitionStats(limit int) []models.RepetitionStat {
 	allExercises := store.GetAll()
-	var stats []RepetitionStat
+	var stats []models.RepetitionStat
 
 	for _, ex := range allExercises {
 		if ex.Repetitions > 0 {
-			stats = append(stats, RepetitionStat{
+			stats = append(stats, models.RepetitionStat{
 				ExerciseID:  ex.ID,
 				Title:       ex.Title,
 				Domain:      ex.Domain,
@@ -298,13 +246,13 @@ func (s *DashboardService) GetRepetitionStats(limit int) []RepetitionStat {
 }
 
 // ✅ GetDomainStrengths - Analyse force par domaine
-func (s *DashboardService) GetDomainStrengths() []DomainStrength {
+func (s *DashboardService) GetDomainStrengths() []models.DomainStrength {
 	allExercises := store.GetAll()
-	domainMap := make(map[string]*DomainStrength)
+	domainMap := make(map[string]*models.DomainStrength)
 
 	for _, ex := range allExercises {
 		if domainMap[ex.Domain] == nil {
-			domainMap[ex.Domain] = &DomainStrength{
+			domainMap[ex.Domain] = &models.DomainStrength{
 				Name: ex.Domain,
 			}
 		}
@@ -321,7 +269,7 @@ func (s *DashboardService) GetDomainStrengths() []DomainStrength {
 		}
 	}
 
-	var strengths []DomainStrength
+	var strengths []models.DomainStrength
 	for _, ds := range domainMap {
 		if ds.TotalCount > 0 {
 			ds.AvgEaseFactor /= float64(ds.TotalCount)
